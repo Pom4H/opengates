@@ -63,7 +63,7 @@ This repo is organized as a ladder, from idea to running code:
 | **2** | Examples — a catalog of business gates by industry | [`examples/`](examples/) |
 | **3** | Reference engine — a small TypeScript "fold" engine | [`engine/`](engine/) |
 | 4 | Standards mappings (W3C PROV, BPMN/DMN, EVM, ISO 19650, IFC) | *planned* |
-| **5** | Service & review queue — Vercel / Docker deploy, push & pull, Claude review skill | [`docs/REVIEW-QUEUE.md`](docs/REVIEW-QUEUE.md) |
+| **5** | Service & review queue — Vercel / Docker deploy, push & pull, Claude review skill + [MCP server](docs/MCP.md) | [`docs/REVIEW-QUEUE.md`](docs/REVIEW-QUEUE.md) |
 | 6 | Vertical MVP — Construction PR | *planned* |
 | 7 | Commercial product — an operational truth layer | *planned* |
 
@@ -131,11 +131,12 @@ just two paths:
   ```
 
   Producers **push** cases (`POST /queue`); reviewers — Claude (a
-  [`/review-gate`](.claude/skills/review-gate/SKILL.md) skill), another harness,
-  or a human — **pull** the next case (`POST /queue/lease`) and record a
-  decision the engine folds into an accepted fact. Set `OPEN_GATES_SECRET` to
-  require signed **reviewer tokens**, so a decision is bound to an authenticated
-  identity instead of a self-asserted name.
+  [`/review-gate`](.claude/skills/review-gate/SKILL.md) skill or the
+  [MCP server](docs/MCP.md)), another harness, or a human — **pull** the next
+  case (`POST /queue/lease`) and record a decision the engine folds into an
+  accepted fact. Set `OPEN_GATES_SECRET` to require signed **reviewer tokens**,
+  so a decision is bound to an authenticated identity instead of a self-asserted
+  name.
 
 See [`docs/REVIEW-QUEUE.md`](docs/REVIEW-QUEUE.md) for the full guide.
 

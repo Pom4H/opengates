@@ -78,10 +78,12 @@ Full endpoint list: `GET /` on a running server.
 
 ### Reviewers are pluggable
 
-The queue does not care who reviews. Two reference harnesses ship in
-[`examples/reviewer/`](../examples/reviewer/):
+The queue does not care who reviews. Three reference harnesses ship:
 
-- a **Claude skill** — [`.claude/skills/review-gate`](../.claude/skills/review-gate/SKILL.md);
+- a **Claude skill** — [`.claude/skills/review-gate`](../.claude/skills/review-gate/SKILL.md)
+  (drives the loop over curl);
+- an **MCP server** — [`docs/MCP.md`](MCP.md), exposing the loop as native tools
+  (`open_gates_lease` → judge → `open_gates_decide`) for Claude or any MCP client;
 - a **dependency-free polling script** — [`poll.mjs`](../examples/reviewer/poll.mjs)
   (swap one function for your own logic, or another harness entirely).
 

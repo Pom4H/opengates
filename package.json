@@ -9,6 +9,7 @@
   "scripts": {
     "serve": "node server.ts",
     "token": "node engine/src/queue/token.ts",
+    "mcp": "node engine/src/mcp/server.ts",
     "test": "node --test engine/test/*.test.ts",
     "demo:accept": "node engine/src/cli.ts examples/construction/gate.json examples/construction/scenario.accept.json",
     "demo:dispute": "node engine/src/cli.ts examples/construction/gate.json examples/construction/scenario.dispute.json",
