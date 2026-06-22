@@ -14,6 +14,14 @@ record a decision the engine folds into an accepted (or rejected) fact.
 The queue is a plain HTTP service. Set `OPEN_GATES_URL` (default
 `http://localhost:3000`). All bodies are JSON.
 
+**Identity.** If the deployment runs with auth on (`GET /health` shows
+`"auth": true`), every queue call needs a bearer token. Set `OPEN_GATES_TOKEN`
+and send `-H "authorization: Bearer $OPEN_GATES_TOKEN"` on each request. The
+server records *the token's subject* as the decider and ignores any `actor`/
+`holder` you send — so identity cannot be spoofed. A `401` means the token is
+missing or invalid; a `403` means your token is not authorized for that
+`reviewerRole`. With auth off, the token is simply unused.
+
 ## The loop
 
 1. **Pull** the next pending case (optionally scope by `inbox`, `role`, or
@@ -22,6 +30,7 @@ The queue is a plain HTTP service. Set `OPEN_GATES_URL` (default
    ```bash
    curl -s -X POST "$OPEN_GATES_URL/queue/lease" \
      -H 'content-type: application/json' \
+     -H "authorization: Bearer $OPEN_GATES_TOKEN" \
      -d '{"holder":"claude","inbox":"supervisors","role":"technical_supervisor"}'
    ```
 
@@ -38,6 +47,7 @@ The queue is a plain HTTP service. Set `OPEN_GATES_URL` (default
    ```bash
    curl -s -X POST "$OPEN_GATES_URL/queue/<id>/decision" \
      -H 'content-type: application/json' \
+     -H "authorization: Bearer $OPEN_GATES_TOKEN" \
      -d '{"outcome":"accepted","reviewerRole":"technical_supervisor","actor":"claude","leaseToken":"<token>","note":"why"}'
    ```
 

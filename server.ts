@@ -8,10 +8,12 @@
 //   docker compose up                    # container (see docker-compose.yml)
 //
 // Env: PORT (3000), QUEUE_FILE (./data/queue.json), LEASE_SECONDS (300),
-//      OPEN_GATES_WEBHOOK (optional push target on enqueue/decide).
+//      OPEN_GATES_WEBHOOK (optional push target on enqueue/decide),
+//      OPEN_GATES_SECRET (optional — when set, queue routes require a bearer token).
 
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { createHandler } from "./engine/src/http.ts";
+import { createAuthenticator } from "./engine/src/queue/auth.ts";
 import { createReviewQueue } from "./engine/src/queue/queue.ts";
 import { createFileStore } from "./engine/src/queue/store.ts";
 
@@ -27,7 +29,8 @@ const queue = createReviewQueue({
 });
 await queue.ready();
 
-const handle = createHandler(queue);
+const auth = createAuthenticator(process.env.OPEN_GATES_SECRET);
+const handle = createHandler(queue, auth);
 
 const server = createServer(async (req, res) => {
   const started = Date.now();
@@ -45,6 +48,7 @@ const server = createServer(async (req, res) => {
       method: req.method ?? "GET",
       path: url.pathname,
       query: Object.fromEntries(url.searchParams),
+      headers: req.headers as Record<string, string | undefined>,
       body,
     });
     send(req, res, result.status, result.body, url, started);
@@ -56,6 +60,11 @@ const server = createServer(async (req, res) => {
 server.listen(PORT, () => {
   console.log(
     `open-gates review queue listening on :${PORT}  (queue file: ${QUEUE_FILE})`,
+  );
+  console.log(
+    auth.enabled
+      ? "auth: ON — queue routes require a bearer token (OPEN_GATES_SECRET set)"
+      : "auth: OFF — set OPEN_GATES_SECRET to require reviewer tokens",
   );
 });
 

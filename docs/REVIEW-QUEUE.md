@@ -87,6 +87,53 @@ The queue does not care who reviews. Two reference harnesses ship in
 
 ---
 
+## Identity & authorization
+
+A gate's whole point is *responsibility*: a named role accepted a fact. But on
+the open API both `actor` and `reviewerRole` are just strings in the request
+body — without identity, anyone could record a decision as anyone. Set
+**`OPEN_GATES_SECRET`** on the server to require a signed **bearer token** on
+every stateful (`/queue`, `/inboxes`) route. The stateless pure-function routes
+(`/fold`, `/autodecide`, `/health`) stay public.
+
+A token is a tiny, dependency-free HMAC credential (no JWT library) naming an
+authenticated **subject** and the **roles** it may act as. Mint one with the
+same secret the server runs with:
+
+```bash
+OPEN_GATES_SECRET=… npm run token -- \
+  --actor supervisor:ivanov --role technical_supervisor --ttl 86400
+# -> v1.<claims>.<sig>   (give this to the reviewer)
+```
+
+The reviewer presents it on each call:
+
+```bash
+curl -s -X POST "$URL/queue/lease" \
+  -H "authorization: Bearer $OPEN_GATES_TOKEN" \
+  -H 'content-type: application/json' -d '{"role":"technical_supervisor"}'
+```
+
+What the server enforces when auth is on:
+
+- **No token → `401`.** Every `/queue` and `/inboxes` call needs a valid token.
+- **Identity is bound, not asserted.** The authenticated subject *overwrites*
+  any `actor`/`holder`/`by` in the body — so the recorded decider, lease holder
+  and delegation author are always the real token subject. A spoofed `actor`
+  is silently ignored.
+- **Role authorization → `403`.** A decision's `reviewerRole` must be one the
+  token carries, otherwise it is refused before the engine even sees it. (This
+  is distinct from the engine's own `422`, which fires when the role is not the
+  *gate's* reviewer role at all — defense in depth.)
+
+This lives entirely in the transport layer ([`engine/src/queue/auth.ts`](../engine/src/queue/auth.ts)
++ [`http.ts`](../engine/src/http.ts)); the fold engine never sees a key and stays
+a pure function. With no secret set, auth is off and the queue behaves exactly as
+before — fine for local/dev, not for a shared deployment. `GET /health` reports
+`"auth": true|false`.
+
+---
+
 ## Inboxes & delegation
 
 A flat queue is fine for one reviewer. To distribute work across teams or
@@ -241,6 +288,10 @@ OPEN_GATES_URL=http://localhost:3000 node examples/reviewer/poll.mjs
 - **Data residency.** Everything stays in your container and volume. Nothing
   leaves the network unless you set `OPEN_GATES_WEBHOOK` or a reviewer reaches
   out. The case payload only ever contains what you put in the claim/evidence.
+- **Authorization.** Set `OPEN_GATES_SECRET` to require reviewer bearer tokens on
+  the stateful routes (see [Identity & authorization](#identity--authorization)).
+  Leave it unset only for local/dev — a shared deployment without it lets any
+  caller decide as any role.
 - **Shutdown.** The server drains on `SIGTERM`/`SIGINT`, so in-flight writes
   finish before the container stops.
 - **Scope.** A single container is a single writer (the file store assumes one

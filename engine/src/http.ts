@@ -17,6 +17,7 @@
 //     POST /queue/:id/release    hand a lease back     { leaseToken? }
 
 import { autodecide, fold, loadGate } from "./index.ts";
+import type { Authenticator, Principal } from "./queue/auth.ts";
 import type { ReviewQueue } from "./queue/queue.ts";
 import type { AssignInput, DecisionInput, EnqueueInput } from "./queue/types.ts";
 
@@ -25,6 +26,8 @@ export interface HttpRequest {
   /** Path only (no query string). */
   path: string;
   query?: Record<string, string | undefined>;
+  /** Request headers, lower-cased keys (used for the bearer token). */
+  headers?: Record<string, string | undefined>;
   body?: unknown;
 }
 
@@ -64,11 +67,12 @@ function parseCase(body: unknown): {
   return { gate: o.gate, events };
 }
 
-function index(hasQueue: boolean): unknown {
+function index(hasQueue: boolean, authEnabled: boolean): unknown {
   return {
     name: "open-gates",
     engine: "@open-gates/engine",
     queue: hasQueue,
+    auth: authEnabled,
     endpoints: {
       "GET /health": "liveness",
       "POST /fold": "{ gate, events? } -> folded state",
@@ -97,8 +101,15 @@ function index(hasQueue: boolean): unknown {
  * Build the request handler. Pass a ReviewQueue to enable the stateful queue
  * routes; omit it (e.g. on serverless) to serve only the stateless engine
  * endpoints — queue routes then return 501.
+ *
+ * Pass an Authenticator to require a bearer token on the stateful (queue/inbox)
+ * routes. When it is enabled, the authenticated subject is bound onto every
+ * mutation — the recorded `actor`/`holder`/`by` is the token's subject, never a
+ * value the caller asserts — and a decision's role must be one the token holds.
+ * The stateless pure-function routes (/, /health, /fold, /autodecide) stay open.
  */
-export function createHandler(queue?: ReviewQueue) {
+export function createHandler(queue?: ReviewQueue, auth?: Authenticator) {
+  const authOn = !!auth?.enabled;
   // Wrap a queue call, mapping a thrown { status } error onto the response.
   async function guard(
     ok: number,
@@ -128,9 +139,14 @@ export function createHandler(queue?: ReviewQueue) {
     const seg = path === "/" ? [] : path.slice(1).split("/");
 
     // ---- stateless engine endpoints --------------------------------------
-    if (method === "GET" && path === "/") return json(200, index(!!queue));
+    if (method === "GET" && path === "/") return json(200, index(!!queue, authOn));
     if (method === "GET" && path === "/health") {
-      return json(200, { ok: true, engine: "@open-gates/engine", queue: !!queue });
+      return json(200, {
+        ok: true,
+        engine: "@open-gates/engine",
+        queue: !!queue,
+        auth: authOn,
+      });
     }
     if (method === "POST" && path === "/fold") {
       const c = parseCase(req.body);
@@ -145,9 +161,22 @@ export function createHandler(queue?: ReviewQueue) {
       return json(200, { state, autodecision: autodecide(g, state) });
     }
 
+    // ---- identity (stateful routes only) ---------------------------------
+    // The pure routes above are public; everything below touches stored cases,
+    // so when auth is on it must carry a valid bearer token.
+    const principal: Principal | null = authOn
+      ? auth!.authenticate(req.headers?.authorization)
+      : null;
+    const unauthorized = (): HttpResponse =>
+      json(401, {
+        error: "a valid bearer token is required for this deployment",
+        docs: "docs/REVIEW-QUEUE.md#identity--authorization",
+      });
+
     // ---- inbox registry (stateful) ---------------------------------------
     if (seg[0] === "inboxes") {
       if (!queue) return queueDisabled();
+      if (authOn && !principal) return unauthorized();
       if (method === "GET" && seg.length === 1) {
         return json(200, await queue.listInboxes());
       }
@@ -167,17 +196,22 @@ export function createHandler(queue?: ReviewQueue) {
     // ---- review queue (stateful) -----------------------------------------
     if (seg[0] === "queue") {
       if (!queue) return queueDisabled();
+      if (authOn && !principal) return unauthorized();
 
       if (method === "POST" && seg.length === 1) {
         const body = asObject(req.body);
         if (!body || !asObject(body.gate)) {
           return json(400, { error: "POST /queue requires { gate, events? }" });
         }
-        return guard(201, () => queue.enqueue(body as unknown as EnqueueInput));
+        const input = { ...body } as unknown as EnqueueInput;
+        if (principal) input.by = principal.sub; // the authenticated pusher
+        return guard(201, () => queue.enqueue(input));
       }
 
       if (method === "POST" && seg.length === 2 && seg[1] === "lease") {
-        const item = await queue.lease((asObject(req.body) ?? {}) as never);
+        const leaseBody = { ...(asObject(req.body) ?? {}) } as Record<string, unknown>;
+        if (principal) leaseBody.holder = principal.sub; // the token holds the lease
+        const item = await queue.lease(leaseBody as never);
         return item ? json(200, item) : json(204, null);
       }
 
@@ -203,17 +237,26 @@ export function createHandler(queue?: ReviewQueue) {
       if (method === "POST" && seg.length === 3 && seg[2] === "assign") {
         const body = asObject(req.body);
         if (!body) return json(400, { error: "assign requires a JSON body" });
-        return guard(200, () =>
-          queue.assign(seg[1], body as unknown as AssignInput),
-        );
+        const input = { ...body } as unknown as AssignInput;
+        if (principal) input.by = principal.sub; // the trace's author is authenticated
+        return guard(200, () => queue.assign(seg[1], input));
       }
 
       if (method === "POST" && seg.length === 3 && seg[2] === "decision") {
         const body = asObject(req.body);
         if (!body) return json(400, { error: "decision requires a JSON body" });
-        return guard(200, () =>
-          queue.decide(seg[1], body as unknown as DecisionInput),
-        );
+        const input = { ...body } as unknown as DecisionInput;
+        if (principal) {
+          // Bind the decider to the token: the actor cannot be spoofed, and the
+          // claimed reviewer role must be one this subject is authorized to act as.
+          input.actor = principal.sub;
+          if (!principal.roles.includes(input.reviewerRole)) {
+            return json(403, {
+              error: `"${principal.sub}" is not authorized for reviewer role "${input.reviewerRole}"`,
+            });
+          }
+        }
+        return guard(200, () => queue.decide(seg[1], input));
       }
 
       if (method === "POST" && seg.length === 3 && seg[2] === "release") {
