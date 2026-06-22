@@ -1,0 +1,23 @@
+# Keep the image to the runtime essentials (engine sources + server.ts).
+.git
+.github
+node_modules
+**/node_modules
+dist
+*.log
+.DS_Store
+
+# Persisted queue data lives on a mounted volume, never baked in.
+data
+
+# Not needed at runtime.
+docs
+examples
+spec
+.claude
+.claude-plugin
+**/test
+**/*.test.ts
+*.md
+vercel.json
+api

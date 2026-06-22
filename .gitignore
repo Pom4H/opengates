@@ -7,6 +7,10 @@ dist/
 *.tsbuildinfo
 .cache/
 
+# Runtime (review-queue persistence; lives on a volume, never committed)
+data/
+*.tmp
+
 # Editor / OS
 .DS_Store
 .idea/
