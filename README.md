@@ -66,7 +66,7 @@ This repo is organized as a ladder, from idea to running code:
 | **2** | Examples — a catalog of business gates by industry | [`examples/`](examples/) |
 | **3** | Reference engine — a small TypeScript "fold" engine | [`engine/`](engine/) |
 | 4 | Standards mappings (W3C PROV, BPMN/DMN, EVM, ISO 19650, IFC) | *planned* |
-| 5 | Agent workspace (Claude skills, subagents, review workflows) | *planned* |
+| **5** | Service & review queue — Vercel / Docker deploy, push & pull, Claude review skill | [`docs/REVIEW-QUEUE.md`](docs/REVIEW-QUEUE.md) |
 | 6 | Vertical MVP — Construction PR | *planned* |
 | 7 | Commercial product — an operational truth layer | *planned* |
 
@@ -116,6 +116,29 @@ The accept run ends in:
 That JSON *is* the point: a claim became an accepted fact, money and the right
 to proceed appeared, a role owns the risk, and a labelled record was added to a
 dataset that future automation can learn from.
+
+---
+
+## Deploy & review
+
+The engine is a pure function, so it deploys without any LLM-serving stack —
+just two paths:
+
+- **Vercel (default)** — a zero-config, stateless API to fold cases on demand
+  (`/fold`, `/autodecide`). Push to GitHub and import, or `npx vercel`.
+- **Docker (advanced)** — the engine **plus a push & pull review queue** for
+  durable, self-hosted operation:
+
+  ```bash
+  docker compose up --build      # or: npm run serve  (Node ≥ 22.18, no build)
+  ```
+
+  Producers **push** cases (`POST /queue`); reviewers — Claude (a
+  [`/review-gate`](.claude/skills/review-gate/SKILL.md) skill), another harness,
+  or a human — **pull** the next case (`POST /queue/lease`) and record a
+  decision the engine folds into an accepted fact.
+
+See [`docs/REVIEW-QUEUE.md`](docs/REVIEW-QUEUE.md) for the full guide.
 
 ---
 
