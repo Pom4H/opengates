@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://open-gates.dev/schema/event.schema.json",
+  "title": "Gate event",
+  "description": "One entry in a gate case's append-only log. Folding the log yields the gate state.",
+  "type": "object",
+  "required": ["type", "at", "actor"],
+  "properties": {
+    "type": { "enum": ["claim.submitted", "evidence.attached", "decision.recorded"] },
+    "at": { "type": "string", "format": "date-time" },
+    "actor": { "type": "string", "description": "Who emitted the event (party, role or system)." }
+  },
+  "oneOf": [
+    {
+      "properties": {
+        "type": { "const": "claim.submitted" },
+        "claim": { "$ref": "#/$defs/claimInstance" }
+      },
+      "required": ["claim"]
+    },
+    {
+      "properties": {
+        "type": { "const": "evidence.attached" },
+        "evidence": { "$ref": "#/$defs/evidenceInstance" }
+      },
+      "required": ["evidence"]
+    },
+    {
+      "properties": {
+        "type": { "const": "decision.recorded" },
+        "reviewerRole": { "type": "string" },
+        "outcome": { "enum": ["accepted", "accepted_with_exceptions", "rejected", "returned_for_rework"] },
+        "note": { "type": "string" }
+      },
+      "required": ["reviewerRole", "outcome"]
+    }
+  ],
+  "$defs": {
+    "scalar": { "type": ["number", "string", "boolean"] },
+    "claimInstance": {
+      "type": "object",
+      "required": ["type", "values"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "type": "string" },
+        "values": { "type": "object", "additionalProperties": { "$ref": "#/$defs/scalar" } }
+      }
+    },
+    "evidenceInstance": {
+      "type": "object",
+      "required": ["kind"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "type": "string" },
+        "values": { "type": "object", "additionalProperties": { "$ref": "#/$defs/scalar" } },
+        "ref": { "type": "string" }
+      }
+    }
+  }
+}

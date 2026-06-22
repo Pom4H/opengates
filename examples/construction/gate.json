@@ -1,0 +1,105 @@
+{
+  "id": "construction.work-volume-acceptance",
+  "name": "Acceptance of completed work volume",
+  "domain": "construction",
+  "description": "A contractor claims a completed volume of work for a period. Site technical supervision (технадзор) verifies the claim against an independent survey before it becomes payable earned value and the next work package is unlocked.",
+  "claim": {
+    "type": "work_volume_completed",
+    "fields": [
+      { "name": "work_item", "kind": "string", "required": true },
+      { "name": "quantity", "kind": "number", "unit": "m3", "required": true },
+      { "name": "period", "kind": "string", "required": true }
+    ]
+  },
+  "evidence": [
+    {
+      "kind": "survey_measurement",
+      "required": true,
+      "description": "Independent measurement of the executed volume (m3)."
+    },
+    {
+      "kind": "delivery_notes",
+      "required": false,
+      "description": "Material delivery notes supporting the claimed volume."
+    },
+    {
+      "kind": "photo_log",
+      "required": false,
+      "description": "Geotagged photographs of the executed work."
+    }
+  ],
+  "checks": [
+    {
+      "id": "evidence-present",
+      "rule": "required_evidence",
+      "kinds": ["survey_measurement"],
+      "severity": "blocking",
+      "description": "An independent survey measurement must be attached."
+    },
+    {
+      "id": "quantity-present",
+      "rule": "field_present",
+      "field": "quantity",
+      "severity": "blocking",
+      "description": "The claimed quantity must be stated."
+    },
+    {
+      "id": "quantity-positive",
+      "rule": "field_range",
+      "field": "quantity",
+      "min": 0,
+      "severity": "blocking",
+      "description": "The claimed quantity must be positive."
+    },
+    {
+      "id": "claim-matches-survey",
+      "rule": "cross_check",
+      "claimField": "quantity",
+      "evidenceKind": "survey_measurement",
+      "evidenceField": "quantity",
+      "tolerance": 0.05,
+      "severity": "blocking",
+      "description": "Claimed volume must be within 5% of the surveyed volume."
+    }
+  ],
+  "reviewer": {
+    "role": "technical_supervisor",
+    "description": "Site technical supervision (технадзор) who accepts responsibility for the acceptance."
+  },
+  "decisions": ["accepted", "accepted_with_exceptions", "rejected", "returned_for_rework"],
+  "consequences": [
+    {
+      "id": "earned-value",
+      "effect": "money",
+      "on": ["accepted", "accepted_with_exceptions"],
+      "quantityField": "quantity",
+      "unitPrice": 85,
+      "currency": "EUR",
+      "description": "Accepted volume becomes payable earned value at the unit rate."
+    },
+    {
+      "id": "unlock-closeout",
+      "effect": "right_to_proceed",
+      "on": ["accepted"],
+      "unlocks": "WP-foundation-closeout",
+      "description": "Acceptance unlocks the next work package."
+    },
+    {
+      "id": "acceptance-liability",
+      "effect": "risk",
+      "on": ["accepted", "accepted_with_exceptions"],
+      "assignedTo": "technical_supervisor",
+      "description": "The supervisor carries liability for the accepted volume."
+    },
+    {
+      "id": "label",
+      "effect": "dataset_label",
+      "on": ["accepted", "accepted_with_exceptions", "rejected", "returned_for_rework"],
+      "dataset": "construction.work_acceptance",
+      "description": "Every decision is appended as a labelled record for future automation."
+    }
+  ],
+  "policy": {
+    "autoAcceptWhen": { "checksPass": true, "maxAmount": 2000 }
+  }
+}

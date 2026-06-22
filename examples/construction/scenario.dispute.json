@@ -1,0 +1,32 @@
+{
+  "gate": "construction.work-volume-acceptance",
+  "events": [
+    {
+      "type": "claim.submitted",
+      "at": "2026-06-01T09:00:00Z",
+      "actor": "contractor:alfa-stroy",
+      "claim": {
+        "type": "work_volume_completed",
+        "values": { "work_item": "Foundation concrete C25/30", "quantity": 120, "period": "2026-05" }
+      }
+    },
+    {
+      "type": "evidence.attached",
+      "at": "2026-06-02T11:00:00Z",
+      "actor": "surveyor:geo-point",
+      "evidence": {
+        "kind": "survey_measurement",
+        "values": { "quantity": 100 },
+        "ref": "survey/2026-05-foundation.pdf"
+      }
+    },
+    {
+      "type": "decision.recorded",
+      "at": "2026-06-03T15:00:00Z",
+      "actor": "supervisor:ivanov",
+      "reviewerRole": "technical_supervisor",
+      "outcome": "returned_for_rework",
+      "note": "Surveyed 100 m3 vs claimed 120 m3 (16.7% over tolerance). Re-measure and resubmit."
+    }
+  ]
+}

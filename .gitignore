@@ -1,0 +1,14 @@
+# Dependencies (the engine is dependency-free; this is hygiene for contributors)
+node_modules/
+package-lock.json
+
+# Build / cache
+dist/
+*.tsbuildinfo
+.cache/
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.log

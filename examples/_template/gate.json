@@ -1,0 +1,39 @@
+{
+  "id": "domain.gate-name",
+  "name": "Human-readable gate name",
+  "domain": "domain",
+  "description": "One sentence: where a claim becomes an accepted fact with consequences.",
+  "claim": {
+    "type": "claim_type",
+    "fields": [
+      { "name": "subject", "kind": "string", "required": true },
+      { "name": "quantity", "kind": "number", "unit": "unit", "required": true },
+      { "name": "period", "kind": "string", "required": true }
+    ]
+  },
+  "evidence": [
+    { "kind": "primary_evidence", "required": true, "description": "What proves the claim." }
+  ],
+  "checks": [
+    { "id": "evidence-present", "rule": "required_evidence", "kinds": ["primary_evidence"], "severity": "blocking" },
+    { "id": "quantity-present", "rule": "field_present", "field": "quantity", "severity": "blocking" },
+    {
+      "id": "claim-matches-reality",
+      "rule": "cross_check",
+      "claimField": "quantity",
+      "evidenceKind": "primary_evidence",
+      "evidenceField": "quantity",
+      "tolerance": 0.05,
+      "severity": "blocking",
+      "description": "Claimed value must be within tolerance of the measured value."
+    }
+  ],
+  "reviewer": { "role": "reviewer_role", "description": "The role that accepts responsibility." },
+  "decisions": ["accepted", "accepted_with_exceptions", "rejected", "returned_for_rework"],
+  "consequences": [
+    { "id": "value", "effect": "money", "on": ["accepted", "accepted_with_exceptions"], "quantityField": "quantity", "unitPrice": 1, "currency": "EUR", "description": "What becomes payable." },
+    { "id": "unlock-next", "effect": "right_to_proceed", "on": ["accepted"], "unlocks": "next-step", "description": "What unlocks." },
+    { "id": "liability", "effect": "risk", "on": ["accepted", "accepted_with_exceptions"], "assignedTo": "reviewer_role", "description": "Who carries the risk." },
+    { "id": "label", "effect": "dataset_label", "on": ["accepted", "accepted_with_exceptions", "rejected", "returned_for_rework"], "dataset": "domain.gate_name" }
+  ]
+}

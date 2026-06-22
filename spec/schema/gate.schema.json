@@ -1,0 +1,152 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://open-gates.dev/schema/gate.schema.json",
+  "title": "Gate definition",
+  "description": "A reusable acceptance pattern: where a claim becomes an accepted fact with consequences.",
+  "type": "object",
+  "required": ["id", "name", "domain", "claim", "evidence", "checks", "reviewer", "decisions", "consequences"],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "string", "description": "Stable identifier, e.g. construction.work-volume-acceptance." },
+    "name": { "type": "string" },
+    "domain": { "type": "string" },
+    "description": { "type": "string" },
+    "claim": { "$ref": "#/$defs/claimSchema" },
+    "evidence": { "type": "array", "items": { "$ref": "#/$defs/evidenceRequirement" } },
+    "checks": { "type": "array", "items": { "$ref": "#/$defs/check" } },
+    "reviewer": { "$ref": "#/$defs/reviewer" },
+    "decisions": { "type": "array", "items": { "$ref": "#/$defs/decisionOutcome" }, "minItems": 1 },
+    "consequences": { "type": "array", "items": { "$ref": "#/$defs/consequence" } },
+    "policy": { "$ref": "#/$defs/policy" }
+  },
+  "$defs": {
+    "decisionOutcome": {
+      "enum": ["accepted", "accepted_with_exceptions", "rejected", "returned_for_rework"]
+    },
+    "severity": { "enum": ["blocking", "warning"] },
+    "claimSchema": {
+      "type": "object",
+      "required": ["type", "fields"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "type": "string" },
+        "fields": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "kind"],
+            "additionalProperties": false,
+            "properties": {
+              "name": { "type": "string" },
+              "kind": { "enum": ["number", "string", "boolean", "date"] },
+              "unit": { "type": "string" },
+              "required": { "type": "boolean" }
+            }
+          }
+        }
+      }
+    },
+    "evidenceRequirement": {
+      "type": "object",
+      "required": ["kind", "required"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "type": "string" },
+        "required": { "type": "boolean" },
+        "description": { "type": "string" }
+      }
+    },
+    "reviewer": {
+      "type": "object",
+      "required": ["role"],
+      "additionalProperties": false,
+      "properties": {
+        "role": { "type": "string" },
+        "description": { "type": "string" }
+      }
+    },
+    "check": {
+      "type": "object",
+      "required": ["id", "rule"],
+      "properties": {
+        "id": { "type": "string" },
+        "description": { "type": "string" },
+        "severity": { "$ref": "#/$defs/severity" },
+        "rule": { "enum": ["required_evidence", "field_present", "field_range", "cross_check"] }
+      },
+      "oneOf": [
+        {
+          "properties": { "rule": { "const": "required_evidence" }, "kinds": { "type": "array", "items": { "type": "string" }, "minItems": 1 } },
+          "required": ["kinds"]
+        },
+        {
+          "properties": { "rule": { "const": "field_present" }, "field": { "type": "string" } },
+          "required": ["field"]
+        },
+        {
+          "properties": { "rule": { "const": "field_range" }, "field": { "type": "string" }, "min": { "type": "number" }, "max": { "type": "number" } },
+          "required": ["field"]
+        },
+        {
+          "properties": {
+            "rule": { "const": "cross_check" },
+            "claimField": { "type": "string" },
+            "evidenceKind": { "type": "string" },
+            "evidenceField": { "type": "string" },
+            "tolerance": { "type": "number", "minimum": 0 }
+          },
+          "required": ["claimField", "evidenceKind", "evidenceField", "tolerance"]
+        }
+      ]
+    },
+    "consequence": {
+      "type": "object",
+      "required": ["id", "effect", "on"],
+      "properties": {
+        "id": { "type": "string" },
+        "description": { "type": "string" },
+        "on": { "type": "array", "items": { "$ref": "#/$defs/decisionOutcome" }, "minItems": 1 },
+        "effect": { "enum": ["money", "right_to_proceed", "risk", "dataset_label"] }
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "effect": { "const": "money" },
+            "currency": { "type": "string" },
+            "quantityField": { "type": "string" },
+            "unitPrice": { "type": "number" },
+            "amount": { "type": "number" }
+          },
+          "required": ["currency"]
+        },
+        {
+          "properties": { "effect": { "const": "right_to_proceed" }, "unlocks": { "type": "string" } },
+          "required": ["unlocks"]
+        },
+        {
+          "properties": { "effect": { "const": "risk" }, "assignedTo": { "type": "string" } },
+          "required": ["assignedTo"]
+        },
+        {
+          "properties": { "effect": { "const": "dataset_label" }, "dataset": { "type": "string" } },
+          "required": ["dataset"]
+        }
+      ]
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "autoAcceptWhen": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["checksPass"],
+          "properties": {
+            "checksPass": { "const": true },
+            "maxAmount": { "type": "number" }
+          }
+        }
+      }
+    }
+  }
+}
