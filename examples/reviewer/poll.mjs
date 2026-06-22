@@ -7,16 +7,22 @@
 //
 //   node examples/reviewer/poll.mjs
 //
-// Env: OPEN_GATES_URL (http://localhost:3000), REVIEWER id, POLL_MS (2000).
+// Env: OPEN_GATES_URL (http://localhost:3000), REVIEWER id, POLL_MS (2000),
+//      OPEN_GATES_TOKEN (optional — bearer token if the deployment requires auth;
+//      when set, the server records the token's subject as the decider).
 
 const BASE = process.env.OPEN_GATES_URL ?? "http://localhost:3000";
 const REVIEWER = process.env.REVIEWER ?? "reviewer:poller";
 const POLL_MS = Number(process.env.POLL_MS ?? 2000);
+const TOKEN = process.env.OPEN_GATES_TOKEN;
 
 async function api(method, path, body) {
+  const headers = {};
+  if (body) headers["content-type"] = "application/json";
+  if (TOKEN) headers["authorization"] = `Bearer ${TOKEN}`;
   const res = await fetch(BASE + path, {
     method,
-    headers: body ? { "content-type": "application/json" } : undefined,
+    headers: Object.keys(headers).length ? headers : undefined,
     body: body ? JSON.stringify(body) : undefined,
   });
   if (res.status === 204) return null;

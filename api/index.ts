@@ -32,6 +32,7 @@ async function run(request: Request): Promise<Response> {
     method: request.method,
     path,
     query: Object.fromEntries(url.searchParams),
+    headers: Object.fromEntries(request.headers),
     body,
   });
 

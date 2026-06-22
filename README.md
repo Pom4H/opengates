@@ -133,7 +133,9 @@ just two paths:
   Producers **push** cases (`POST /queue`); reviewers — Claude (a
   [`/review-gate`](.claude/skills/review-gate/SKILL.md) skill), another harness,
   or a human — **pull** the next case (`POST /queue/lease`) and record a
-  decision the engine folds into an accepted fact.
+  decision the engine folds into an accepted fact. Set `OPEN_GATES_SECRET` to
+  require signed **reviewer tokens**, so a decision is bound to an authenticated
+  identity instead of a self-asserted name.
 
 See [`docs/REVIEW-QUEUE.md`](docs/REVIEW-QUEUE.md) for the full guide.
 
