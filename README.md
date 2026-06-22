@@ -29,9 +29,6 @@ responsibility is murky, disputes pile up, data stays dirty, and AI doesn't
 know what to trust. Open Gates makes that moment **explicit, executable, and
 recordable**.
 
-> Open Gates — точка входа для превращения хаотичной операционки в проверяемые
-> бизнес-гейты, где заявления становятся признанными фактами с последствиями.
-
 ---
 
 ## The one question

@@ -4,8 +4,8 @@
 > [`../_template/`](../_template/) and [`../../CONTRIBUTING.md`](../../CONTRIBUTING.md).
 
 **The expensive disputed fact:** production claims a batch is good and ready to
-ship; QC (ОТК) finds — or might find — a defect. Until QC accepts, the batch
-can't move to finished-goods inventory and can't be sold.
+ship; QC finds — or might find — a defect. Until QC accepts, the batch can't
+move to finished-goods inventory and can't be sold.
 
 ## The seven questions
 
@@ -21,8 +21,7 @@ defect log, machine telemetry for the run.
 - cross-check: claimed conforming quantity within tolerance of inspected
   conforming count.
 
-**Reviewer** — `qc_inspector` (ОТК) accepts responsibility for releasing the
-batch.
+**Reviewer** — `qc_inspector` accepts responsibility for releasing the batch.
 
 **Decision** — accepted / accepted_with_exceptions (concession/deviation
 approved) / rejected (quarantine/scrap) / returned_for_rework (rework order).

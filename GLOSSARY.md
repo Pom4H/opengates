@@ -1,9 +1,8 @@
 # Glossary
 
-Precise definitions of the Open Gates vocabulary. Where a term has an
-established Russian equivalent it is given in parentheses.
+Precise definitions of the Open Gates vocabulary.
 
-### Gate (гейт)
+### Gate
 A named decision point in an operation where a **claim** becomes an **accepted
 fact** — or is rejected — with real consequences. The central primitive of Open
 Gates.
@@ -17,7 +16,7 @@ requirements, checks, reviewer role, allowed decisions, and consequences. See
 One actual run of a gate, expressed as an append-only log of **events** that
 **fold** into a **state**.
 
-### Claim (заявление / факт)
+### Claim
 An asserted fact: "this happened / this is true." Has a `type` and typed
 `values`. A claim is not yet trusted — it is the input to a gate.
 
@@ -25,35 +24,35 @@ An asserted fact: "this happened / this is true." Has a `type` and typed
 A claim that a **reviewer** has accepted responsibility for, after checks
 passed. This is the output the whole pattern exists to produce.
 
-### Evidence (доказательство)
+### Evidence
 Material that backs a claim and makes it checkable — a measurement, document,
 photo, signature, sensor reading. Has a `kind`, optional `values`, and a `ref`
 to the artifact.
 
-### Check (проверка)
+### Check
 A deterministic verification rule evaluated against the claim and evidence.
 `blocking` checks must pass before a claim can be accepted; `warning` checks
 inform but do not block. The **cross-check** (claim vs. evidence within a
 tolerance) is the defining rule.
 
-### Reviewer (проверяющий, напр. технадзор / ОТК)
+### Reviewer
 The **role** authorized to accept responsibility for a decision. Only this role
 may decide a gate. Acceptance transfers liability to the reviewer.
 
-### Decision (решение)
+### Decision
 A recorded outcome by the reviewer: `accepted`, `accepted_with_exceptions`,
 `rejected`, or `returned_for_rework`.
 
-### Responsibility (ответственность)
+### Responsibility
 The state, set on a positive decision, recording **who** accepted the fact and
 when. "Who said this was true?" stops being murky.
 
-### Consequence (последствие)
+### Consequence
 What a decision releases: **money** (payable amount), the **right to proceed**
 (the next step unlocks), **risk** (liability assigned), and a **dataset label**.
 This is what makes a gate matter economically.
 
-### State (статус)
+### State
 The folded result of a gate case: status, check results, decision,
 responsibility, consequences, dataset label, and a human-readable log.
 

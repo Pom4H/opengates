@@ -2,7 +2,7 @@
   "id": "construction.work-volume-acceptance",
   "name": "Acceptance of completed work volume",
   "domain": "construction",
-  "description": "A contractor claims a completed volume of work for a period. Site technical supervision (технадзор) verifies the claim against an independent survey before it becomes payable earned value and the next work package is unlocked.",
+  "description": "A contractor claims a completed volume of work for a period. Site technical supervision verifies the claim against an independent survey before it becomes payable earned value and the next work package is unlocked.",
   "claim": {
     "type": "work_volume_completed",
     "fields": [
@@ -64,7 +64,7 @@
   ],
   "reviewer": {
     "role": "technical_supervisor",
-    "description": "Site technical supervision (технадзор) who accepts responsibility for the acceptance."
+    "description": "Site technical supervision who accepts responsibility for the acceptance."
   },
   "decisions": ["accepted", "accepted_with_exceptions", "rejected", "returned_for_rework"],
   "consequences": [
