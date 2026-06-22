@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://open-gates.dev/schema/scenario.schema.json",
+  "title": "Gate scenario",
+  "description": "A single run of a gate: a reference to the gate and an ordered event log.",
+  "type": "object",
+  "required": ["gate", "events"],
+  "additionalProperties": false,
+  "properties": {
+    "gate": { "type": "string", "description": "The id of the gate this scenario runs against." },
+    "events": {
+      "type": "array",
+      "items": { "$ref": "https://open-gates.dev/schema/event.schema.json" }
+    }
+  }
+}

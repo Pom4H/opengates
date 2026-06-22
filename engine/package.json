@@ -1,0 +1,15 @@
+{
+  "name": "@open-gates/engine",
+  "version": "0.0.1",
+  "description": "Reference fold engine for Open Gates — folds claim/evidence/decision events into accepted facts, consequences and dataset labels.",
+  "type": "module",
+  "license": "MIT",
+  "private": true,
+  "engines": { "node": ">=22.18" },
+  "exports": "./src/index.ts",
+  "scripts": {
+    "test": "node --test test/*.test.ts",
+    "demo:accept": "node src/cli.ts ../examples/construction/gate.json ../examples/construction/scenario.accept.json",
+    "demo:dispute": "node src/cli.ts ../examples/construction/gate.json ../examples/construction/scenario.dispute.json"
+  }
+}
