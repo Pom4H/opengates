@@ -265,27 +265,34 @@
 
         // --- tower crane (mast + slewing jib + counter-jib + hook) ---
         const crane = new THREE.Group(); crane.position.set(-34, 0, 22); scene.add(crane);
-        const MAST_H = 54;
+        const MAST_H = 54, JIBY = 2.7, JIBW = MAST_H + JIBY; // jib world height
         box(1.6, MAST_H, 1.6, steel, 0, MAST_H / 2, 0, crane); // mast
         const slew = new THREE.Group(); slew.position.y = MAST_H; crane.add(slew);
         box(2.0, 2.0, 2.0, steel, 0, 1.0, 0, slew); // turntable / cab
         box(0.5, 5, 0.5, steel, 0, 4.6, 0, slew); // apex
-        box(42, 1.0, 1.1, steel, 21, 2.7, 0, slew); // jib (+x)
-        box(14, 1.0, 1.1, steel, -7, 2.7, 0, slew); // counter-jib (−x)
+        box(42, 1.0, 1.1, steel, 21, JIBY, 0, slew); // jib (+x)
+        box(14, 1.0, 1.1, steel, -7, JIBY, 0, slew); // counter-jib (−x)
         box(3.4, 2.8, 2.8, dark, -13, 1.9, 0, slew); // counterweight
-        const hook = new THREE.Group(); hook.position.set(27, 2.4, 0); slew.add(hook);
-        box(0.14, 10, 0.14, dark, 0, -5, 0, hook); // cable
-        box(1.0, 1.0, 1.0, dark, 0, -10.3, 0, hook); // hook block
+        const flag = box(1.7, 1.0, 0.06, matt(0x4ade80, { roughness: 0.7, side: THREE.DoubleSide, emissive: 0x2f9e57, emissiveIntensity: 0.35 }), 1.0, 7.7, 0, slew); // jib flag
+        const trolley = new THREE.Group(); trolley.position.set(26, JIBY, 0); slew.add(trolley);
+        const cable = box(0.14, 1, 0.14, dark, 0, -0.5, 0, trolley); // unit cable, scaled in aimAt
+        const block = box(1.0, 1.0, 1.0, dark, 0, -1, 0, trolley); // hook block
 
-        // ambient motion: pure functions of elapsed time (bounded sinusoids → can
-        // never accumulate / drift / break, whatever the frame-rate or seeking)
-        const BASE = 0.57; // jib reaches over the building
-        const animate = (e) => {
-          slew.rotation.y = BASE + Math.sin(e * 0.16) * 0.7;
-          hook.position.y = 2.2 + Math.sin(e * 0.5) * 1.4;
-        };
-        animate(0); // sensible static pose (for stills)
-        return { animate };
+        // Aim the crane at the current work front (tx,ty,tz — a pure function of
+        // the scrubber time t) with gentle sway/flutter (elapsed). Both are pure
+        // functions of time → the animation can never drift, jitter or break.
+        function aimAt(tx, ty, tz, e) {
+          const dx = tx - crane.position.x, dz = tz - crane.position.z;
+          const dist = Math.hypot(dx, dz) || 1;
+          slew.rotation.y = Math.atan2(-dz, dx) + Math.sin(e * 0.45) * 0.02; // point at the front + idle sway
+          trolley.position.x = Math.max(10, Math.min(40, dist)); // trolley rides out along the jib
+          const L = Math.max(6, Math.min(22, JIBW - (ty + 4))); // cable lowers toward the active level
+          cable.scale.y = L; cable.position.y = -L / 2; block.position.y = -L;
+          const swing = Math.sin(e * 0.8) * 0.3; block.position.x = swing; cable.position.x = swing * 0.5; // load swing
+          flag.rotation.y = Math.sin(e * 3.0) * 0.5; // flutter
+        }
+        aimAt(0, 46, 0, 0); // sensible static pose
+        return { aimAt };
       }
 
       const $ = (id) => document.getElementById(id);
@@ -407,6 +414,20 @@
         scopeAt.excavation = firstStage("SITE");
         scopeAt.foundation = firstStage("BLDG-L00");
         scopeAt.roof = firstStage("BLDG-R01");
+
+        // The crane's work front: each bay's structure acceptance, in time order.
+        // frontierAt(t) is a pure lookup, so the crane follows the build sweep with
+        // no extra state — it can't desync from the timeline.
+        const frontier = [];
+        for (const zid in stageByZone) {
+          const o = Z[zid]; if (!o || o.zone.scope !== "bay") continue;
+          const ev = stageByZone[zid].find((e) => (e.systemsDone || 0) >= 1); if (!ev) continue;
+          const c = center(o.zone.structure);
+          frontier.push({ at: ev.at, x: c[0], y: o.zone.structure.max[1], z: c[2] });
+        }
+        frontier.sort((a, b) => a.at - b.at);
+        const frontierAt = (t) => { let r = frontier[0] || { x: 0, y: 24, z: 0 }; for (const f of frontier) { if (f.at <= t) r = f; else break; } return r; };
+        let craneTarget = frontier[0] || { x: 0, y: 24, z: 0 };
 
         const MIN = ms(timeline.range.minAt), MAX = ms(timeline.range.maxAt);
         const events = timeline.events; const evMs = events.map((e) => ms(e.at));
@@ -660,6 +681,7 @@
         function setT(t, redrawTrack = true) {
           T = Math.max(MIN, Math.min(MAX, t));
           $("tlnow").textContent = day(T); $("tlphase").textContent = phaseAt(T);
+          craneTarget = frontierAt(T); // crane follows the work front at time t
           paintAll(); moneyAsOf(); renderActs(); if (redrawTrack) drawTrack();
         }
         function trackToT(clientX) { const r = trackEl.getBoundingClientRect(); const f = Math.max(0, Math.min(1, (clientX - r.left) / r.width)); return fToT(f); }
@@ -692,7 +714,7 @@
         // ---- go ----
         setT(MAX);
         addEventListener("resize", () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); if (composer) composer.setSize(innerWidth, innerHeight); });
-        (function render() { requestAnimationFrame(render); controls.update(); site.animate(clock.getElapsedTime()); if (composer) composer.render(); else renderer.render(scene, camera); })();
+        (function render() { requestAnimationFrame(render); controls.update(); site.aimAt(craneTarget.x, craneTarget.y, craneTarget.z, clock.getElapsedTime()); if (composer) composer.render(); else renderer.render(scene, camera); })();
       }
     </script>
   </body>

@@ -73,22 +73,29 @@
         box(7.5, 1, 2.6, concrete, 0, 1.5, -28); box(3, 2.1, 2.6, dark, 2.6, 1.7, -28); box(5, 1.3, 2.1, matt(0x6b7280), -0.8, 2.6, -28);
 
         const crane = new THREE.Group(); crane.position.set(-15, 0, -16); scene.add(crane);
-        const MAST_H = 57;
+        const MAST_H = 57, JIBY = 2.7, JIBW = MAST_H + JIBY;
         box(1.6, MAST_H, 1.6, steel, 0, MAST_H / 2, 0, crane);
         const slew = new THREE.Group(); slew.position.y = MAST_H; crane.add(slew);
         box(2.0, 2.0, 2.0, steel, 0, 1.0, 0, slew);
         box(0.5, 5, 0.5, steel, 0, 4.6, 0, slew);
-        box(42, 1.0, 1.1, steel, 21, 2.7, 0, slew);
-        box(14, 1.0, 1.1, steel, -7, 2.7, 0, slew);
+        box(42, 1.0, 1.1, steel, 21, JIBY, 0, slew);
+        box(14, 1.0, 1.1, steel, -7, JIBY, 0, slew);
         box(3.4, 2.8, 2.8, dark, -13, 1.9, 0, slew);
-        const hook = new THREE.Group(); hook.position.set(27, 2.4, 0); slew.add(hook);
-        box(0.14, 10, 0.14, dark, 0, -5, 0, hook);
-        box(1.0, 1.0, 1.0, dark, 0, -10.3, 0, hook);
-
-        const BASE = -0.8;
-        const animate = (e) => { slew.rotation.y = BASE + Math.sin(e * 0.16) * 0.7; hook.position.y = 2.2 + Math.sin(e * 0.5) * 1.4; };
-        animate(0);
-        return { animate };
+        const flag = box(1.7, 1.0, 0.06, matt(0x4ade80, { roughness: 0.7, side: THREE.DoubleSide, emissive: 0x2f9e57, emissiveIntensity: 0.35 }), 1.0, 7.7, 0, slew);
+        const trolley = new THREE.Group(); trolley.position.set(26, JIBY, 0); slew.add(trolley);
+        const cable = box(0.14, 1, 0.14, dark, 0, -0.5, 0, trolley);
+        const block = box(1.0, 1.0, 1.0, dark, 0, -1, 0, trolley);
+        function aimAt(tx, ty, tz, e) {
+          const dx = tx - crane.position.x, dz = tz - crane.position.z; const dist = Math.hypot(dx, dz) || 1;
+          slew.rotation.y = Math.atan2(-dz, dx) + Math.sin(e * 0.45) * 0.02;
+          trolley.position.x = Math.max(10, Math.min(40, dist));
+          const L = Math.max(6, Math.min(22, JIBW - (ty + 4)));
+          cable.scale.y = L; cable.position.y = -L / 2; block.position.y = -L;
+          const swing = Math.sin(e * 0.8) * 0.3; block.position.x = swing; cable.position.x = swing * 0.5;
+          flag.rotation.y = Math.sin(e * 3.0) * 0.5;
+        }
+        aimAt(0, 52, 0, 0); // static pose: jib over the building
+        return { aimAt };
       }
 
       const W = 1280, H = 640, BG = 0x070b12;
