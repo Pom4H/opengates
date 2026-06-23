@@ -10,8 +10,8 @@ import { createMemoryStore } from "../src/queue/store.ts";
 const here = fileURLToPath(new URL(".", import.meta.url));
 const read = (rel: string) => JSON.parse(readFileSync(here + rel, "utf8"));
 
-const gate: GateDefinition = loadGate(read("../../examples/construction/gate.json"));
-const accept = read("../../examples/construction/scenario.accept.json");
+const gate: GateDefinition = loadGate(read("../../../examples/construction/gate.json"));
+const accept = read("../../../examples/construction/scenario.accept.json");
 
 // Claim 120 + full executive documentation, surveyed 117. Awaiting a reviewer.
 const pendingEvents = accept.events.slice(0, -1);

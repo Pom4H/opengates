@@ -13,7 +13,7 @@ ENV NODE_ENV=production \
 WORKDIR /app
 
 # Only what the runtime needs (the rest is excluded via .dockerignore).
-COPY engine ./engine
+COPY packages/engine ./packages/engine
 COPY server.ts package.json ./
 
 # The queue is one JSON file; persist it on a mounted volume.

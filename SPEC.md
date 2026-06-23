@@ -1,9 +1,9 @@
 # Open Gates Specification (v0.2, draft)
 
-> Level 1 of the [ladder](README.md#whats-in-this-repository). The normative
-> description of the Acceptance Act. Machine-readable schemas live in
-> [`spec/schema/`](spec/schema/); the reference implementation in
-> [`engine/`](engine/).
+> The normative description of the Acceptance Act. Machine-readable schemas live
+> in [`spec/schema/`](spec/schema/); the language-agnostic conformance suite in
+> [`conformance/`](conformance/); a non-normative reference implementation in
+> [`packages/engine/`](packages/engine/).
 
 A **gate** is a named decision point where a *claim* becomes an *accepted fact* —
 or is refused — with real consequences. The spec separates two things:
@@ -88,7 +88,7 @@ Rules the engine enforces:
 3. is **replayable** — it reads no `Date.now()`, `Math.random()`, or environment;
    every timestamp in the state comes from an event's `at`.
 
-These are enforced by [`engine/test/fold.test.ts`](engine/test/fold.test.ts). They
+These are enforced by [`packages/engine/test/fold.test.ts`](packages/engine/test/fold.test.ts). They
 are what let a gate be embedded as a deterministic step in a durable-execution
 engine ([`docs/DURABLE-EXECUTION.md`](docs/DURABLE-EXECUTION.md)).
 
@@ -150,7 +150,7 @@ actually accepted (e.g. surveyed 117, not claimed 120). Money is paid on these.
 
 What an outcome releases. Each lists the outcomes it fires `on`, and each fired
 effect carries a stable `effectId = sha256(decisionEventId : ruleId)` so external
-delivery is exactly-once on replay (see [`engine/src/effects.ts`](engine/src/effects.ts)).
+delivery is exactly-once on replay (see [`packages/engine/src/effects.ts`](packages/engine/src/effects.ts)).
 
 | Effect | Result |
 |--------|--------|
@@ -224,7 +224,7 @@ The `reviewerRole` on a `decision.recorded` event is advisory on the wire. Over
 the HTTP/MCP surface the engine binds authority to the caller's OAuth 2.1 scope:
 a token with `og:decide:<role>` (or `og:decide:*`) may decide a gate whose
 `reviewer.role` is `<role>`; the actor is the token subject. There is no anonymous
-decision path. See [`engine/src/auth.ts`](engine/src/auth.ts) and
+decision path. See [`packages/engine/src/auth.ts`](packages/engine/src/auth.ts) and
 [`docs/MCP.md`](docs/MCP.md).
 
 ---
@@ -241,4 +241,10 @@ A conforming implementation:
 4. computes consequences per §6 (accepted quantity, retention, minor units) and a
    dataset label per §7.
 
-The [`engine/`](engine/) directory is the reference implementation.
+Conformance is **executable and language-agnostic**: [`conformance/`](conformance/)
+holds the normative state each case must fold to, and
+[`conformance/README.md`](conformance/README.md) defines exactly which fields are
+normative. Reproduce those states in any language and you are conformant.
+
+[`packages/engine/`](packages/engine/) is **one** reference implementation
+(non-normative) — it passes the conformance suite, but it is not privileged.

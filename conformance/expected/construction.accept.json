@@ -1,0 +1,87 @@
+{
+  "checks": [
+    {
+      "id": "billable-quantity",
+      "outcome": "pass",
+      "rule": "field_range",
+      "severity": "blocking"
+    },
+    {
+      "id": "claim-matches-survey",
+      "outcome": "pass",
+      "rule": "cross_check",
+      "severity": "blocking"
+    },
+    {
+      "id": "executive-docs-present",
+      "outcome": "pass",
+      "rule": "required_evidence",
+      "severity": "blocking"
+    }
+  ],
+  "checksPassed": true,
+  "consequences": [
+    {
+      "assignedTo": "technical_supervisor",
+      "effect": "risk"
+    },
+    {
+      "basis": "accepted_quantity",
+      "currency": "EUR",
+      "effect": "money",
+      "gross": 9945,
+      "net": 9447.75,
+      "quantity": 117,
+      "quantitySource": "accepted",
+      "retention": 497.25,
+      "vat": 1889.55
+    },
+    {
+      "dataset": "construction.work_acceptance",
+      "effect": "dataset_label"
+    },
+    {
+      "effect": "right_to_proceed",
+      "unlocks": "WP-foundation-closeout"
+    }
+  ],
+  "cycleDays": 2.25,
+  "datasetLabel": {
+    "claim_type": "work_volume_completed",
+    "dataset": "construction.work_acceptance",
+    "decided_by_role": "technical_supervisor",
+    "features": {
+      "accepted": {
+        "quantity": 117
+      },
+      "checks": {
+        "billable-quantity": "pass",
+        "claim-matches-survey": "pass",
+        "executive-docs-present": "pass"
+      },
+      "claimed": {
+        "period": "2026-05",
+        "quantity": 120,
+        "work_item": "Foundation concrete C25/30, axes 1–6"
+      },
+      "evidence_kinds": [
+        "executive_survey",
+        "concrete_strength_protocol",
+        "works_log",
+        "aosr_ref"
+      ]
+    },
+    "label": "accepted"
+  },
+  "decision": {
+    "acceptedValues": {
+      "quantity": 117
+    },
+    "outcome": "accepted",
+    "role": "technical_supervisor"
+  },
+  "responsibility": {
+    "role": "technical_supervisor"
+  },
+  "status": "accepted"
+}

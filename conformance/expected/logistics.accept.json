@@ -1,0 +1,85 @@
+{
+  "checks": [
+    {
+      "id": "pod-present",
+      "outcome": "pass",
+      "rule": "required_evidence",
+      "severity": "blocking"
+    },
+    {
+      "id": "qty-matches-scan",
+      "outcome": "pass",
+      "rule": "cross_check",
+      "severity": "warning"
+    },
+    {
+      "id": "within-window",
+      "outcome": "pass",
+      "rule": "date_window",
+      "severity": "blocking"
+    }
+  ],
+  "checksPassed": true,
+  "consequences": [
+    {
+      "assignedTo": "customer_receiver",
+      "effect": "risk"
+    },
+    {
+      "basis": "accepted_quantity",
+      "currency": "EUR",
+      "effect": "money",
+      "gross": 1040,
+      "net": 1040,
+      "quantity": 26,
+      "quantitySource": "accepted",
+      "retention": 0,
+      "vat": null
+    },
+    {
+      "dataset": "logistics.delivery_acceptance",
+      "effect": "dataset_label"
+    },
+    {
+      "effect": "right_to_proceed",
+      "unlocks": "transport-leg-closeout"
+    }
+  ],
+  "cycleDays": 0.021,
+  "datasetLabel": {
+    "claim_type": "delivery_completed",
+    "dataset": "logistics.delivery_acceptance",
+    "decided_by_role": "customer_receiver",
+    "features": {
+      "accepted": {
+        "quantity": 26
+      },
+      "checks": {
+        "pod-present": "pass",
+        "qty-matches-scan": "pass",
+        "within-window": "pass"
+      },
+      "claimed": {
+        "delivered_at": "2026-06-10T12:05:00Z",
+        "quantity": 26,
+        "shipment_id": "SHP-5521"
+      },
+      "evidence_kinds": [
+        "proof_of_delivery",
+        "weighbridge_ticket"
+      ]
+    },
+    "label": "accepted"
+  },
+  "decision": {
+    "acceptedValues": {
+      "quantity": 26
+    },
+    "outcome": "accepted",
+    "role": "customer_receiver"
+  },
+  "responsibility": {
+    "role": "customer_receiver"
+  },
+  "status": "accepted"
+}

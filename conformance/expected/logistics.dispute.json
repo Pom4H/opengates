@@ -1,0 +1,59 @@
+{
+  "checks": [
+    {
+      "id": "pod-present",
+      "outcome": "pass",
+      "rule": "required_evidence",
+      "severity": "blocking"
+    },
+    {
+      "id": "qty-matches-scan",
+      "outcome": "skipped",
+      "rule": "cross_check",
+      "severity": "warning"
+    },
+    {
+      "id": "within-window",
+      "outcome": "fail",
+      "rule": "date_window",
+      "severity": "blocking"
+    }
+  ],
+  "checksPassed": false,
+  "consequences": [
+    {
+      "dataset": "logistics.delivery_acceptance",
+      "effect": "dataset_label"
+    }
+  ],
+  "cycleDays": 0.021,
+  "datasetLabel": {
+    "claim_type": "delivery_completed",
+    "dataset": "logistics.delivery_acceptance",
+    "decided_by_role": "customer_receiver",
+    "features": {
+      "accepted": {},
+      "checks": {
+        "pod-present": "pass",
+        "qty-matches-scan": "skipped",
+        "within-window": "fail"
+      },
+      "claimed": {
+        "delivered_at": "2026-06-11T09:10:00Z",
+        "quantity": 26,
+        "shipment_id": "SHP-5530"
+      },
+      "evidence_kinds": [
+        "proof_of_delivery"
+      ]
+    },
+    "label": "returned_for_rework"
+  },
+  "decision": {
+    "acceptedValues": null,
+    "outcome": "returned_for_rework",
+    "role": "customer_receiver"
+  },
+  "responsibility": null,
+  "status": "returned_for_rework"
+}

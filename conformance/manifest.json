@@ -1,0 +1,10 @@
+{
+  "description": "Conformance cases: each is a gate definition + an event log that MUST fold to expected/<name>.json on any conforming engine. Inputs are reused from examples/; goldens are the contract.",
+  "cases": [
+    { "name": "construction.accept", "gate": "examples/construction/gate.json", "scenario": "examples/construction/scenario.accept.json" },
+    { "name": "construction.dispute", "gate": "examples/construction/gate.json", "scenario": "examples/construction/scenario.dispute.json" },
+    { "name": "construction.remarks", "gate": "examples/construction/gate.json", "scenario": "examples/construction/scenario.remarks.json" },
+    { "name": "logistics.accept", "gate": "examples/logistics/gate.json", "scenario": "examples/logistics/scenario.accept.json" },
+    { "name": "logistics.dispute", "gate": "examples/logistics/gate.json", "scenario": "examples/logistics/scenario.dispute.json" }
+  ]
+}

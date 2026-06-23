@@ -1,10 +1,10 @@
 // Mint an OAuth 2.1 access token for the Open Gates review queue.
 //
-//   OG_JWT_SECRET=… node engine/src/token.ts \
+//   OG_JWT_SECRET=… node packages/engine/src/token.ts \
 //     --actor supervisor:ivanov --role technical_supervisor [--ttl 86400]
 //
 // Prints a signed HS256 JWT to stdout (pipeable). It is verified by
-// engine/src/auth.ts, which binds the reviewer role to the token's scope:
+// packages/engine/src/auth.ts, which binds the reviewer role to the token's scope:
 // `og:decide:<role>` lets the holder decide a gate whose reviewer.role is
 // <role>. The deployment must run with the same OG_JWT_SECRET (and, if set,
 // OG_RESOURCE_URI / OG_ISSUER, which become the token audience / issuer).
@@ -51,7 +51,7 @@ if (!secret) {
 const { actor, roles, scopes, ttl } = parseArgs(process.argv.slice(2));
 if (!actor) {
   console.error(
-    "usage: OG_JWT_SECRET=… node engine/src/token.ts --actor <id> --role <role> [--role <role>] [--scope <scope>] [--ttl <seconds>]",
+    "usage: OG_JWT_SECRET=… node packages/engine/src/token.ts --actor <id> --role <role> [--role <role>] [--scope <scope>] [--ttl <seconds>]",
   );
   process.exit(1);
 }

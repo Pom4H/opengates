@@ -1,67 +1,16 @@
 # Open Gates
 
-**Event sourcing for the one decision where a claim becomes money.**
+**An open standard for the Acceptance Act** — the bounded moment a *submitted
+claim* becomes an *accepted, payable fact*: checked against a trusted reference,
+decided by a proven authority, recorded as a replayable event log.
 Not task management — fact acceptance.
 
-Open Gates is an open standard and a dependency-free reference engine for the
-**Acceptance Act**: the bounded moment an organization turns a *submitted claim*
-into an *accepted, payable fact* — checked against a trusted reference, decided by
-a proven authority, with effects that fire **exactly once** from a log that
-**replays to the same state forever**.
-
-It owns that one decision and nothing else. It is not a workflow engine, an ERP,
-or a BPM tool — it drops *into* those (and into agents, over MCP) as the typed,
-auditable acceptance step.
-
----
-
-## See it in 60 seconds
-
-The engine runs TypeScript directly — Node ≥ 22.18, no build, no dependencies.
-
-```bash
-cd engine
-npm run demo:dispute    # a claim that fails the claim-vs-reality check
-```
-
-A contractor claims **120 m³** of concrete. The independent survey measures
-**100 m³** — `|120 − 100| = 20 m³`, **20% of the reference**, far outside the 5%
-tolerance. The engine refuses acceptance:
-
-```jsonc
-{ "status": "returned_for_rework",
-  "checksPassed": false,
-  "checks": [
-    { "id": "executive-docs-present", "outcome": "pass" },
-    { "id": "claim-matches-survey",   "outcome": "fail",
-      "detail": "|claim−ref|=20 (20.00% of ref 100) exceeds limit 5" },
-    { "id": "billable-quantity",      "outcome": "pass" } ],
-  "consequences": [
-    { "effect": "dataset_label", "payload": { "dataset": "construction.work_acceptance" } } ] }
-// only the audit label fired — no money, no unlock, no risk. The stage stays locked.
-```
-
-```bash
-npm run demo:accept     # the same gate, an honest claim
-```
-
-Now the survey reads **117 m³ ± 4 (k=2)**. The error is 2.56% of the reference —
-within tolerance *and* within measurement uncertainty — so the supervisor accepts
-**117, not the claimed 120**, and money is computed on what was accepted:
-
-```jsonc
-{ "status": "accepted", "checksPassed": true, "cycleDays": 2.25,
-  "consequences": [
-    { "effect": "money", "payload": { "quantity": 117, "quantitySource": "accepted",
-        "gross": 9945, "retention": 497.25, "net": 9447.75, "vat": 1889.55 } },
-    { "effect": "right_to_proceed", "payload": { "unlocks": "WP-foundation-closeout" } },
-    { "effect": "risk", "payload": { "assignedTo": "technical_supervisor" } },
-    { "effect": "dataset_label", "payload": { "dataset": "construction.work_acceptance" } } ] }
-```
-
-That one run is the whole project: a claim met reality, money moved on the
-**accepted** quantity less retention, a role took the risk, and a labelled record
-joined a dataset — all replayable, byte-for-byte, a year later in an audit.
+> Like OpenAPI, this repository is a **specification plus a conformance suite**,
+> not a runtime. The normative artifacts are [`SPEC.md`](SPEC.md), the
+> [JSON Schemas](spec/schema/), and the [conformance goldens](conformance/). A
+> reference implementation lives in [`packages/engine/`](packages/engine/) — it is
+> **non-normative**; implement the standard in any language and prove it against
+> the same golden files.
 
 ---
 
@@ -69,110 +18,155 @@ joined a dataset — all replayable, byte-for-byte, a year later in an audit.
 
 ```text
 claim ──▶ reference ──▶ checks ──▶ authority decides ──▶ accepted quantity ──▶ effects
-        (the survey)  (tolerance      (proven by         (not the claimed       (money − retention,
-                       + uncertainty)  token scope)        quantity)              unlock, risk, label)
+        (the survey)  (tolerance      (proven role)      (not the claimed       (money − retention,
+                       + uncertainty)                     quantity)              unlock, risk, label)
 ```
 
-Formally it is eight typed elements, `⟨ Context, Subject, Grounds, Criteria,
-Authority, Decision, Effect, Record ⟩`. The spec and engine implement them with
-short, code-friendly names — the bridge lives in **one** place,
-[`GLOSSARY.md`](GLOSSARY.md):
+Formally, eight typed elements: `⟨ Context, Subject, Grounds, Criteria, Authority,
+Decision, Effect, Record ⟩`. The spec uses short, code-friendly names for each;
+the bridge is defined once, in [`GLOSSARY.md`](GLOSSARY.md):
 
-| Acceptance Act | In the spec & engine |
-|----------------|----------------------|
+| Acceptance Act | In the spec |
+|----------------|-------------|
+| Context | the gate definition |
 | Subject / Grounds / Criteria | `claim` / `evidence` / `checks` |
 | Authority / Decision / Effect | `reviewer` / `decision` / `consequences` |
 | Record | the append-only **event log** that **folds** into state |
 
-## Record = event sourcing
+## The spec is executable — see it in a folded case
 
-A case is an append-only log of events that `fold` reduces to state. The fold is
-**pure and deterministic** — it reads no wall clock and no randomness, dedups
-redelivered events by id, and rejects out-of-order ones — so the same log always
-yields the same state and every state is explainable from its history. Effects
-carry a stable `effectId`, so paying or webhooking them is exactly-once on replay.
-That contract is enforced by [property tests](engine/test/fold.test.ts); see
-[`engine/src/fold.ts`](engine/src/fold.ts) and [`SPEC.md` §2–3](SPEC.md).
+A gate case is an event log; folding it yields a state. A **disputed** claim
+(survey 100 vs. claim 120 — 20% of the reference, outside the 5% tolerance) cannot
+be accepted:
+
+```jsonc
+{ "status": "returned_for_rework", "checksPassed": false,
+  "checks": [ { "id": "claim-matches-survey", "outcome": "fail",
+               "detail": "|claim−ref|=20 (20.00% of ref 100) exceeds limit 5" } ],
+  "consequences": [ { "effect": "dataset_label", "payload": { "dataset": "construction.work_acceptance" } } ] }
+// only the audit label fired — no money, no unlock. The stage stays locked.
+```
+
+An **honest** claim (survey 117 ± 4, k=2 — within tolerance *and* measurement
+uncertainty) is accepted on the **surveyed 117, not the claimed 120**, and money is
+computed on what was accepted:
+
+```jsonc
+{ "status": "accepted", "checksPassed": true, "cycleDays": 2.25,
+  "consequences": [
+    { "effect": "money", "payload": { "quantity": 117, "quantitySource": "accepted",
+        "gross": 9945, "retention": 497.25, "net": 9447.75, "vat": 1889.55 } },
+    { "effect": "right_to_proceed", "payload": { "unlocks": "WP-foundation-closeout" } },
+    { "effect": "risk", "payload": { "assignedTo": "technical_supervisor" } } ] }
+```
+
+These two states are conformance cases — every engine must reproduce them (below).
+Run them with the reference impl: `cd packages/engine && npm run demo:dispute` /
+`demo:accept`.
+
+## The record is an event log (event sourcing)
+
+A case is an append-only log; `fold(gate, events) → state` is a **pure,
+deterministic** reduction — it reads no wall clock and no randomness, dedups
+redelivered events by `id`, and rejects out-of-order ones. The same log yields the
+same state forever, and every state is explainable from its history. Normative in
+[`SPEC.md` §2–3](SPEC.md).
 
 ## Claim vs. reality, done right
 
-The defining check, `cross_check`, measures the error **against the reference**
-(the surveyed value, per VIM §2.16) — not the claim — with an absolute floor and,
-when the evidence carries an expanded uncertainty `U` (GUM, `U = k·u`), a
-hard uncertainty band. Honest measurement, not a hand-wave. See
-[`STANDARDS.md`](STANDARDS.md) and [`SPEC.md` §4](SPEC.md).
+The defining check, `cross_check`, measures error **against the reference** (the
+surveyed value, per VIM §2.16) — not the claim — with an absolute floor and, when
+the evidence carries an expanded uncertainty `U` (GUM, `U = k·u`), a hard
+uncertainty band. Honest measurement, not a hand-wave. [`SPEC.md` §4.1](SPEC.md),
+[`STANDARDS.md`](STANDARDS.md).
 
 ## Money is real
 
 Payment is computed on the **accepted** quantity, in integer minor units, less
-guarantee retention, with a VAT memo and payment terms — and the folded state
-carries `cycleDays` (free, from event timestamps) so the audit log doubles as a
-cost-of-delay / leakage dataset. The auto-accept ceiling is the review-vs-leakage
-break-even, not a magic number. See [`docs/ECONOMICS.md`](docs/ECONOMICS.md).
+retention, with a VAT memo — and the folded state carries `cycleDays` (free, from
+event timestamps). The auto-accept ceiling is a review-vs-leakage break-even, not a
+magic number. [`SPEC.md` §6.1](SPEC.md), [`docs/ECONOMICS.md`](docs/ECONOMICS.md).
 
-## Integration: durable execution and agents
+## Conformance — the contract is data, not code
 
-- **Durable execution** — Open Gates is event sourcing for *one decision*, not a
-  runtime. Embed `fold(gate, events)` as the deterministic decision step inside
-  Temporal / Inngest / Restate; wrap I/O in the orchestrator's step, never the
-  fold. [`docs/DURABLE-EXECUTION.md`](docs/DURABLE-EXECUTION.md).
-- **Agents** — an [MCP](docs/MCP.md) server exposes the lifecycle as typed tools
-  and `og://` resources, protected by OAuth 2.1. **Authority is proven by token
-  scope, never self-asserted**: an agent can't decide a gate it lacks
-  `og:decide:<role>` for, and a [hook](.claude/hooks/) hard-denies a forced
-  acceptance before the call leaves. [`docs/MCP.md`](docs/MCP.md).
+This is what makes Open Gates a standard. [`conformance/`](conformance/) holds, for
+each case, the **normative state any engine must fold to** — in any language. Five
+cases across two domains; the reference engine passes all five:
+
+```bash
+npm run conformance     # ✓ construction.accept / dispute / remarks · logistics.accept / dispute
+```
+
+The golden files are the authority; the reference engine is one passing
+implementation, not privileged. To certify your own engine, fold each case and
+compare to [`conformance/expected/`](conformance/expected/) — see
+[`conformance/README.md`](conformance/README.md) for the normative projection.
+
+## Standards it speaks
+
+The record maps onto formats existing software and AI already read — W3C PROV-O,
+OMG DMN, GUM/VIM, ISO/IEC 17025, ANSI/EIA-748 (EVM) — with an honest
+load-bearing-vs-decorative split. [`STANDARDS.md`](STANDARDS.md).
 
 ---
 
 ## What's in this repository
 
-| Level | What | Where |
-|------:|------|-------|
-| **0** | The Acceptance Act — the primitive | this README |
-| **1** | Spec — events & fold, the metrology-aware checks, accepted-quantity money | [`SPEC.md`](SPEC.md), [`spec/schema/`](spec/schema/) |
-| **2** | Examples — construction (work volume, hidden works) and logistics, worked | [`examples/`](examples/) |
-| **3** | Reference engine — the dependency-free, event-sourced fold | [`engine/`](engine/) |
-| **4** | Standards — real, field-level mappings (PROV-O, DMN, GUM/VIM, EVM) | [`STANDARDS.md`](STANDARDS.md) |
-| **5** | Service & agents — review queue, durable execution, MCP + OAuth, hooks | [`docs/`](docs/) |
+**Normative — the standard:**
 
-Open questions and unbuilt verticals live in [`ROADMAP.md`](ROADMAP.md), not here.
+| | What | Where |
+|---|------|-------|
+| **Spec** | the Acceptance Act, events & fold, the metrology-aware checks, accepted-quantity money | [`SPEC.md`](SPEC.md) |
+| **Schemas** | machine-readable gate / event / scenario / dataset-label | [`spec/schema/`](spec/schema/) |
+| **Conformance** | golden states every engine must reproduce | [`conformance/`](conformance/) |
+| **Examples** | worked gates — construction (work volume, hidden works), logistics | [`examples/`](examples/) |
+| **Standards** | real, field-level mappings | [`STANDARDS.md`](STANDARDS.md) |
 
-## Quickstart
+**Non-normative — one implementation & its tooling:**
+
+| | What | Where |
+|---|------|-------|
+| **Reference engine** | a dependency-free TypeScript fold | [`packages/engine/`](packages/engine/) |
+| **Runtime & integration** | review queue, OAuth 2.1, MCP server, durable-execution embedding | [`docs/`](docs/) |
+| **Roadmap** | unbuilt verticals and products (incl. a hosted service) | [`ROADMAP.md`](ROADMAP.md) |
+
+---
+
+## Reference implementation (non-normative)
+
+[`packages/engine/`](packages/engine/) makes the spec executable and generates the
+conformance goldens. It runs TypeScript directly — Node ≥ 22.18, no build, no
+dependencies — so you can read it as living pseudocode or run it as-is.
 
 ```bash
-cd engine
-npm run demo:dispute    # claim 120 vs survey 100 -> returned, €0, stage locked
-npm run demo:accept     # survey 117±4 -> accept 117, €9,447.75 net certified
-npm run demo:remarks    # accepted_with_exceptions, retention held against a punch list
+cd packages/engine
 npm test                # 61 tests incl. determinism + idempotency + fencing + SLA + OAuth + MCP
+npm run demo:accept     # fold the accepted case -> €9,447.75 net certified
 ```
 
-From the repo root, `npm run eval` scores the automation policy against a labelled
-dataset (coverage 0.5, agreement 1.0, false-accept 0).
+It also ships a **runtime layer that is not part of the standard** — a push/pull
+review queue (fencing leases, SLAs, delegation trail), OAuth 2.1 authority where
+the reviewer role is proven by token scope, an MCP server so an agent can drive the
+loop, and guidance for embedding the fold as a step in Temporal / Inngest /
+Restate. These are conveniences built **on** the Acceptance Act, not part of it:
 
-## Deploy
+- Deploy & review queue → [`docs/REVIEW-QUEUE.md`](docs/REVIEW-QUEUE.md)
+- Agents (MCP + OAuth) → [`docs/MCP.md`](docs/MCP.md)
+- Durable execution → [`docs/DURABLE-EXECUTION.md`](docs/DURABLE-EXECUTION.md)
 
-The engine is a pure function, so it ships without any model-serving stack:
-
-- **Vercel (default)** — the stateless engine (`/fold`, `/autodecide`). Push and
-  import, or `npx vercel`.
-- **Docker (self-host)** — the engine **plus** the review queue (push & pull,
-  SLAs, fencing leases, delegation trail), and the MCP server:
-
-  ```bash
-  docker compose up --build      # or: npm run serve   (Node ≥ 22.18, no build)
-  ```
-
-See [`docs/REVIEW-QUEUE.md`](docs/REVIEW-QUEUE.md).
+```bash
+# stateless spec engine on Vercel, or the full queue + MCP self-hosted:
+docker compose up --build      # or: npm run serve   (Node ≥ 22.18, no build)
+```
 
 ## What it is / is not
 
-**Is:** an open standard plus a small reference engine for the acceptance
-boundary — the typed, event-sourced, replayable step where a claim becomes a
-payable fact, with proven authority and exactly-once effects.
+**Is:** an open standard for the acceptance boundary — the typed, event-sourced,
+replayable step where a claim becomes a payable fact — with a conformance suite and
+one reference implementation.
 
-**Is not:** a workflow runtime, an ERP, a BPM tool, or an AI automation
-framework. It owns the one decision and integrates with the rest.
+**Is not:** a workflow runtime, an ERP, a BPM tool, or an AI framework. The
+standard owns the one decision; runtimes and products are built on it, not baked in.
 
 ## License
 

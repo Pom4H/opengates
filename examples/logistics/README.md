@@ -24,7 +24,7 @@ Definition: [`gate.json`](gate.json).
 Fold either against the gate:
 
 ```bash
-node engine/src/cli.ts examples/logistics/gate.json examples/logistics/scenario.accept.json
+node packages/engine/src/cli.ts examples/logistics/gate.json examples/logistics/scenario.accept.json
 ```
 
 - **Accept** ([`scenario.accept.json`](scenario.accept.json)) — delivered 12:05,

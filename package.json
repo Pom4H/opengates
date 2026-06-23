@@ -8,13 +8,15 @@
   "engines": { "node": ">=22.18" },
   "scripts": {
     "serve": "node server.ts",
-    "mcp": "node engine/src/mcp/server.ts",
-    "token": "node engine/src/token.ts",
-    "test": "node --test engine/test/*.test.ts",
-    "demo:dispute": "node engine/src/cli.ts examples/construction/gate.json examples/construction/scenario.dispute.json",
-    "demo:accept": "node engine/src/cli.ts examples/construction/gate.json examples/construction/scenario.accept.json",
-    "demo:remarks": "node engine/src/cli.ts examples/construction/gate.json examples/construction/scenario.remarks.json",
-    "demo:logistics": "node engine/src/cli.ts examples/logistics/gate.json examples/logistics/scenario.accept.json",
+    "mcp": "node packages/engine/src/mcp/server.ts",
+    "token": "node packages/engine/src/token.ts",
+    "test": "node --test packages/engine/test/*.test.ts",
+    "conformance": "node conformance/run.mjs",
+    "conformance:update": "node conformance/run.mjs --update",
+    "demo:dispute": "node packages/engine/src/cli.ts examples/construction/gate.json examples/construction/scenario.dispute.json",
+    "demo:accept": "node packages/engine/src/cli.ts examples/construction/gate.json examples/construction/scenario.accept.json",
+    "demo:remarks": "node packages/engine/src/cli.ts examples/construction/gate.json examples/construction/scenario.remarks.json",
+    "demo:logistics": "node packages/engine/src/cli.ts examples/logistics/gate.json examples/logistics/scenario.accept.json",
     "eval": "node eval/replay.mjs examples/construction/gate.json examples/construction/dataset.sample.jsonl",
     "review:example": "node examples/reviewer/poll.mjs"
   }

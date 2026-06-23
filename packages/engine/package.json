@@ -9,8 +9,8 @@
   "exports": "./src/index.ts",
   "scripts": {
     "test": "node --test test/*.test.ts",
-    "demo:dispute": "node src/cli.ts ../examples/construction/gate.json ../examples/construction/scenario.dispute.json",
-    "demo:accept": "node src/cli.ts ../examples/construction/gate.json ../examples/construction/scenario.accept.json",
-    "demo:remarks": "node src/cli.ts ../examples/construction/gate.json ../examples/construction/scenario.remarks.json"
+    "demo:dispute": "node src/cli.ts ../../examples/construction/gate.json ../../examples/construction/scenario.dispute.json",
+    "demo:accept": "node src/cli.ts ../../examples/construction/gate.json ../../examples/construction/scenario.accept.json",
+    "demo:remarks": "node src/cli.ts ../../examples/construction/gate.json ../../examples/construction/scenario.remarks.json"
   }
 }

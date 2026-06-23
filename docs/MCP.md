@@ -7,7 +7,7 @@
 
 ## What it is
 
-[`engine/src/mcp/server.ts`](../engine/src/mcp/server.ts) is a small,
+[`packages/engine/src/mcp/server.ts`](../packages/engine/src/mcp/server.ts) is a small,
 **dependency-free** MCP server — its own JSON-RPC 2.0 over stdio, no SDK, in
 keeping with the rest of the repo. It is a thin **client** of a running review
 queue (the [Docker / `server.ts`](REVIEW-QUEUE.md) deployment), so the queue
@@ -53,7 +53,7 @@ run it by hand — an MCP client launches it.
 ```bash
 claude mcp add open-gates \
   --env OPEN_GATES_URL=http://localhost:3000 \
-  -- node /absolute/path/to/opengates/engine/src/mcp/server.ts
+  -- node /absolute/path/to/opengates/packages/engine/src/mcp/server.ts
 ```
 
 Or add it to a project's `.mcp.json`:
@@ -63,7 +63,7 @@ Or add it to a project's `.mcp.json`:
   "mcpServers": {
     "open-gates": {
       "command": "node",
-      "args": ["engine/src/mcp/server.ts"],
+      "args": ["packages/engine/src/mcp/server.ts"],
       "env": { "OPEN_GATES_URL": "http://localhost:3000" }
     }
   }
@@ -75,7 +75,7 @@ Or add it to a project's `.mcp.json`:
 A decision is an act of authority, so the queue never trusts a `reviewerRole`
 sent in a request body. Run the server with **`OG_JWT_SECRET`** set and
 `/queue/:id/decision` requires an OAuth 2.1 Bearer token; the engine
-([`engine/src/auth.ts`](../engine/src/auth.ts)) derives the reviewer role and the
+([`packages/engine/src/auth.ts`](../packages/engine/src/auth.ts)) derives the reviewer role and the
 actor from the **token**, never the tool input:
 
 | Scope | Grants |
@@ -137,4 +137,4 @@ cross-check fails and the engine refuses any positive outcome.
 ## See also
 
 - [Review queue](REVIEW-QUEUE.md) — the queue's leases, SLA, delegation trail, stores, and OAuth.
-- [`engine/src/mcp/`](../engine/src/mcp/) — the stdio server, the JSON-RPC dispatcher, the tool surface, and the HTTP client.
+- [`packages/engine/src/mcp/`](../packages/engine/src/mcp/) — the stdio server, the JSON-RPC dispatcher, the tool surface, and the HTTP client.
