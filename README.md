@@ -1,177 +1,178 @@
 # Open Gates
 
-**Not task management. Fact acceptance.**
+**Event sourcing for the one decision where a claim becomes money.**
+Not task management — fact acceptance.
 
-Open Gates is a starting point for turning messy real-world operations into
-**verifiable, auditable, automatable business gates** — the moments where a
-*claim* becomes an *accepted fact* with consequences.
+Open Gates is an open standard and a dependency-free reference engine for the
+**Acceptance Act**: the bounded moment an organization turns a *submitted claim*
+into an *accepted, payable fact* — checked against a trusted reference, decided by
+a proven authority, with effects that fire **exactly once** from a log that
+**replays to the same state forever**.
 
-It is not an ERP, a workflow engine, a BPM tool, or "AI for business." It is a
-smaller, more fundamental primitive that sits underneath all of those:
-
-```text
-someone asserted a fact        (claim)
-  → proved it                  (evidence)
-  → the system verified it     (checks)
-  → a role accepted it         (decision / responsibility)
-  → status changed             (state)
-  → money / risk / the right to proceed appeared   (consequence)
-  → a dataset accumulated      (labels)
-  → some decisions became automatable               (automation)
-```
-
-In almost every industry there is the same expensive pain:
-
-> **A fact has been asserted, but not yet accepted.**
-
-And until it is accepted, money is frozen, the next step is blocked,
-responsibility is murky, disputes pile up, data stays dirty, and AI doesn't
-know what to trust. Open Gates makes that moment **explicit, executable, and
-recordable**.
+It owns that one decision and nothing else. It is not a workflow engine, an ERP,
+or a BPM tool — it drops *into* those (and into agents, over MCP) as the typed,
+auditable acceptance step.
 
 ---
 
-## The one question
+## See it in 60 seconds
 
-Business usually asks "we need a CRM / a dashboard / AI / automation."
-Open Gates asks a different question:
+The engine runs TypeScript directly — Node ≥ 22.18, no build, no dependencies.
 
-> **Where is your most expensive disputed fact?**
-
-```text
-construction:   contractor claims a volume — site supervision hasn't accepted it
-logistics:      driver claims delivery — customer disputes it
-manufacturing:  a batch is claimed good — QC finds a defect
-retail:         supplier claims a shipment — the warehouse received less
-healthcare:     a service was rendered — the insurer won't confirm it
-agriculture:    a field was treated — the agronomist isn't sure
+```bash
+cd engine
+npm run demo:dispute    # a claim that fails the claim-vs-reality check
 ```
 
-Find that gate. Model it. That is your entry point into digitization — without
-a giant ERP rollout.
+A contractor claims **120 m³** of concrete. The independent survey measures
+**100 m³** — `|120 − 100| = 20 m³`, **20% of the reference**, far outside the 5%
+tolerance. The engine refuses acceptance:
+
+```jsonc
+{ "status": "returned_for_rework",
+  "checksPassed": false,
+  "checks": [
+    { "id": "executive-docs-present", "outcome": "pass" },
+    { "id": "claim-matches-survey",   "outcome": "fail",
+      "detail": "|claim−ref|=20 (20.00% of ref 100) exceeds limit 5" },
+    { "id": "billable-quantity",      "outcome": "pass" } ],
+  "consequences": [
+    { "effect": "dataset_label", "payload": { "dataset": "construction.work_acceptance" } } ] }
+// only the audit label fired — no money, no unlock, no risk. The stage stays locked.
+```
+
+```bash
+npm run demo:accept     # the same gate, an honest claim
+```
+
+Now the survey reads **117 m³ ± 4 (k=2)**. The error is 2.56% of the reference —
+within tolerance *and* within measurement uncertainty — so the supervisor accepts
+**117, not the claimed 120**, and money is computed on what was accepted:
+
+```jsonc
+{ "status": "accepted", "checksPassed": true, "cycleDays": 2.25,
+  "consequences": [
+    { "effect": "money", "payload": { "quantity": 117, "quantitySource": "accepted",
+        "gross": 9945, "retention": 497.25, "net": 9447.75, "vat": 1889.55 } },
+    { "effect": "right_to_proceed", "payload": { "unlocks": "WP-foundation-closeout" } },
+    { "effect": "risk", "payload": { "assignedTo": "technical_supervisor" } },
+    { "effect": "dataset_label", "payload": { "dataset": "construction.work_acceptance" } } ] }
+```
+
+That one run is the whole project: a claim met reality, money moved on the
+**accepted** quantity less retention, a role took the risk, and a labelled record
+joined a dataset — all replayable, byte-for-byte, a year later in an audit.
+
+---
+
+## What an Acceptance Act is
+
+```text
+claim ──▶ reference ──▶ checks ──▶ authority decides ──▶ accepted quantity ──▶ effects
+        (the survey)  (tolerance      (proven by         (not the claimed       (money − retention,
+                       + uncertainty)  token scope)        quantity)              unlock, risk, label)
+```
+
+Formally it is eight typed elements, `⟨ Context, Subject, Grounds, Criteria,
+Authority, Decision, Effect, Record ⟩`. The spec and engine implement them with
+short, code-friendly names — the bridge lives in **one** place,
+[`GLOSSARY.md`](GLOSSARY.md):
+
+| Acceptance Act | In the spec & engine |
+|----------------|----------------------|
+| Subject / Grounds / Criteria | `claim` / `evidence` / `checks` |
+| Authority / Decision / Effect | `reviewer` / `decision` / `consequences` |
+| Record | the append-only **event log** that **folds** into state |
+
+## Record = event sourcing
+
+A case is an append-only log of events that `fold` reduces to state. The fold is
+**pure and deterministic** — it reads no wall clock and no randomness, dedups
+redelivered events by id, and rejects out-of-order ones — so the same log always
+yields the same state and every state is explainable from its history. Effects
+carry a stable `effectId`, so paying or webhooking them is exactly-once on replay.
+That contract is enforced by [property tests](engine/test/fold.test.ts); see
+[`engine/src/fold.ts`](engine/src/fold.ts) and [`SPEC.md` §2–3](SPEC.md).
+
+## Claim vs. reality, done right
+
+The defining check, `cross_check`, measures the error **against the reference**
+(the surveyed value, per VIM §2.16) — not the claim — with an absolute floor and,
+when the evidence carries an expanded uncertainty `U` (GUM, `U = k·u`), a
+hard uncertainty band. Honest measurement, not a hand-wave. See
+[`STANDARDS.md`](STANDARDS.md) and [`SPEC.md` §4](SPEC.md).
+
+## Money is real
+
+Payment is computed on the **accepted** quantity, in integer minor units, less
+guarantee retention, with a VAT memo and payment terms — and the folded state
+carries `cycleDays` (free, from event timestamps) so the audit log doubles as a
+cost-of-delay / leakage dataset. The auto-accept ceiling is the review-vs-leakage
+break-even, not a magic number. See [`docs/ECONOMICS.md`](docs/ECONOMICS.md).
+
+## Integration: durable execution and agents
+
+- **Durable execution** — Open Gates is event sourcing for *one decision*, not a
+  runtime. Embed `fold(gate, events)` as the deterministic decision step inside
+  Temporal / Inngest / Restate; wrap I/O in the orchestrator's step, never the
+  fold. [`docs/DURABLE-EXECUTION.md`](docs/DURABLE-EXECUTION.md).
+- **Agents** — an [MCP](docs/MCP.md) server exposes the lifecycle as typed tools
+  and `og://` resources, protected by OAuth 2.1. **Authority is proven by token
+  scope, never self-asserted**: an agent can't decide a gate it lacks
+  `og:decide:<role>` for, and a [hook](.claude/hooks/) hard-denies a forced
+  acceptance before the call leaves. [`docs/MCP.md`](docs/MCP.md).
 
 ---
 
 ## What's in this repository
 
-This repo is organized as a ladder, from idea to running code:
-
 | Level | What | Where |
 |------:|------|-------|
-| **0** | Manifesto — the Business Gate Pattern | [`MANIFESTO.md`](MANIFESTO.md) |
-| **1** | Spec — Claim / Evidence / Check / Decision / Consequence schemas | [`SPEC.md`](SPEC.md), [`spec/schema/`](spec/schema/) |
-| **2** | Examples — a catalog of business gates by industry | [`examples/`](examples/) |
-| **3** | Reference engine — a small TypeScript "fold" engine | [`engine/`](engine/) |
-| 4 | Standards mappings (W3C PROV, BPMN/DMN, EVM, ISO 19650, IFC) | *planned* |
-| **5** | Service & review queue — Vercel / Docker deploy, push & pull, Claude review skill | [`docs/REVIEW-QUEUE.md`](docs/REVIEW-QUEUE.md) |
-| 6 | Vertical MVP — Construction PR | *planned* |
-| 7 | Commercial product — an operational truth layer | *planned* |
+| **0** | The Acceptance Act — the primitive | this README |
+| **1** | Spec — events & fold, the metrology-aware checks, accepted-quantity money | [`SPEC.md`](SPEC.md), [`spec/schema/`](spec/schema/) |
+| **2** | Examples — construction (work volume, hidden works) and logistics, worked | [`examples/`](examples/) |
+| **3** | Reference engine — the dependency-free, event-sourced fold | [`engine/`](engine/) |
+| **4** | Standards — real, field-level mappings (PROV-O, DMN, GUM/VIM, EVM) | [`STANDARDS.md`](STANDARDS.md) |
+| **5** | Service & agents — review queue, durable execution, MCP + OAuth, hooks | [`docs/`](docs/) |
 
-See [`GLOSSARY.md`](GLOSSARY.md) for precise definitions of every term.
-
----
+Open questions and unbuilt verticals live in [`ROADMAP.md`](ROADMAP.md), not here.
 
 ## Quickstart
 
-The fully worked example is **construction work-volume acceptance**: a
-contractor claims a completed volume, an independent survey is attached, the
-engine cross-checks the claim against the survey, and site supervision accepts
-responsibility — which turns the work into payable earned value.
-
-Requires Node ≥ 22.18 (runs TypeScript directly via type stripping — no build,
-no dependencies).
-
 ```bash
 cd engine
-
-# Fold the "accepted" scenario into its final state
-npm run demo:accept
-
-# Fold the "disputed" scenario (claim outside tolerance is returned)
-npm run demo:dispute
-
-# Run the test suite
-npm test
+npm run demo:dispute    # claim 120 vs survey 100 -> returned, €0, stage locked
+npm run demo:accept     # survey 117±4 -> accept 117, €9,447.75 net certified
+npm run demo:remarks    # accepted_with_exceptions, retention held against a punch list
+npm test                # 47 tests incl. determinism + idempotency + fencing + SLA + OAuth
 ```
 
-The accept run ends in:
+From the repo root, `npm run eval` scores the automation policy against a labelled
+dataset (coverage 0.5, agreement 1.0, false-accept 0).
 
-```jsonc
-{
-  "status": "accepted",
-  "checksPassed": true,
-  "responsibility": { "role": "technical_supervisor", ... },
-  "consequences": [
-    { "effect": "money", "amount": 10200, "currency": "EUR" },   // 120 m³ × 85
-    { "effect": "right_to_proceed", "unlocks": "WP-foundation-closeout" },
-    { "effect": "risk", "assignedTo": "technical_supervisor" },
-    { "effect": "dataset_label", "dataset": "construction.work_acceptance", ... }
-  ]
-}
-```
+## Deploy
 
-That JSON *is* the point: a claim became an accepted fact, money and the right
-to proceed appeared, a role owns the risk, and a labelled record was added to a
-dataset that future automation can learn from.
+The engine is a pure function, so it ships without any model-serving stack:
 
----
-
-## Deploy & review
-
-The engine is a pure function, so it deploys without any LLM-serving stack —
-just two paths:
-
-- **Vercel (default)** — a zero-config, stateless API to fold cases on demand
-  (`/fold`, `/autodecide`). Push to GitHub and import, or `npx vercel`.
-- **Docker (advanced)** — the engine **plus a push & pull review queue** for
-  durable, self-hosted operation:
+- **Vercel (default)** — the stateless engine (`/fold`, `/autodecide`). Push and
+  import, or `npx vercel`.
+- **Docker (self-host)** — the engine **plus** the review queue (push & pull,
+  SLAs, fencing leases, delegation trail), and the MCP server:
 
   ```bash
-  docker compose up --build      # or: npm run serve  (Node ≥ 22.18, no build)
+  docker compose up --build      # or: npm run serve   (Node ≥ 22.18, no build)
   ```
 
-  Producers **push** cases (`POST /queue`); reviewers — Claude (a
-  [`/review-gate`](.claude/skills/review-gate/SKILL.md) skill), another harness,
-  or a human — **pull** the next case (`POST /queue/lease`) and record a
-  decision the engine folds into an accepted fact.
+See [`docs/REVIEW-QUEUE.md`](docs/REVIEW-QUEUE.md).
 
-See [`docs/REVIEW-QUEUE.md`](docs/REVIEW-QUEUE.md) for the full guide.
+## What it is / is not
 
----
+**Is:** an open standard plus a small reference engine for the acceptance
+boundary — the typed, event-sourced, replayable step where a claim becomes a
+payable fact, with proven authority and exactly-once effects.
 
-## Who this is for
-
-- **Developers** who want to leave "coding for code's sake" and become
-  *Applied Systems Builders* — go into a real business and build digital
-  contours around its most important decisions. Don't start with an app. Find
-  the gate.
-- **Businesses** that don't know where to start digitizing. Start at your most
-  expensive disputed fact.
-- **The open-source community** — bring *domain knowledge*, not necessarily
-  code. Describe your industry's claim, evidence, checks, reviewer, decision
-  and economic consequence, and the repo becomes a living encyclopedia of
-  operational patterns. See [`CONTRIBUTING.md`](CONTRIBUTING.md).
-- **AI agents** — instead of "talking about business," an agent can take apart a
-  business as an *executable system*: find the claim, the evidence, the checks,
-  the reviewer, the decision, the consequence, the dataset labels.
-
----
-
-## What Open Gates is *not*
-
-It is deliberately **not** positioned as an open-source ERP, an open-source
-workflow engine, a construction management system, an AI automation framework,
-or a BPM alternative. Those are old categories. Open Gates is:
-
-```text
-acceptance infrastructure
-an operational truth layer
-the business gate pattern
-a claim-to-consequence protocol
-```
-
-> **The shortest formula:** Open Gates is the entry point for people and AI into
-> real business through its most important moment — **the acceptance of a fact.**
+**Is not:** a workflow runtime, an ERP, a BPM tool, or an AI automation
+framework. It owns the one decision and integrates with the rest.
 
 ## License
 
