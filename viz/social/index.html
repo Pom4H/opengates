@@ -32,9 +32,33 @@
         const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
       };
 
+      // Crane driver (same rig as the interactive viewer): climb to the floor +
+      // one pick/place lift over progress u. Here it's only used for a static
+      // hero pose (the viewer drives u from the build timeline).
+      function runCrane(rig, cur, nxt, u, e) {
+        const { mast, slew, trolley, cable, hookBlk, load, flag, BASE, JIBY } = rig;
+        const lerp = (a, b, t) => a + (b - a) * t;
+        const ease = (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
+        const topY = lerp(cur.y, nxt.y, u);
+        const craneH = Math.max(13, Math.min(60, topY + 9));
+        mast.scale.y = craneH; mast.position.y = craneH / 2; slew.position.y = craneH;
+        slew.rotation.y = BASE + Math.sin(e * 0.22) * 0.03;
+        const jibW = craneH + JIBY, D_SUP = 13, D_PLC = 33;
+        const grabL = jibW - 1.8, placeL = Math.max(3.5, jibW - (nxt.y + 2));
+        let d, L, carry;
+        if (u < 0.35) { d = lerp(D_PLC, D_SUP, ease(u / 0.35)); L = lerp(5, grabL, ease(u / 0.35)); carry = false; }
+        else if (u < 0.45) { d = D_SUP; L = lerp(grabL, 5, ease((u - 0.35) / 0.1)); carry = true; }
+        else if (u < 0.78) { d = lerp(D_SUP, D_PLC, ease((u - 0.45) / 0.33)); L = 5; carry = true; }
+        else { d = D_PLC; L = lerp(5, placeL, ease((u - 0.78) / 0.22)); carry = true; }
+        trolley.position.x = d;
+        cable.scale.y = L; cable.position.y = -L / 2; hookBlk.position.y = -L;
+        load.position.y = -L - 1.0; load.visible = carry;
+        const sw = Math.sin(e * 2.0) * (carry ? 0.1 : 0.04); hookBlk.position.x = sw; load.position.x = sw;
+        flag.rotation.y = Math.sin(e * 3.0) * 0.5;
+      }
+
       // graded construction site + props (crane/cabins/hoarding/materials/truck)
-      // so the building plants into the ground instead of floating. Returns
-      // { animate(elapsed) } — a pure function of time for the ambient motion.
+      // so the building plants into the ground instead of floating.
       function buildSite(scene, shadows) {
         const SITE_X = 76, SITE_Z = 58, PIT_X = 22, PIT_Z = 16, FX = 18.3, FZ = 12.3;
         const matt = (color, o) => new THREE.MeshStandardMaterial({ color, roughness: 1, metalness: 0, ...(o || {}) });
@@ -86,30 +110,9 @@
         const cable = box(0.14, 1, 0.14, dark, 0, -0.5, 0, trolley);
         const hookBlk = box(0.9, 0.9, 0.9, dark, 0, -1, 0, trolley);
         const load = box(2.2, 1.0, 2.2, matt(0x8a93a3, { roughness: 0.8 }), 0, -2, 0, trolley);
-        const lerp = (a, b, u) => a + (b - a) * u;
-        const ease = (u) => (u < 0.5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2);
-        function craneUpdate(topY, e) {
-          const craneH = Math.max(13, Math.min(60, topY + 9));
-          mast.scale.y = craneH; mast.position.y = craneH / 2; slew.position.y = craneH;
-          slew.rotation.y = BASE + Math.sin(e * 0.22) * 0.035;
-          const jibW = craneH + JIBY, D_SUP = 13, D_PLC = 34;
-          const grabL = jibW - 1.8, placeL = Math.max(3.5, jibW - (topY + 2));
-          const p = (e % 9) / 9; let d, L, carry;
-          if (p < 0.12) { d = D_SUP; L = lerp(5, grabL, ease(p / 0.12)); carry = false; }
-          else if (p < 0.2) { d = D_SUP; L = lerp(grabL, 5, ease((p - 0.12) / 0.08)); carry = true; }
-          else if (p < 0.45) { d = lerp(D_SUP, D_PLC, ease((p - 0.2) / 0.25)); L = 5; carry = true; }
-          else if (p < 0.57) { d = D_PLC; L = lerp(5, placeL, ease((p - 0.45) / 0.12)); carry = true; }
-          else if (p < 0.65) { d = D_PLC; L = lerp(placeL, 5, ease((p - 0.57) / 0.08)); carry = false; }
-          else if (p < 0.9) { d = lerp(D_PLC, D_SUP, ease((p - 0.65) / 0.25)); L = 5; carry = false; }
-          else { d = D_SUP; L = 5; carry = false; }
-          trolley.position.x = d;
-          cable.scale.y = L; cable.position.y = -L / 2; hookBlk.position.y = -L;
-          load.position.y = -L - 1.0; load.visible = carry;
-          const sw = carry ? Math.sin(e * 2.3) * 0.12 : 0; hookBlk.position.x = sw; load.position.x = sw;
-          flag.rotation.y = Math.sin(e * 3.0) * 0.5;
-        }
-        craneUpdate(49, 4.45); // static pose: lowering a block onto the top
-        return { craneUpdate };
+        const rig = { mast, slew, trolley, cable, hookBlk, load, flag, BASE, JIBY };
+        runCrane(rig, { y: 49 }, { y: 49 }, 0.84, 0); // static hero pose: lowering a block onto the top
+        return { rig };
       }
 
       const W = 1280, H = 640, BG = 0x070b12;

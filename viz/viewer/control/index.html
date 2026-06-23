@@ -214,6 +214,33 @@
         const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
       };
 
+      // Drive the crane from a construction step {cur,nxt,u}: u is the progress
+      // from the current floor to the next, a PURE FUNCTION of the scrubber time t
+      // (via the floor-step primitive). The crane climbs to the floor and runs one
+      // pick → carry → place lift per floor, in lockstep with the timeline; it
+      // freezes when t is paused. Only the cosmetic sway/flutter use elapsed e.
+      function runCrane(rig, cur, nxt, u, e) {
+        const { mast, slew, trolley, cable, hookBlk, load, flag, BASE, JIBY } = rig;
+        const lerp = (a, b, t) => a + (b - a) * t;
+        const ease = (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
+        const topY = lerp(cur.y, nxt.y, u);
+        const craneH = Math.max(13, Math.min(60, topY + 9));
+        mast.scale.y = craneH; mast.position.y = craneH / 2; slew.position.y = craneH; // climb with the build
+        slew.rotation.y = BASE + Math.sin(e * 0.22) * 0.03; // cosmetic micro-sway
+        const jibW = craneH + JIBY, D_SUP = 13, D_PLC = 33;
+        const grabL = jibW - 1.8, placeL = Math.max(3.5, jibW - (nxt.y + 2));
+        let d, L, carry;
+        if (u < 0.35) { d = lerp(D_PLC, D_SUP, ease(u / 0.35)); L = lerp(5, grabL, ease(u / 0.35)); carry = false; } // return to supply + lower to grab
+        else if (u < 0.45) { d = D_SUP; L = lerp(grabL, 5, ease((u - 0.35) / 0.1)); carry = true; } // hoist the block
+        else if (u < 0.78) { d = lerp(D_SUP, D_PLC, ease((u - 0.45) / 0.33)); L = 5; carry = true; } // carry out over the building
+        else { d = D_PLC; L = lerp(5, placeL, ease((u - 0.78) / 0.22)); carry = true; } // lower onto the new floor
+        trolley.position.x = d;
+        cable.scale.y = L; cable.position.y = -L / 2; hookBlk.position.y = -L;
+        load.position.y = -L - 1.0; load.visible = carry;
+        const sw = Math.sin(e * 2.0) * (carry ? 0.1 : 0.04); hookBlk.position.x = sw; load.position.x = sw;
+        flag.rotation.y = Math.sin(e * 3.0) * 0.5;
+      }
+
       // A graded construction site so the building plants into the ground and
       // casts its shadow instead of floating: an earth apron at grade with an open
       // pit, a concrete edge, a ground-floor slab, a road + driveway, and props
@@ -278,34 +305,9 @@
         const cable = box(0.14, 1, 0.14, dark, 0, -0.5, 0, trolley); // unit cable, scaled to the hook drop
         const hookBlk = box(0.9, 0.9, 0.9, dark, 0, -1, 0, trolley); // hook block
         const load = box(2.2, 1.0, 2.2, matt(0x8a93a3, { roughness: 0.8 }), 0, -2, 0, trolley); // the block being lifted
-
-        const lerp = (a, b, u) => a + (b - a) * u;
-        const ease = (u) => (u < 0.5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2);
-        // Climb with the build (mast height = current top + clearance, from t) and
-        // run a pick→carry→place→return cycle (trolley forward/back + hook up/down,
-        // from elapsed). Pure functions of time → can't drift or break.
-        function craneUpdate(topY, e) {
-          const craneH = Math.max(13, Math.min(60, topY + 9));
-          mast.scale.y = craneH; mast.position.y = craneH / 2; slew.position.y = craneH; // climb
-          slew.rotation.y = BASE + Math.sin(e * 0.22) * 0.035; // tiny idle sway
-          const jibW = craneH + JIBY, D_SUP = 13, D_PLC = 34;
-          const grabL = jibW - 1.8, placeL = Math.max(3.5, jibW - (topY + 2));
-          const p = (e % 9) / 9; let d, L, carry;
-          if (p < 0.12) { d = D_SUP; L = lerp(5, grabL, ease(p / 0.12)); carry = false; }                     // lower to grab
-          else if (p < 0.2) { d = D_SUP; L = lerp(grabL, 5, ease((p - 0.12) / 0.08)); carry = true; }          // hoist the block
-          else if (p < 0.45) { d = lerp(D_SUP, D_PLC, ease((p - 0.2) / 0.25)); L = 5; carry = true; }          // carry out over the building
-          else if (p < 0.57) { d = D_PLC; L = lerp(5, placeL, ease((p - 0.45) / 0.12)); carry = true; }        // lower onto the top
-          else if (p < 0.65) { d = D_PLC; L = lerp(placeL, 5, ease((p - 0.57) / 0.08)); carry = false; }       // release + raise
-          else if (p < 0.9) { d = lerp(D_PLC, D_SUP, ease((p - 0.65) / 0.25)); L = 5; carry = false; }         // return empty
-          else { d = D_SUP; L = 5; carry = false; }
-          trolley.position.x = d;
-          cable.scale.y = L; cable.position.y = -L / 2; hookBlk.position.y = -L;
-          load.position.y = -L - 1.0; load.visible = carry;
-          const sw = carry ? Math.sin(e * 2.3) * 0.12 : 0; hookBlk.position.x = sw; load.position.x = sw;
-          flag.rotation.y = Math.sin(e * 3.0) * 0.5;
-        }
-        craneUpdate(24, 0); // sensible static pose
-        return { craneUpdate };
+        const rig = { mast, slew, trolley, cable, hookBlk, load, flag, BASE, JIBY };
+        runCrane(rig, { y: 24 }, { y: 24 }, 0.85, 0); // sensible static pose
+        return { rig };
       }
 
       const $ = (id) => document.getElementById(id);
@@ -428,19 +430,28 @@
         scopeAt.foundation = firstStage("BLDG-L00");
         scopeAt.roof = firstStage("BLDG-R01");
 
-        // The crane's work front: each bay's structure acceptance, in time order.
-        // frontierAt(t) is a pure lookup, so the crane follows the build sweep with
-        // no extra state — it can't desync from the timeline.
-        const frontier = [];
+        // Construction primitive: the build expressed as ordered FLOOR lifts,
+        // derived from the engine's accepted facts (each level's structure-start
+        // time + its level y), one per floor. The crane walks these in lockstep
+        // with the timeline; craneStepAt(t) is a pure lookup, so the crane is
+        // synchronized to t and freezes when t is paused.
+        const structAccepts = [];
         for (const zid in stageByZone) {
           const o = Z[zid]; if (!o || o.zone.scope !== "bay") continue;
           const ev = stageByZone[zid].find((e) => (e.systemsDone || 0) >= 1); if (!ev) continue;
-          const c = center(o.zone.structure);
-          frontier.push({ at: ev.at, x: c[0], y: o.zone.structure.max[1], z: c[2] });
+          structAccepts.push({ at: ev.at, x: center(o.zone.structure)[0], y: o.zone.structure.max[1], z: center(o.zone.structure)[2] });
         }
-        frontier.sort((a, b) => a.at - b.at);
-        const frontierAt = (t) => { let r = frontier[0] || { x: 0, y: 24, z: 0 }; for (const f of frontier) { if (f.at <= t) r = f; else break; } return r; };
-        let craneTarget = frontier[0] || { x: 0, y: 24, z: 0 };
+        const floorSteps = (() => {
+          const byFloor = new Map();
+          for (const f of structAccepts) { const k = Math.round(f.y); const c = byFloor.get(k); if (!c || f.at < c.at) byFloor.set(k, f); }
+          return [...byFloor.values()].sort((a, b) => a.at - b.at);
+        })();
+        const craneStepAt = (t) => {
+          if (!floorSteps.length) return { cur: { y: 14 }, nxt: { y: 14 }, u: 0 };
+          let i = 0; for (let k = 0; k < floorSteps.length; k++) { if (floorSteps[k].at <= t) i = k; else break; }
+          const cur = floorSteps[i], nxt = floorSteps[Math.min(i + 1, floorSteps.length - 1)];
+          return { cur, nxt, u: Math.max(0, Math.min(1, (t - cur.at) / Math.max(1, nxt.at - cur.at))) };
+        };
 
         const MIN = ms(timeline.range.minAt), MAX = ms(timeline.range.maxAt);
         const events = timeline.events; const evMs = events.map((e) => ms(e.at));
@@ -694,7 +705,6 @@
         function setT(t, redrawTrack = true) {
           T = Math.max(MIN, Math.min(MAX, t));
           $("tlnow").textContent = day(T); $("tlphase").textContent = phaseAt(T);
-          craneTarget = frontierAt(T); // crane follows the work front at time t
           paintAll(); moneyAsOf(); renderActs(); if (redrawTrack) drawTrack();
         }
         function trackToT(clientX) { const r = trackEl.getBoundingClientRect(); const f = Math.max(0, Math.min(1, (clientX - r.left) / r.width)); return fToT(f); }
@@ -727,7 +737,7 @@
         // ---- go ----
         setT(MAX);
         addEventListener("resize", () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); if (composer) composer.setSize(innerWidth, innerHeight); });
-        (function render() { requestAnimationFrame(render); controls.update(); site.craneUpdate(craneTarget.y, clock.getElapsedTime()); if (composer) composer.render(); else renderer.render(scene, camera); })();
+        (function render() { requestAnimationFrame(render); controls.update(); const s = craneStepAt(T); runCrane(site.rig, s.cur, s.nxt, s.u, clock.getElapsedTime()); if (composer) composer.render(); else renderer.render(scene, camera); })();
       }
     </script>
   </body>
