@@ -2,10 +2,12 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://open-gates.dev/schema/event.schema.json",
   "title": "Gate event",
-  "description": "One entry in a gate case's append-only log. Folding the log yields the gate state.",
+  "description": "One entry in a gate case's append-only log. Folding the log yields the gate state. A persisted event MUST carry a stable `id` and a monotonic `seq`; hand-authored scenarios may omit them — the loader synthesizes them deterministically.",
   "type": "object",
   "required": ["type", "at", "actor"],
   "properties": {
+    "id": { "type": "string", "description": "Stable, unique event id (uuid/ULID). Dedup key for idempotent replay. Required on a persisted event." },
+    "seq": { "type": "integer", "minimum": 1, "description": "Monotonic per-case sequence; apply() requires seq === state.seq + 1." },
     "type": { "enum": ["claim.submitted", "evidence.attached", "decision.recorded"] },
     "at": { "type": "string", "format": "date-time" },
     "actor": { "type": "string", "description": "Who emitted the event (party, role or system)." }
@@ -28,8 +30,13 @@
     {
       "properties": {
         "type": { "const": "decision.recorded" },
-        "reviewerRole": { "type": "string" },
+        "reviewerRole": { "type": "string", "description": "On the wire this is advisory; the engine binds authority to the gate's reviewer role and (over MCP/HTTP) to the caller's OAuth scope." },
         "outcome": { "enum": ["accepted", "accepted_with_exceptions", "rejected", "returned_for_rework"] },
+        "acceptedValues": {
+          "type": "object",
+          "description": "The quantities the reviewer actually accepted (e.g. surveyed 117, not claimed 120). Money is paid on these.",
+          "additionalProperties": { "$ref": "#/$defs/scalar" }
+        },
         "note": { "type": "string" }
       },
       "required": ["reviewerRole", "outcome"]

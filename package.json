@@ -8,9 +8,13 @@
   "engines": { "node": ">=22.18" },
   "scripts": {
     "serve": "node server.ts",
+    "mcp": "node mcp/server.ts",
     "test": "node --test engine/test/*.test.ts",
-    "demo:accept": "node engine/src/cli.ts examples/construction/gate.json examples/construction/scenario.accept.json",
     "demo:dispute": "node engine/src/cli.ts examples/construction/gate.json examples/construction/scenario.dispute.json",
+    "demo:accept": "node engine/src/cli.ts examples/construction/gate.json examples/construction/scenario.accept.json",
+    "demo:remarks": "node engine/src/cli.ts examples/construction/gate.json examples/construction/scenario.remarks.json",
+    "demo:logistics": "node engine/src/cli.ts examples/logistics/gate.json examples/logistics/scenario.accept.json",
+    "eval": "node eval/replay.mjs examples/construction/gate.json examples/construction/dataset.sample.jsonl",
     "review:example": "node examples/reviewer/poll.mjs"
   }
 }

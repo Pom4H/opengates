@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://open-gates.dev/schema/scenario.schema.json",
   "title": "Gate scenario",
-  "description": "A single run of a gate: a reference to the gate and an ordered event log.",
+  "description": "A single run of a gate: a reference to the gate and an ordered event log. Events may omit id/seq — loadScenario() synthesizes them deterministically.",
   "type": "object",
   "required": ["gate", "events"],
   "additionalProperties": false,

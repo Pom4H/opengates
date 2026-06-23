@@ -1,0 +1,25 @@
+{
+  "gate": "logistics.delivery-acceptance",
+  "events": [
+    {
+      "type": "claim.submitted",
+      "at": "2026-06-11T09:30:00Z",
+      "actor": "carrier:transco",
+      "claim": { "type": "delivery_completed", "values": { "shipment_id": "SHP-5530", "quantity": 26, "delivered_at": "2026-06-11T09:10:00Z" } }
+    },
+    {
+      "type": "evidence.attached",
+      "at": "2026-06-11T09:31:00Z",
+      "actor": "carrier:transco",
+      "evidence": { "kind": "proof_of_delivery", "values": { "signed_by": "warehouse:gate-4" }, "ref": "pod/SHP-5530.pdf" }
+    },
+    {
+      "type": "decision.recorded",
+      "at": "2026-06-11T10:00:00Z",
+      "actor": "receiver:lena",
+      "reviewerRole": "customer_receiver",
+      "outcome": "returned_for_rework",
+      "note": "Delivered 2026-06-11 09:10 — a day outside the agreed 2026-06-10 08:00–18:00 window. Blocking date_window fails; nothing invoiceable until the window dispute is resolved."
+    }
+  ]
+}

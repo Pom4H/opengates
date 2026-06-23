@@ -16,15 +16,7 @@
       "actor": "surveyor:geo-point",
       "evidence": {
         "kind": "executive_survey",
-        "values": {
-          "quantity": 117,
-          "unit": "m3",
-          "U": 4.0,
-          "k": 2,
-          "method": "as-built volume from total-station section survey",
-          "instrument": "Leica TS16",
-          "calibration_ref": "cal/leica-ts16-2026-01.pdf"
-        },
+        "values": { "quantity": 118, "unit": "m3", "U": 4.0, "k": 2, "instrument": "Leica TS16", "calibration_ref": "cal/leica-ts16-2026-01.pdf" },
         "ref": "obmer/2026-05-foundation.pdf"
       }
     },
@@ -32,7 +24,7 @@
       "type": "evidence.attached",
       "at": "2026-06-02T11:05:00Z",
       "actor": "lab:stroylab",
-      "evidence": { "kind": "concrete_strength_protocol", "values": { "grade": "C25/30", "r28_mpa": 31.2 }, "ref": "lab/strength-2026-05.pdf" }
+      "evidence": { "kind": "concrete_strength_protocol", "values": { "grade": "C25/30", "r28_mpa": 30.5 }, "ref": "lab/strength-2026-05.pdf" }
     },
     {
       "type": "evidence.attached",
@@ -51,9 +43,9 @@
       "at": "2026-06-03T15:00:00Z",
       "actor": "supervisor:ivanov",
       "reviewerRole": "technical_supervisor",
-      "outcome": "accepted",
-      "acceptedValues": { "quantity": 117 },
-      "note": "Обмер: claimed 120 m³, survey 117±4 m³ (k=2); |error|=3 m³ = 2.56% of reference, within the 5% tolerance and within U. Accept 117 m³. КС-3: 117×85 = 9 945 € gross, −5% retention 497.25 € = 9 447.75 € net certified."
+      "outcome": "accepted_with_exceptions",
+      "acceptedValues": { "quantity": 118 },
+      "note": "Принято с замечаниями: cold joint at axis 3 and surface раковины. Accept 118 m³ (survey, within tolerance); remediate by 2026-06-20. 5% retention held against the punch list and released after the defects are closed."
     }
   ]
 }
