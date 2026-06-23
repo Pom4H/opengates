@@ -98,7 +98,7 @@ cover dedup, ordering, and idempotence.
   of 120 against a survey of 117 is `|120 − 117| / 117 = 2.56%`, compared to the
   gate's `tolerance`. State the denominator wherever you quote a percentage.
 - **Cyrillic (and other non-English) domain terms** are paired with an English
-  gloss in prose and kept out of JSON keys. Estimate line `ФЕР06-01-001-01` may
+  gloss in prose and kept out of JSON keys. Estimate line `FER06-01-001-01` may
   appear as an evidence *value*; schema keys stay ASCII.
 - Prefer real, named pains over abstract ones — "contractor claims a volume,
   supervision hasn't accepted it" beats "process step needs approval."

@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="ru">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-    <title>Open Gates — операционная модель стройки (e2e)</title>
+    <title>Open Gates — construction operations model (e2e)</title>
     <style>
       :root {
         --bg: #070b12; --panel: #0e1622d9; --border: #1e2d40; --text: #e6edf6; --dim: #7e8ea3;
@@ -134,19 +134,19 @@
       <div class="sub" id="objsub"></div>
       <div id="roles"></div>
       <div id="action"></div>
-      <div id="bldgbtn" class="rolebtn" style="margin-top:9px;display:inline-block;color:#a78bfa">▢ Объект целиком (BLDG) — проект · аванс · сдача · удержание</div>
+      <div id="bldgbtn" class="rolebtn" style="margin-top:9px;display:inline-block;color:#a78bfa">▢ Whole object (BLDG) — design · advance · handover · retention</div>
     </div>
 
     <div id="acts" class="card">
-      <h2>ЛЕНТА АКТОВ · claim → evidence → decision</h2>
+      <h2>ACTS FEED · claim → evidence → decision</h2>
       <div id="actsList"></div>
     </div>
 
     <div id="money" class="card">
-      <h2>ДЕНЬГИ · КС-3 / EVM — на дату</h2>
+      <h2>MONEY · KS-3 / EVM — as of date</h2>
       <div class="kpis" id="kpis"></div>
       <div class="evm">
-        <div class="hd"><span>Освоение (S-curve): <b style="color:var(--green)">EV</b> · <b style="color:var(--dim)">PV</b> · <b style="color:var(--amber)">AC</b></span><span id="spicpi"></span></div>
+        <div class="hd"><span>Earned (S-curve): <b style="color:var(--green)">EV</b> · <b style="color:var(--dim)">PV</b> · <b style="color:var(--amber)">AC</b></span><span id="spicpi"></span></div>
         <div id="evmchart"></div>
       </div>
     </div>
@@ -155,11 +155,11 @@
       <span id="zclose">×</span>
       <div class="zid" id="zid">—</div>
       <div class="meta" id="zmeta"></div>
-      <div id="zbody"><div class="hint" style="padding:4px 0">Коснитесь блока на 3D-модели, чтобы увидеть его акты, документы и оплаты.</div></div>
+      <div id="zbody"><div class="hint" style="padding:4px 0">Tap a block on the 3D model to see its acts, documents and payments.</div></div>
     </div>
 
     <div id="legend" class="card">
-      <div class="grp" style="color:var(--dim);font-size:10px;letter-spacing:1px;margin-bottom:4px">ЖИЗНЕННЫЙ ЦИКЛ — цвет = что ПРИНЯТО на дату</div>
+      <div class="grp" style="color:var(--dim);font-size:10px;letter-spacing:1px;margin-bottom:4px">LIFECYCLE — colour = what's ACCEPTED as of the date</div>
       <div id="legrows"></div>
     </div>
 
@@ -168,7 +168,7 @@
         <button id="playbtn">▶</button>
         <div id="tlnow">—</div>
         <div id="tlphase"></div>
-        <div id="tlspeed">скорость
+        <div id="tlspeed">speed
           <select id="speed"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select>
         </div>
       </div>
@@ -177,18 +177,18 @@
 
     <div id="tabbar">
       <button data-sheet="" class="on"><span class="ic">◳</span>3D</button>
-      <button data-sheet="money"><span class="ic">€</span>Деньги</button>
-      <button data-sheet="acts"><span class="ic">≡</span>Акты</button>
-      <button data-sheet="zone"><span class="ic">▢</span>Зона</button>
-      <button data-sheet="legend"><span class="ic">◧</span>Цвета</button>
+      <button data-sheet="money"><span class="ic">€</span>Money</button>
+      <button data-sheet="acts"><span class="ic">≡</span>Acts</button>
+      <button data-sheet="zone"><span class="ic">▢</span>Zone</button>
+      <button data-sheet="legend"><span class="ic">◧</span>Colours</button>
     </div>
 
     <div id="toast"></div>
 
     <div id="err" class="card">
-      <b>Не удалось загрузить модель.</b>
-      <p class="hint">Откройте по HTTP, не <code>file://</code>. Из корня репозитория: <code>python3 -m http.server 8099</code>, затем
-        <code>/viz/viewer/control/</code>. Перед этим: <code>node viz/model/generate.ts &amp;&amp; node examples/construction/e2e/drive.ts</code>.</p>
+      <b>Failed to load the model.</b>
+      <p class="hint">Open over HTTP, not <code>file://</code>. From the repo root: <code>python3 -m http.server 8099</code>, then
+        <code>/viz/viewer/control/</code>. Before that: <code>node viz/model/generate.ts &amp;&amp; node examples/construction/e2e/drive.ts</code>.</p>
     </div>
 
     <!-- Absolute paths from the repo root (serve with `python3 -m http.server`
@@ -232,10 +232,10 @@
 
         // ---- object header ----
         $("objname").textContent = meta.object.name;
-        $("objsub").textContent = `котлован −9 м → плита → ${model.grid.basements} подземных → ${model.grid.floors} надземных → кровля · ${Object.keys(attach).length} зон`;
+        $("objsub").textContent = `excavation pit −9 m → raft → ${model.grid.basements} underground → ${model.grid.floors} above-ground → roof · ${Object.keys(attach).length} zones`;
 
         // ---- legend ----
-        const legend = [["котлован", P.excavation], ["плита", P.foundation_mat], ["1·каркас", model.systems[0].color], ["2·фасад", model.systems[1].color], ["3·инженерка", model.systems[2].color], ["4·отделка (принято)", model.systems[3].color], ["кровля", P.roof], ["не начато", P.not_started]];
+        const legend = [["excavation", P.excavation], ["raft", P.foundation_mat], ["1·frame", model.systems[0].color], ["2·façade", model.systems[1].color], ["3·MEP", model.systems[2].color], ["4·fit-out (accepted)", model.systems[3].color], ["roof", P.roof], ["not started", P.not_started]];
         $("legrows").innerHTML = legend.map(([l, c]) => `<span class="row"><span class="sw" style="background:${c}"></span>${l}</span>`).join("");
 
         // ---- three scene ----
@@ -309,20 +309,20 @@
         const roleByActor = {}; for (const r of meta.roles) roleByActor[r.actor] = r.key;
         const lensRoles = meta.roles.filter((r) => r.lens);
         const ACTIONS = {
-          contractor: "Подать <b>КС-2</b> по выбранной зоне", technical_supervisor: "Принять / вернуть работу (<b>decision</b>)",
-          client_technical_customer: "Подтвердить оплату <b>КС-3</b>", surveyor: "Приложить <b>исполнительную съёмку</b>", lab: "Приложить <b>протокол</b>",
+          contractor: "Submit <b>KS-2</b> for the selected zone", technical_supervisor: "Accept / return the work (<b>decision</b>)",
+          client_technical_customer: "Confirm <b>KS-3</b> payment", surveyor: "Attach <b>as-built survey</b>", lab: "Attach <b>test report</b>",
         };
         let lens = null;
         const rolesDiv = $("roles");
-        rolesDiv.innerHTML = `<span class="rolebtn on" data-k="" style="color:var(--text)">Все</span>` +
+        rolesDiv.innerHTML = `<span class="rolebtn on" data-k="" style="color:var(--text)">All</span>` +
           lensRoles.map((r) => `<span class="rolebtn" data-k="${r.key}" style="color:${r.color}">${r.short}</span>`).join("");
         rolesDiv.querySelectorAll(".rolebtn").forEach((b) => b.addEventListener("click", () => {
           rolesDiv.querySelectorAll(".rolebtn").forEach((x) => x.classList.remove("on"));
           b.classList.add("on"); lens = b.dataset.k || null;
-          $("action").innerHTML = lens && ACTIONS[lens] ? "Действие роли: " + ACTIONS[lens] : "Роль определяет, что подсвечено и какие акты в ленте.";
+          $("action").innerHTML = lens && ACTIONS[lens] ? "Role action: " + ACTIONS[lens] : "The role sets what's highlighted and which acts are in the feed.";
           paintAll(); renderActs();
         }));
-        $("action").innerHTML = "Роль определяет, что подсвечено и какие акты в ленте.";
+        $("action").innerHTML = "The role sets what's highlighted and which acts are in the feed.";
 
         // ---- mobile bottom-sheet tab bar ----
         const isMobile = () => matchMedia("(max-width: 920px)").matches;
@@ -395,30 +395,30 @@
         function renderZone(id) {
           const z = Z[id].zone; const a = attach[id];
           $("zid").textContent = id;
-          const where = z.scope === "bay" ? `ось ${z.col} · ряд ${z.row} · ${z.floor >= 90 ? "подземный −" + (z.floor - 90) : "этаж " + z.floor}` : ({ excavation: "котлован", foundation: "фундаментная плита", roof: "кровля / плант", marker: "объект целиком" }[z.level] || z.scope);
+          const where = z.scope === "bay" ? `axis ${z.col} · row ${z.row} · ${z.floor >= 90 ? "underground −" + (z.floor - 90) : "floor " + z.floor}` : ({ excavation: "excavation pit", foundation: "foundation raft", roof: "roof / plant", marker: "whole object" }[z.level] || z.scope);
           $("zmeta").textContent = where + (z.scope === "bay" ? ` · ${z.id}` : "");
-          if (!a) { $("zbody").innerHTML = `<div class="grp">РАБОТЫ НЕ ПРИВЯЗАНЫ</div><div class="hint">К этой зоне не привязан ни один акт.</div>`; return; }
-          let h = `<div class="grp">РАБОТЫ · ${a.rollup.accepted}/${a.rollup.total} принято</div>`;
+          if (!a) { $("zbody").innerHTML = `<div class="grp">NO WORKS BOUND</div><div class="hint">No act is bound to this zone.</div>`; return; }
+          let h = `<div class="grp">WORKS · ${a.rollup.accepted}/${a.rollup.total} accepted</div>`;
           for (const w of a.works) {
             const col = STATUS_COL[w.status] || "var(--dim)"; const visible = (w.acceptedAt ? ms(w.acceptedAt) : ms(w.claimedAt)) <= T;
             const money = w.net != null ? ` · <span class="money">${fmt(w.net)}</span>` : "";
-            const due = w.paymentDueAt ? ` · оплата до ${day(ms(w.paymentDueAt))}` : "";
+            const due = w.paymentDueAt ? ` · payment by ${day(ms(w.paymentDueAt))}` : "";
             h += `<div class="w" style="opacity:${visible ? 1 : 0.4}"><div class="top"><span>${ru(w.system) || PHASE_RU[w.phase] || w.title || w.gateId}</span><span class="sbadge" style="color:${col};border-color:${col}66">${ruStatus(w.status)}</span></div>` +
-              `<div class="sub">${w.quantity != null ? "обмер " + w.quantity + " · " : ""}${w.unitPrice ? "@" + w.unitPrice + " €" : ""}${money}${due}<br>` +
-              `${w.claimedBy ? "КС-2: " + actorShort(w.claimedBy) : ""}${w.acceptedBy ? " → принял " + actorShort(w.acceptedBy) + " " + (w.acceptedAt ? day(ms(w.acceptedAt)) : "") : ""}${w.cycleDays != null ? " · цикл " + w.cycleDays + " дн" : ""}</div></div>`;
+              `<div class="sub">${w.quantity != null ? "survey " + w.quantity + " · " : ""}${w.unitPrice ? "@" + w.unitPrice + " €" : ""}${money}${due}<br>` +
+              `${w.claimedBy ? "KS-2: " + actorShort(w.claimedBy) : ""}${w.acceptedBy ? " → accepted " + actorShort(w.acceptedBy) + " " + (w.acceptedAt ? day(ms(w.acceptedAt)) : "") : ""}${w.cycleDays != null ? " · cycle " + w.cycleDays + " d" : ""}</div></div>`;
           }
           const groups = {};
           for (const d of a.documents) (groups[d.docClass] ||= []).push(d);
-          h += `<div class="grp">ДОКУМЕНТЫ</div>`;
+          h += `<div class="grp">DOCUMENTS</div>`;
           for (const [cls, ds] of Object.entries(groups)) for (const d of ds)
             h += `<div class="doc"><span class="k">${DOCRU[cls] || cls}</span><span class="r">${d.ref || "—"}</span></div>`;
           $("zbody").innerHTML = h;
         }
-        const DOCRU = { aosr: "АОСР", obmer: "обмер", protokol: "протокол", permit: "разрешение/ЗОС", inspection: "освид.", defects: "замечания", photo: "фото", doc: "док." };
-        const RU = { structure: "1 · Каркас (монолит)", envelope: "2 · Фасад / ограждение", mep: "3 · Инженерные системы", fitout: "4 · Отделка" };
+        const DOCRU = { aosr: "AOSR", obmer: "survey", protokol: "report", permit: "permit/ZOS", inspection: "inspection", defects: "remarks", photo: "photo", doc: "doc." };
+        const RU = { structure: "1 · Frame (monolithic)", envelope: "2 · Façade / envelope", mep: "3 · MEP (engineering systems)", fitout: "4 · Fit-out" };
         const ru = (s) => RU[s] || null;
-        const PHASE_RU = { design: "Проект + разрешение", advance: "Аванс 15%", excavation: "Котлован", foundation: "Фундамент (АОСР + плита)", "fire-safety": "Пожарная безопасность", handover: "Сдача / ЗОС / акт ввода", release: "Возврат удержания" };
-        const RUSTATUS = { accepted: "принято", accepted_with_exceptions: "принято с замеч.", under_review: "на проверке", submitted: "подано", returned_for_rework: "возврат", rejected: "отклонено" };
+        const PHASE_RU = { design: "Design + permit", advance: "Advance 15%", excavation: "Excavation pit", foundation: "Foundation (AOSR + raft)", "fire-safety": "Fire safety", handover: "Handover / ZOS / commissioning act", release: "Retention release" };
+        const RUSTATUS = { accepted: "accepted", accepted_with_exceptions: "accepted w/ remarks", under_review: "under review", submitted: "submitted", returned_for_rework: "returned", rejected: "rejected" };
         const ruStatus = (s) => RUSTATUS[s] || s;
         const SHORT = {}; for (const r of meta.roles) SHORT[r.actor] = r.short;
         const actorShort = (a) => SHORT[a] || a;
@@ -437,10 +437,10 @@
           const advOut = Math.max(0, ledger.advance.issued - recovered);
           let spi = 1, cpi = 1; for (const s of cert.spiCpiAt) { if (ms(s.at) <= T) { spi = s.spi; cpi = s.cpi; } else break; }
           $("kpis").innerHTML = [
-            ["Сертифиц. КС-3", fmtK(certified), "var(--green)"],
-            ["Оплачено", fmtK(paid), "var(--text)"],
-            ["Удержание (резерв)", fmtK(reserve), "var(--amber)"],
-            ["Аванс не закрыт", fmtK(advOut), "var(--text)"],
+            ["Certified KS-3", fmtK(certified), "var(--green)"],
+            ["Paid", fmtK(paid), "var(--text)"],
+            ["Retention (reserve)", fmtK(reserve), "var(--amber)"],
+            ["Advance outstanding", fmtK(advOut), "var(--text)"],
           ].map(([l, v, c]) => `<div class="kpi"><div class="l">${l}</div><div class="v" style="color:${c}">${v}</div></div>`).join("");
           $("spicpi").innerHTML = `<span class="badge" style="color:${spi >= 0.99 ? "var(--green)" : "var(--amber)"};border-color:currentColor">SPI ${spi.toFixed(2)}</span> <span class="badge" style="color:${cpi >= 0.99 ? "var(--green)" : "var(--amber)"};border-color:currentColor">CPI ${cpi.toFixed(2)}</span>`;
           drawEVM();
@@ -472,14 +472,14 @@
             const zone = e.zone ? `<span class="g"> · ${e.zone}</span>` : "";
             out.push(`<div class="act"><span class="dot" style="background:${col}"></span><span class="t">${day(evMs[i]).slice(5)}</span><span class="b"><span class="a">${actorShort(e.actor)}</span> ${verb}${e.evidenceKind ? " <span class='g'>" + (DOCRU[e.docClass] || e.evidenceKind) + "</span>" : ""}${zone}</span>${money}</div>`);
           }
-          $("actsList").innerHTML = out.join("") || `<div class="hint">Нет актов этой роли до выбранной даты.</div>`;
+          $("actsList").innerHTML = out.join("") || `<div class="hint">No acts for this role before the selected date.</div>`;
         }
-        const VERB = { claimed: "подал КС-2", attached: "приложил", accepted: "<b style='color:var(--green)'>принял</b>", accepted_with_exceptions: "<b style='color:var(--green)'>принял с замеч.</b>", returned_for_rework: "<b style='color:var(--red)'>вернул</b>", rejected: "<b style='color:var(--red)'>отклонил</b>" };
+        const VERB = { claimed: "submitted KS-2", attached: "attached", accepted: "<b style='color:var(--green)'>accepted</b>", accepted_with_exceptions: "<b style='color:var(--green)'>accepted w/ remarks</b>", returned_for_rework: "<b style='color:var(--red)'>returned</b>", rejected: "<b style='color:var(--red)'>rejected</b>" };
         function upper(arr, t) { let lo = 0, hi = arr.length; while (lo < hi) { const m = (lo + hi) >> 1; if (arr[m] <= t) lo = m + 1; else hi = m; } return lo; }
 
         // ---- scrubber ----
         let T = MAX;
-        // The defects-liability (гарантийный) period is a ~2-year event-free gap
+        // The defects-liability (warranty) period is a ~2-year event-free gap
         // between the first and second retention tranches. Compress it on the axis
         // so the dense build phase stays readable and the final release stays
         // visible. tToF: time → axis fraction [0,1]; fToT: its inverse.
@@ -501,12 +501,12 @@
           if (f < FB) return GAP.lo + ((f - FA) / (FB - FA)) * (GAP.hi - GAP.lo);
           return GAP.hi + ((f - FB) / (1 - FB)) * (MAX - GAP.hi);
         }
-        const PHASES = [["проект+аванс", "#a78bfa"], ["котлован/плита", P.excavation], ["каркас→фасад→инженерка→отделка", P.foundation_mat], ["сдача/оплаты", "#a78bfa"]];
+        const PHASES = [["design+advance", "#a78bfa"], ["excavation/raft", P.excavation], ["frame→façade→MEP→fit-out", P.foundation_mat], ["handover/payments", "#a78bfa"]];
         function phaseAt(t) {
-          if (t < scopeAt.excavation) return "Проектирование · разрешение · аванс";
-          if (t < scopeAt.foundation) return "Котлован · геодезия · приёмка грунта";
-          if (t < ms(ledger.retention.tranche1At) - 30 * 864e5) return "СМР: каркас → фасад → инженерка → отделка";
-          return "Сдача-приёмка · ЗОС · возврат удержания";
+          if (t < scopeAt.excavation) return "Design · permit · advance";
+          if (t < scopeAt.foundation) return "Excavation · survey · soil acceptance";
+          if (t < ms(ledger.retention.tranche1At) - 30 * 864e5) return "Construction: frame → façade → MEP → fit-out";
+          return "Handover · ZOS · retention release";
         }
         const trackEl = $("track");
         function drawTrack() {
@@ -517,7 +517,7 @@
           const lastY = cert.evm.ev.length ? yv(cert.evm.ev[cert.evm.ev.length - 1].cum) : H;
           const area = `M0,${H} L` + pts.join(" L") + ` L${W},${lastY.toFixed(1)} L${W},${H} Z`;
           const curve = "M" + pts.join(" L") + ` L${W},${lastY.toFixed(1)}`;
-          // compressed-gap band (the гарантийный period)
+          // compressed-gap band (the warranty period)
           let band = "";
           if (GAP) { const gx0 = x(GAP.lo), gx1 = x(GAP.hi); band = `<rect x="${gx0}" y="0" width="${gx1 - gx0}" height="${H}" fill="#0c1521" stroke="#1e2d40" stroke-dasharray="2 2"/>`; }
           // year labels (skip those inside the compressed gap)
@@ -541,7 +541,7 @@
             const t = Date.parse(yy + "-01-01T00:00:00Z"); if (t < MIN || t > MAX || (GAP && t > GAP.lo && t < GAP.hi)) continue;
             ov += `<span style="position:absolute;left:${(tToF(t) * 100).toFixed(2)}%;top:0;font-size:9px;color:#41506a;padding-left:3px;pointer-events:none">${yy}</span>`;
           }
-          if (GAP) { const f0 = tToF(GAP.lo) * 100, f1 = tToF(GAP.hi) * 100; ov += `<span style="position:absolute;left:${f0}%;width:${(f1 - f0).toFixed(2)}%;bottom:1px;text-align:center;font-size:7.5px;line-height:1.05;color:#5b6b82;pointer-events:none">гаран-<br>тийный</span>`; }
+          if (GAP) { const f0 = tToF(GAP.lo) * 100, f1 = tToF(GAP.hi) * 100; ov += `<span style="position:absolute;left:${f0}%;width:${(f1 - f0).toFixed(2)}%;bottom:1px;text-align:center;font-size:7.5px;line-height:1.05;color:#5b6b82;pointer-events:none">warranty<br>period</span>`; }
           trackEl.insertAdjacentHTML("beforeend", `<div style="position:absolute;inset:0;pointer-events:none">${ov}</div>`);
         }
         function setT(t, redrawTrack = true) {
@@ -564,7 +564,7 @@
           const loop = (now) => {
             if (!playing) return; const dt = (now - lastTick) / 1000; lastTick = now;
             // advance on the (compressed) AXIS so the playhead moves at a uniform
-            // visual speed — the compressed гарантийный gap passes quickly.
+            // visual speed — the compressed warranty gap passes quickly.
             const f = tToF(T) + dt * (1 / 26) * parseFloat(speed.value); // whole timeline in ~26s at 1×
             if (f >= 1) { setT(MAX); stop(); return; }
             setT(fToT(f)); raf = requestAnimationFrame(loop);
@@ -574,7 +574,7 @@
 
         // ---- toast for role actions ----
         function toast(msg) { const t = $("toast"); t.innerHTML = msg; t.style.opacity = 1; clearTimeout(t._h); t._h = setTimeout(() => (t.style.opacity = 0), 2600); }
-        $("action").addEventListener("click", () => { if (lens) toast("В реальном развёртывании это отправит событие Open Gates (claim/evidence/decision) по выбранной зоне."); });
+        $("action").addEventListener("click", () => { if (lens) toast("In a real deployment this would emit an Open Gates event (claim/evidence/decision) for the selected zone."); });
 
         // ---- go ----
         setT(MAX);

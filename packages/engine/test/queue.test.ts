@@ -33,7 +33,7 @@ const fullDocs = (qty: number) => [
   evidence("executive_survey", { quantity: qty, unit: "m3" }),
   evidence("concrete_strength_protocol", { grade: "C25/30" }),
   evidence("works_log"),
-  evidence("aosr_ref", { act: "АОСР-1" }),
+  evidence("aosr_ref", { act: "AOSR-1" }),
 ];
 
 // Claim 120 vs survey 100 = 20% of reference -> outside tolerance.

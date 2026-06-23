@@ -2,7 +2,7 @@
   "id": "construction.fitout-acceptance",
   "name": "Acceptance of finishing / fit-out in a bay",
   "domain": "construction",
-  "description": "Отделочные работы / чистовая отделка in a bay — the last system. The обмер is the surveyed finished area; a finishing defects list (ведомость замечаний) may drive accepted_with_exceptions. Technical supervision accepts; money at the fit-out rate marks the bay complete and ready for fire-safety. Per-bay scope.",
+  "description": "Finishing works / final fit-out in a bay — the last system. The survey is the surveyed finished area; a finishing defects list (punch list) may drive accepted_with_exceptions. Technical supervision accepts; money at the fit-out rate marks the bay complete and ready for fire-safety. Per-bay scope.",
   "claim": {
     "type": "system_work_completed",
     "fields": [
@@ -13,10 +13,10 @@
     ]
   },
   "evidence": [
-    { "kind": "inspection", "required": true, "description": "Акт освидетельствования отделочных работ — finishing acceptance inspection." },
-    { "kind": "executive_survey", "required": true, "description": "Обмер площади отделки — surveyed finished area (drives payment)." },
-    { "kind": "defects_list", "required": false, "description": "Ведомость замечаний по отделке — finishing punch list, if any." },
-    { "kind": "photo_log", "required": false, "description": "Геотегированные фотографии работ." }
+    { "kind": "inspection", "required": true, "description": "Finishing works acceptance act — finishing acceptance inspection." },
+    { "kind": "executive_survey", "required": true, "description": "Survey of the finished area — surveyed finished area (drives payment)." },
+    { "kind": "defects_list", "required": false, "description": "Finishing punch list — finishing punch list, if any." },
+    { "kind": "photo_log", "required": false, "description": "Geotagged photographs of the works." }
   ],
   "checks": [
     { "id": "evidence-present", "rule": "required_evidence", "kinds": ["inspection", "executive_survey"], "severity": "blocking", "description": "Inspection and survey are attached." },
@@ -24,10 +24,10 @@
     { "id": "zone-format", "rule": "field_pattern", "field": "zone", "pattern": "^[A-Z]\\d+-F\\d{2}$", "severity": "blocking" },
     { "id": "claim-matches-survey", "rule": "cross_check", "claimField": "quantity", "claimUnit": "m2", "evidenceKind": "executive_survey", "evidenceField": "quantity", "uncertaintyField": "U", "tolerance": 0.05, "absolute": 2, "severity": "blocking", "description": "Claimed area within 5% / 2 m² of the surveyed value and within its uncertainty U." }
   ],
-  "reviewer": { "role": "technical_supervisor", "description": "Технадзор заказчика." },
+  "reviewer": { "role": "technical_supervisor", "description": "Client's technical supervision (technadzor)." },
   "decisions": ["accepted", "accepted_with_exceptions", "rejected", "returned_for_rework"],
   "consequences": [
-    { "id": "earned-value", "effect": "money", "on": ["accepted", "accepted_with_exceptions"], "basis": "accepted_quantity", "quantityField": "quantity", "unitPrice": 60, "currency": "EUR", "retentionPct": 0.05, "retentionCap": 25000, "vatRate": 0.2, "paymentTermsDays": 30, "estimateLine": "ФЕР15-04-005", "contractRef": "BOQ 7.1 'Отделочные работы / чистовая отделка' @ EUR 60.00/m²", "description": "Accepted finished area becomes earned value." },
+    { "id": "earned-value", "effect": "money", "on": ["accepted", "accepted_with_exceptions"], "basis": "accepted_quantity", "quantityField": "quantity", "unitPrice": 60, "currency": "EUR", "retentionPct": 0.05, "retentionCap": 25000, "vatRate": 0.2, "paymentTermsDays": 30, "estimateLine": "FER15-04-005", "contractRef": "BOQ 7.1 'Finishing works / final fit-out' @ EUR 60.00/m²", "description": "Accepted finished area becomes earned value." },
     { "id": "unlock-occupancy", "effect": "right_to_proceed", "on": ["accepted"], "unlocks": "fire-safety-in-zone", "description": "Bay complete — fire-safety acceptance may proceed." },
     { "id": "acceptance-liability", "effect": "risk", "on": ["accepted", "accepted_with_exceptions"], "assignedTo": "technical_supervisor" },
     { "id": "label", "effect": "dataset_label", "on": ["accepted", "accepted_with_exceptions", "rejected", "returned_for_rework"], "dataset": "construction.system_acceptance" }

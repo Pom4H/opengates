@@ -2,7 +2,7 @@
   "id": "construction.mep-acceptance",
   "name": "Acceptance of internal MEP systems in a bay",
   "domain": "construction",
-  "description": "Внутренние инженерные системы (ОВ + ВК + ЭОМ) in a bay, brought to the bay's serviced area. A pressure/leak test (опрессовка) and electrical-measurement protocol (ЭИ) are mandatory grounds; the inspection confirms the serviced area. Technical supervision accepts; money at the MEP rate unlocks fit-out in the bay. Per-bay scope.",
+  "description": "Internal MEP systems (HVAC + plumbing + electrical) in a bay, brought to the bay's serviced area. A pressure/leak test (pressure test) and electrical-measurement report (electrical-measurement) are mandatory grounds; the inspection confirms the serviced area. Technical supervision accepts; money at the MEP rate unlocks fit-out in the bay. Per-bay scope.",
   "claim": {
     "type": "system_work_completed",
     "fields": [
@@ -13,9 +13,9 @@
     ]
   },
   "evidence": [
-    { "kind": "inspection", "required": true, "description": "Акт освидетельствования инженерных систем — serviced-area acceptance inspection." },
-    { "kind": "pressure_test_protocol", "required": true, "description": "Акт опрессовки / гидравлических испытаний — pressure/leak test of ОВ+ВК before acceptance." },
-    { "kind": "lab_protocol", "required": false, "description": "Протокол электроизмерений (ЭИ) — electrical-measurement protocol." }
+    { "kind": "inspection", "required": true, "description": "Inspection act of MEP systems — serviced-area acceptance inspection." },
+    { "kind": "pressure_test_protocol", "required": true, "description": "Pressure test / hydraulic test act — pressure/leak test of HVAC+plumbing before acceptance." },
+    { "kind": "lab_protocol", "required": false, "description": "Electrical-measurement report (electrical-measurement) — electrical-measurement protocol." }
   ],
   "checks": [
     { "id": "evidence-present", "rule": "required_evidence", "kinds": ["inspection", "pressure_test_protocol"], "severity": "blocking", "description": "Inspection and the pressure-test act are attached." },
@@ -23,10 +23,10 @@
     { "id": "zone-format", "rule": "field_pattern", "field": "zone", "pattern": "^[A-Z]\\d+-F\\d{2}$", "severity": "blocking" },
     { "id": "claim-matches-inspection", "rule": "cross_check", "claimField": "quantity", "claimUnit": "m2", "evidenceKind": "inspection", "evidenceField": "quantity", "tolerance": 0.05, "absolute": 2, "severity": "blocking", "description": "Claimed serviced area within 5% / 2 m² of the inspected value." }
   ],
-  "reviewer": { "role": "technical_supervisor", "description": "Технадзор заказчика." },
+  "reviewer": { "role": "technical_supervisor", "description": "Client's technical supervision (technadzor)." },
   "decisions": ["accepted", "accepted_with_exceptions", "rejected", "returned_for_rework"],
   "consequences": [
-    { "id": "earned-value", "effect": "money", "on": ["accepted", "accepted_with_exceptions"], "basis": "accepted_quantity", "quantityField": "quantity", "unitPrice": 120, "currency": "EUR", "retentionPct": 0.05, "retentionCap": 25000, "vatRate": 0.2, "paymentTermsDays": 30, "estimateLine": "ФЕРм10-06", "contractRef": "BOQ 6.1 'Внутренние инженерные системы (ОВ+ВК+ЭОМ)' @ EUR 120.00/m²", "description": "Accepted serviced area becomes earned value." },
+    { "id": "earned-value", "effect": "money", "on": ["accepted", "accepted_with_exceptions"], "basis": "accepted_quantity", "quantityField": "quantity", "unitPrice": 120, "currency": "EUR", "retentionPct": 0.05, "retentionCap": 25000, "vatRate": 0.2, "paymentTermsDays": 30, "estimateLine": "FERm10-06", "contractRef": "BOQ 6.1 'Internal MEP systems (HVAC+plumbing+electrical)' @ EUR 120.00/m²", "description": "Accepted serviced area becomes earned value." },
     { "id": "unlock-fitout", "effect": "right_to_proceed", "on": ["accepted"], "unlocks": "fitout-in-zone", "description": "MEP tested and accepted — fit-out may start in this bay." },
     { "id": "acceptance-liability", "effect": "risk", "on": ["accepted", "accepted_with_exceptions"], "assignedTo": "technical_supervisor" },
     { "id": "label", "effect": "dataset_label", "on": ["accepted", "accepted_with_exceptions", "rejected", "returned_for_rework"], "dataset": "construction.system_acceptance" }

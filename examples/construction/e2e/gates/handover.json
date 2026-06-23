@@ -1,8 +1,8 @@
 {
   "id": "construction.handover-and-release",
-  "name": "Handover & commissioning (ЗОС + акт ввода)",
+  "name": "Handover & commissioning (ZOS + commissioning act)",
   "domain": "construction",
-  "description": "Сдача-приёмка объекта: ЗОС (заключение о соответствии госстройнадзора), акт ввода в эксплуатацию (ст.55 ГрК РФ), the agreed defects list and the as-built dossier. The technical customer accepts handover once fire-safety and fit-out are done; the acceptance triggers the retention release (the handover line itself is lump 0). Building-level scope (zone=BLDG).",
+  "description": "Object handover and acceptance: ZOS (compliance conclusion from state construction supervision), commissioning act / occupancy permit (art.55 of the Town Planning Code of the Russian Federation), the agreed defects list and the as-built dossier. The technical customer accepts handover once fire-safety and fit-out are done; the acceptance triggers the retention release (the handover line itself is lump 0). Building-level scope (zone=BLDG).",
   "claim": {
     "type": "building_handover",
     "fields": [
@@ -12,20 +12,20 @@
     ]
   },
   "evidence": [
-    { "kind": "zos", "required": true, "description": "Заключение о соответствии (ЗОС) органа госстройнадзора." },
-    { "kind": "commissioning_act", "required": true, "description": "Разрешение / акт ввода объекта в эксплуатацию (ст.55 ГрК РФ)." },
-    { "kind": "defects_list", "required": true, "description": "Ведомость замечаний / дефектная ведомость, согласованная сторонами." },
-    { "kind": "as_built_dossier", "required": true, "description": "Исполнительная документация (комплект) — the as-built dossier." }
+    { "kind": "zos", "required": true, "description": "Compliance conclusion (ZOS) from the state construction supervision authority." },
+    { "kind": "commissioning_act", "required": true, "description": "Occupancy permit / commissioning act for the object (art.55 of the Town Planning Code of the Russian Federation)." },
+    { "kind": "defects_list", "required": true, "description": "Punch list / defects list agreed by the parties." },
+    { "kind": "as_built_dossier", "required": true, "description": "As-built dossier (full set) — the as-built dossier." }
   ],
   "checks": [
-    { "id": "handover-docs-present", "rule": "required_evidence", "kinds": ["zos", "commissioning_act", "defects_list", "as_built_dossier"], "severity": "blocking", "description": "Handover needs the ЗОС, the commissioning act, the defects list and the dossier." },
+    { "id": "handover-docs-present", "rule": "required_evidence", "kinds": ["zos", "commissioning_act", "defects_list", "as_built_dossier"], "severity": "blocking", "description": "Handover needs the ZOS, the commissioning act, the defects list and the dossier." },
     { "id": "zone-format", "rule": "field_pattern", "field": "zone", "pattern": "^(SITE|BLDG)(-[A-Z][0-9]{2})?$", "severity": "blocking", "description": "Building-level scope id (BLDG)." },
     { "id": "commissioning-window", "rule": "date_window", "field": "commissioning_date", "start": "2026-06-23", "severity": "blocking", "description": "Commissioning date is within the project window." }
   ],
-  "reviewer": { "role": "client_technical_customer", "description": "Заказчик / технический заказчик." },
+  "reviewer": { "role": "client_technical_customer", "description": "Client / technical customer." },
   "decisions": ["accepted", "accepted_with_exceptions", "rejected", "returned_for_rework"],
   "consequences": [
-    { "id": "unlock-release", "effect": "right_to_proceed", "on": ["accepted", "accepted_with_exceptions"], "unlocks": "final-retention-release", "description": "Handover (behind fire-safety + ЗОС) unlocks the retention release — no new earned-value line, the act itself triggers the release." },
+    { "id": "unlock-release", "effect": "right_to_proceed", "on": ["accepted", "accepted_with_exceptions"], "unlocks": "final-retention-release", "description": "Handover (behind fire-safety + ZOS) unlocks the retention release — no new earned-value line, the act itself triggers the release." },
     { "id": "ownership", "effect": "risk", "on": ["accepted", "accepted_with_exceptions"], "assignedTo": "client_technical_customer", "description": "Customer takes ownership and operating liability of the object." },
     { "id": "label", "effect": "dataset_label", "on": ["accepted", "accepted_with_exceptions", "rejected", "returned_for_rework"], "dataset": "construction.handover" }
   ]

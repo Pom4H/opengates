@@ -8,9 +8,9 @@
 
 ## Verdict: **realizable, with the engine unchanged.**
 
-The entire lifecycle — design+permit, 15% advance, котлован, фундаментная плита
-(АОСР + raft), 384 bays × 4 parallel systems, fire-safety, handover (ЗОС + акт
-ввода) and the two-tranche retention release — is expressible as Acceptance Acts
+The entire lifecycle — design+permit, 15% advance, excavation pit, foundation raft
+(AOSR + raft), 384 bays × 4 parallel systems, fire-safety, handover (ZOS + commissioning
+act) and the two-tranche retention release — is expressible as Acceptance Acts
 that fold through the **existing** `fold` / `consequences` / `zones` modules with
 **no engine, schema or check-rule change**. Confirmed end-to-end:
 
@@ -32,16 +32,16 @@ paid and audited. All of this is load-bearing and exact:
 
 1. **The acceptance boundary.** Every real milestone is the same typed step —
    `claim → evidence → checks → decision → consequences` — the one place a claim
-   becomes a payable fact or is refused. A КС-2 is a `claim`; an обмер/протокол is
-   `evidence`; the технадзор's signature is a role-bound `decision`.
+   becomes a payable fact or is refused. A KS-2 (work-acceptance act) is a `claim`; a survey/report is
+   `evidence`; the technical supervision (technadzor) signature is a role-bound `decision`.
 2. **Claim vs. reality, metrology-honest.** `cross_check` measures the contractor's
    claim against the **surveyed reference** (VIM §2.16), with an absolute floor and
    the survey's expanded uncertainty `U` (GUM). Money is paid on the **accepted**
    quantity (`acceptedValues → surveyed → claim`), never the asserted one — the
-   обмер-vs-КС-2 argument made structural.
+   survey-vs-KS-2 argument made structural.
 3. **Money is real.** Unit rate × accepted quantity, integer minor units, 5%
    guarantee retention (capped per acceptance), 20% VAT as a memo excluded from
-   earned value, payment terms → due dates. It rolls up into 22 monthly **КС-3**
+   earned value, payment terms → due dates. It rolls up into 22 monthly **KS-3** (cost/payment certificate)
    certificates with advance recovery and a retention reserve.
 4. **Process causality.** `right_to_proceed` chains the dependency graph —
    excavation unlocks the raft, the raft the frame, frame→envelope→MEP→fit-out per
@@ -56,8 +56,8 @@ paid and audited. All of this is load-bearing and exact:
    on-time arrival dates), so the 51 disputed reworks surface as **SPI dipping to
    ~0.98 and recovering** — not a flat 1.00. AC is **illustrative** (actual
    contractor cost is the one figure the engine does not own; here EV inflated by a
-   fixed overrun). The design fee (ПИР) and the advance are pre-/non-construction
-   lumps kept out of КС-3 earned value and BAC, so EV never exceeds the contract.
+   fixed overrun). The design fee (design & survey works) and the advance are pre-/non-construction
+   lumps kept out of KS-3 earned value and BAC, so EV never exceeds the contract.
 7. **Cross-domain, one place.** A facilities fire-safety acceptance anchors to the
    same bay as the construction work — different domain, same zone.
 
@@ -65,20 +65,20 @@ paid and audited. All of this is load-bearing and exact:
 
 Stated plainly, so the claim is not oversold:
 
-- **Geometry is axis-aligned boxes, not BIM/IFC.** The benched котлован is a few
+- **Geometry is axis-aligned boxes, not BIM/IFC.** The benched excavation pit is a few
   stacked translucent boxes; the raft and roof are slabs. There is **no FEA, no
   structural/thermal/clash analysis**. Concrete strength enters only as a
-  *documentary* cross-check (the 28-day протокол), not a simulation. The pit
-  *volume* that drives payment comes from the обмер, so the box approximation never
+  *documentary* cross-check (the 28-day report), not a simulation. The pit
+  *volume* that drives payment comes from the survey, so the box approximation never
   touches the money.
-- **The КС-3 rollup layer is non-engine, by design.** Period assembly, advance
-  recovery (зачёт аванса), the retention reserve and the 50/50 release split live
+- **The KS-3 rollup layer is non-engine, by design.** Period assembly, advance
+  recovery (advance offset), the retention reserve and the 50/50 release split live
   in the simulator's rollup, *aggregating* engine money-effects — never recomputing
   per-fact money. This keeps earned value clean (SPEC §6).
 - **`retentionCap` is per-acceptance, not contract-cumulative** — that is the
   engine's semantics; a contract-wide ceiling is a rollup concern, flagged, not
   patched into the engine. (At this demo's scale the €25 000 cap never actually
-  binds — the largest single retention is the котлован's €13 997 — so it is a
+  binds — the largest single retention is the excavation pit's €13 997 — so it is a
   semantic guard here, not a live constraint.)
 - **Magnitudes are illustrative.** The unit rates match the repo exactly (raft €85,
   fit-out €60); the per-bay quantities are modest, so the headline €4 M is smaller
@@ -96,7 +96,7 @@ The gaps above are the roadmap, not blockers:
 - **As-built reality** — replace surveyed numbers with field-captured LiDAR/IFC, so
   "claim vs. reality" becomes literal geometry. The foundational design already
   exists: [`docs/architecture/spatial-evidence-and-ar.md`](architecture/spatial-evidence-and-ar.md).
-- **Real КС-2/КС-3 PDFs** generated from the folded `attachments` / `certificate`.
+- **Real KS-2/KS-3 PDFs** generated from the folded `attachments` / `certificate`.
 - **Authority over the wire** — the engine already binds the reviewer role to an
   OAuth scope ([`docs/MCP.md`](MCP.md)); here the simulator folds directly.
 - **Durable execution** — embed the fold as a deterministic step in Temporal /
@@ -105,8 +105,8 @@ The gaps above are the roadmap, not blockers:
 ## Bottom line
 
 A real e2e construction — from project and pit to finishing and payments, with the
-real Russian act flow (КС-2/КС-3, АОСР, обмер, протоколы, ЗОС, акт ввода,
-гарантийное удержание) between the real roles — **is** faithfully representable as
+real Russian act flow (KS-2/KS-3, AOSR, survey, reports, ZOS, commissioning act,
+guarantee retention) between the real roles — **is** faithfully representable as
 Open Gates Acceptance Acts on one shared 3D model, driven entirely by the
 unchanged engine. The thing the engine reproduces "in full" is the operation's
 **acceptance physics**: who accepts what, against which reality, with which

@@ -2,7 +2,7 @@
   "id": "construction.work-volume-acceptance",
   "name": "Acceptance of executed work volume",
   "domain": "construction",
-  "description": "A contractor reports a completed work volume for a billing period. Technical supervision (технадзор) cross-checks it against an independent as-built survey and accepts a quantity, which becomes earned value on the КС-3 payment certificate, less guarantee retention.",
+  "description": "A contractor reports a completed work volume for a billing period. Technical supervision (technadzor) cross-checks it against an independent as-built survey and accepts a quantity, which becomes earned value on the KS-3 payment certificate, less guarantee retention.",
   "claim": {
     "type": "work_volume_completed",
     "fields": [
@@ -12,11 +12,11 @@
     ]
   },
   "evidence": [
-    { "kind": "executive_survey", "required": true, "description": "Обмерная ведомость / executive geodetic survey — the measured executed volume. Drives payment." },
-    { "kind": "concrete_strength_protocol", "required": true, "description": "Протокол испытаний бетона (28 сут.) — 28-day compressive-strength lab report for the grade." },
-    { "kind": "works_log", "required": true, "description": "Общий журнал работ — daily works log." },
-    { "kind": "aosr_ref", "required": true, "description": "Reference to the signed АОСР (hidden-works act) for the rebar/formwork covered by this pour." },
-    { "kind": "delivery_notes", "required": false, "description": "ТТН на бетонную смесь — concrete delivery notes (supply side; proves material arrived, not that work was executed)." }
+    { "kind": "executive_survey", "required": true, "description": "Survey sheet / executive geodetic survey — the measured executed volume. Drives payment." },
+    { "kind": "concrete_strength_protocol", "required": true, "description": "28-day concrete strength test report — 28-day compressive-strength lab report for the grade." },
+    { "kind": "works_log", "required": true, "description": "General works log — daily works log." },
+    { "kind": "aosr_ref", "required": true, "description": "Reference to the signed AOSR (hidden-works act) for the rebar/formwork covered by this pour." },
+    { "kind": "delivery_notes", "required": false, "description": "Delivery note for the concrete mix — concrete delivery notes (supply side; proves material arrived, not that work was executed)." }
   ],
   "checks": [
     {
@@ -51,7 +51,7 @@
   ],
   "reviewer": {
     "role": "technical_supervisor",
-    "description": "Технадзор / customer representative who accepts responsibility for the acceptance."
+    "description": "Tech supervision / customer representative who accepts responsibility for the acceptance."
   },
   "decisions": ["accepted", "accepted_with_exceptions", "rejected", "returned_for_rework"],
   "consequences": [
@@ -67,9 +67,9 @@
       "retentionCap": 25000,
       "vatRate": 0.2,
       "paymentTermsDays": 30,
-      "estimateLine": "ФЕР06-01-001-01",
+      "estimateLine": "FER06-01-001-01",
       "contractRef": "BOQ 3.2 'C25/30 foundation concrete' @ EUR 85.00/m³",
-      "description": "КС-3 payment certificate: accepted volume × contract unit rate, less 5% guarantee retention (гарантийное удержание)."
+      "description": "KS-3 payment certificate: accepted volume × contract unit rate, less 5% guarantee retention."
     },
     {
       "id": "unlock-closeout",

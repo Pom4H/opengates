@@ -44,10 +44,10 @@ node viz/model/generate.ts            # default snapshot (p=0.62)
 node viz/model/generate.ts --p=0.85   # further along
 ```
 
-The canonical model is a mid-rise: a benched **котлован**, a **фундаментная
-плита**, 2 basements (`F91`/`F92`), 14 storeys and a roof — 389 zones, with
+The canonical model is a mid-rise: a benched **excavation pit**, a **foundation
+raft**, 2 basements (`F91`/`F92`), 14 storeys and a roof — 389 zones, with
 site/building scopes (`SITE`, `BLDG-L00`, `BLDG-R01`). For the **full end-to-end
-project** (design → котлован → … → payments) folded through the engine and shown
+project** (design → excavation pit → … → payments) folded through the engine and shown
 in the shared control surface, see
 [`examples/construction/e2e/`](../../../examples/construction/e2e/) — run
 `node examples/construction/e2e/drive.ts`, then open `/viz/viewer/control/`.

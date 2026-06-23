@@ -3,217 +3,217 @@
     {
       "key": "contractor",
       "actor": "contractor:alfa-stroy",
-      "name_ru": "Генподрядчик «Альфа-Строй»",
-      "short": "Прораб / подрядчик",
-      "responsibility": "Выполняет работы, подаёт КС-2 (claim) и исполнительную документацию.",
+      "name_ru": "General contractor Alfa-Stroy",
+      "short": "Foreman / contractor",
+      "responsibility": "Performs the works, submits KS-2 (a work-acceptance act) (claim) and the as-built dossier.",
       "lens": true,
       "color": "#f5a524"
     },
     {
       "key": "technical_supervisor",
       "actor": "supervisor:ivanov",
-      "name_ru": "Технадзор заказчика",
-      "short": "Технадзор",
-      "responsibility": "Сверяет заявленный объём с обмером и принимает (decision) системы и объёмы.",
+      "name_ru": "Client's technical supervision",
+      "short": "Tech supervision",
+      "responsibility": "Reconciles the claimed quantity against the survey and accepts (decision) systems and quantities.",
       "lens": true,
       "color": "#34d399"
     },
     {
       "key": "client_technical_customer",
       "actor": "client:technical-customer",
-      "name_ru": "Заказчик / технический заказчик",
-      "short": "Застройщик",
-      "responsibility": "Принимает проект, аванс, сдачу-приёмку; держит и возвращает удержание; платит по КС-3.",
+      "name_ru": "Client / technical customer",
+      "short": "Developer",
+      "responsibility": "Accepts the design, advance, handover; holds and releases the retention; pays against KS-3 (a cost/payment certificate).",
       "lens": true,
       "color": "#a78bfa"
     },
     {
       "key": "surveyor",
       "actor": "surveyor:geo-point",
-      "name_ru": "Геодезист «Гео-Поинт»",
-      "short": "Геодезист",
-      "responsibility": "Делает исполнительную съёмку/обмер — доверенную опорную величину для cross_check.",
+      "name_ru": "Surveyor Geo-Point",
+      "short": "Surveyor",
+      "responsibility": "Performs the as-built survey/survey — the trusted reference value for cross_check.",
       "lens": true,
       "color": "#7fd4ff"
     },
     {
       "key": "lab",
       "actor": "lab:stroylab",
-      "name_ru": "Строительная лаборатория «СтройЛаб»",
-      "short": "Лаборатория",
-      "responsibility": "Выдаёт протоколы (бетон 28 сут, опрессовка, ЭИ) — основания для приёмки.",
+      "name_ru": "Construction laboratory StroyLab",
+      "short": "Lab",
+      "responsibility": "Issues reports (28-day concrete strength test report, pressure test, electrical-measurement report) — grounds for acceptance.",
       "lens": true,
       "color": "#c084fc"
     },
     {
       "key": "construction_control",
       "actor": "control:stroycontrol",
-      "name_ru": "Строительный контроль (стройконтроль)",
-      "short": "Стройконтроль",
-      "responsibility": "Освидетельствует скрытые работы (АОСР) до закрытия конструкций.",
+      "name_ru": "Construction control (StroyControl)",
+      "short": "StroyControl",
+      "responsibility": "Inspects hidden works (AOSR (hidden-works act)) before structures are closed.",
       "lens": false,
       "color": "#94a3b8"
     },
     {
       "key": "fire_safety_officer",
       "actor": "fire:officer-petrov",
-      "name_ru": "Инспектор пожарной безопасности",
-      "short": "Пожнадзор",
-      "responsibility": "Принимает противопожарные системы зоны; открывает право на эксплуатацию.",
+      "name_ru": "Fire-safety inspector",
+      "short": "Fire-safety inspector",
+      "responsibility": "Accepts a zone's fire-protection systems; unlocks the right to occupancy.",
       "lens": false,
       "color": "#f87171"
     },
     {
       "key": "expertise_authority",
       "actor": "authority:glavgosexpertiza",
-      "name_ru": "Госстройнадзор / экспертиза",
-      "short": "Госстройнадзор",
-      "responsibility": "Выдаёт заключение экспертизы, ЗОС и акт ввода (как evidence, не решает gate).",
+      "name_ru": "State construction supervision / expert review",
+      "short": "State construction supervision",
+      "responsibility": "Issues the expert-review conclusion, ZOS (compliance conclusion) and commissioning act / occupancy permit (as evidence, does not decide the gate).",
       "lens": false,
       "color": "#fbbf24"
     },
     {
       "key": "guarantor_bank",
       "actor": "bank:guarantor",
-      "name_ru": "Банк-гарант",
-      "short": "Банк",
-      "responsibility": "Выдаёт банковскую гарантию возврата аванса (evidence).",
+      "name_ru": "Guarantor bank",
+      "short": "Bank",
+      "responsibility": "Issues the advance-recovery bank guarantee (evidence).",
       "lens": false,
       "color": "#64748b"
     }
   ],
   "acts": [
     {
-      "code": "РАЗР.НА СТР.",
-      "name_ru": "Разрешение на строительство + заключение экспертизы",
+      "code": "CONSTR.PERMIT",
+      "name_ru": "Construction permit + expert-review conclusion",
       "from": "expertise_authority",
       "to": "client_technical_customer",
       "phase": "design",
       "maps_to": "evidence: construction_permit + expertise_conclusion"
     },
     {
-      "code": "БАНК.ГАРАНТИЯ",
-      "name_ru": "Банковская гарантия возврата аванса",
+      "code": "BANK.GUARANTEE",
+      "name_ru": "Advance-recovery bank guarantee",
       "from": "guarantor_bank",
       "to": "client_technical_customer",
       "phase": "advance",
       "maps_to": "evidence: advance_bank_guarantee"
     },
     {
-      "code": "АКТ ГЕОД.РАЗБИВКИ",
-      "name_ru": "Акт геодезической разбивочной основы (вынос осей)",
+      "code": "GEODETIC SET-OUT ACT",
+      "name_ru": "Geodetic set-out act (axis layout)",
       "from": "surveyor",
       "to": "technical_supervisor",
       "phase": "excavation",
       "maps_to": "evidence: geodetic_layout_act"
     },
     {
-      "code": "ИСПОЛН.СЪЁМКА",
-      "name_ru": "Исполнительная геодезическая съёмка / обмер",
+      "code": "AS-BUILT SURVEY",
+      "name_ru": "As-built survey / survey",
       "from": "surveyor",
       "to": "technical_supervisor",
       "phase": "all",
       "maps_to": "evidence: executive_survey (cross_check reference, carries U,k)"
     },
     {
-      "code": "АОСР",
-      "name_ru": "Акт освидетельствования скрытых работ",
+      "code": "AOSR",
+      "name_ru": "Hidden-works act (AOSR)",
       "from": "construction_control",
       "to": "contractor",
       "phase": "foundation/frame",
       "maps_to": "decision on hidden-works → right_to_proceed; later referenced as aosr_ref"
     },
     {
-      "code": "ПРОТ.БЕТОН.28",
-      "name_ru": "Протокол испытаний бетона 28 сут.",
+      "code": "CONCRETE.PROT.28",
+      "name_ru": "28-day concrete strength test report",
       "from": "lab",
       "to": "technical_supervisor",
       "phase": "foundation/frame",
       "maps_to": "evidence: concrete_strength_protocol"
     },
     {
-      "code": "АООК",
-      "name_ru": "Акт освидетельствования ответственных конструкций",
+      "code": "AOOK",
+      "name_ru": "Responsible-structures act (AOOK)",
       "from": "construction_control",
       "to": "client_technical_customer",
       "phase": "frame",
       "maps_to": "evidence: inspection (responsible structures)"
     },
     {
-      "code": "КС-2",
-      "name_ru": "Акт о приёмке выполненных работ (КС-2)",
+      "code": "KS-2",
+      "name_ru": "Work-acceptance act (KS-2)",
       "from": "contractor",
       "to": "technical_supervisor",
       "phase": "all",
       "maps_to": "claim.submitted; reconciled at decision with acceptedValues"
     },
     {
-      "code": "КС-3",
-      "name_ru": "Справка о стоимости выполненных работ (КС-3)",
+      "code": "KS-3",
+      "name_ru": "Cost/payment certificate (KS-3)",
       "from": "contractor",
       "to": "client_technical_customer",
       "phase": "all",
       "maps_to": "decision: money consequence (net certified on accepted quantity)"
     },
     {
-      "code": "АКТ ОПРЕССОВКИ",
-      "name_ru": "Акт опрессовки / гидравлических испытаний",
+      "code": "PRESSURE TEST ACT",
+      "name_ru": "Pressure test act",
       "from": "lab",
       "to": "technical_supervisor",
       "phase": "mep",
       "maps_to": "evidence: pressure_test_protocol"
     },
     {
-      "code": "ПРОТ.ЭИ",
-      "name_ru": "Протокол электроизмерений (ЭИ)",
+      "code": "PROT.EI",
+      "name_ru": "Electrical-measurement report (EI)",
       "from": "lab",
       "to": "technical_supervisor",
       "phase": "mep",
       "maps_to": "evidence: lab_protocol"
     },
     {
-      "code": "ВЕД.ЗАМЕЧАНИЙ",
-      "name_ru": "Ведомость замечаний / дефектная ведомость",
+      "code": "PUNCH LIST",
+      "name_ru": "Punch list / defects list",
       "from": "technical_supervisor",
       "to": "contractor",
       "phase": "fitout/handover",
       "maps_to": "evidence: defects_list → accepted_with_exceptions"
     },
     {
-      "code": "ПРОТ.АПС/СОУЭ",
-      "name_ru": "Протокол испытаний АПС/СОУЭ/дымоудаления",
+      "code": "PROT.FIRE ALARM/WARNING",
+      "name_ru": "Fire alarm / warning system / smoke control test report",
       "from": "lab",
       "to": "fire_safety_officer",
       "phase": "fire-safety",
       "maps_to": "evidence: inspection_report"
     },
     {
-      "code": "ЗОС",
-      "name_ru": "Заключение о соответствии (ЗОС)",
+      "code": "ZOS",
+      "name_ru": "Compliance conclusion (ZOS)",
       "from": "expertise_authority",
       "to": "client_technical_customer",
       "phase": "handover",
       "maps_to": "evidence: zos"
     },
     {
-      "code": "АКТ ВВОДА",
-      "name_ru": "Разрешение / акт ввода в эксплуатацию",
+      "code": "COMMISSIONING ACT",
+      "name_ru": "Commissioning act / occupancy permit",
       "from": "expertise_authority",
       "to": "client_technical_customer",
       "phase": "handover",
       "maps_to": "evidence: commissioning_act"
     },
     {
-      "code": "ИСПОЛН.ДОК.",
-      "name_ru": "Исполнительная документация (комплект)",
+      "code": "AS-BUILT DOSSIER",
+      "name_ru": "As-built dossier (set)",
       "from": "contractor",
       "to": "client_technical_customer",
       "phase": "handover",
       "maps_to": "evidence: as_built_dossier"
     },
     {
-      "code": "АКТ ВОЗВРАТА",
-      "name_ru": "Возврат гарантийного удержания",
+      "code": "RETENTION RELEASE ACT",
+      "name_ru": "Guarantee retention release",
       "from": "client_technical_customer",
       "to": "contractor",
       "phase": "release",
@@ -221,12 +221,12 @@
     }
   ],
   "object": {
-    "name": "ЖК «Открытые Ворота», корпус 1",
+    "name": "«Open Gates» residential complex, Block 1",
     "name_en": "Mixed-use mid-rise — Block 1",
-    "address": "г. Москва, Проектируемый пр-д, уч. 1",
-    "developer": "Заказчик / технический заказчик",
-    "contractor": "Генподрядчик «Альфа-Строй»",
-    "description": "Монолитный каркасный корпус: котлован −9.0 м, фундаментная плита 1.2 м, 2 подземных этажа, 14 надземных этажей, кровля. 6×4 сетка несущих осей (бай 6×6 м).",
+    "address": "Moscow, Designed Drive, plot 1",
+    "developer": "Client / technical customer",
+    "contractor": "General contractor Alfa-Stroy",
+    "description": "Monolithic frame block: excavation pit −9.0 m, foundation raft 1.2 m, 2 underground floors, 14 above-ground floors, roof. 6×4 grid of load-bearing axes (bay 6×6 m).",
     "zone": "BLDG"
   }
 }

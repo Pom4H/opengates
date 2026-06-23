@@ -2,7 +2,7 @@
   "id": "construction.design-permit-acceptance",
   "name": "Design documentation, expertise & construction permit",
   "domain": "construction",
-  "description": "Проектная документация (стадия П), положительное заключение экспертизы и разрешение на строительство (ст.51 ГрК РФ). The technical customer accepts the design-and-permit milestone; the fixed design fee is certified and the excavation phase is unlocked. Building-level scope (zone=BLDG).",
+  "description": "Design documentation (stage P), positive expert review conclusion and construction permit (Art.51 of the Town Planning Code of the Russian Federation). The technical customer accepts the design-and-permit milestone; the fixed design fee is certified and the excavation phase is unlocked. Building-level scope (zone=BLDG).",
   "claim": {
     "type": "design_ready_for_construction",
     "fields": [
@@ -13,10 +13,10 @@
     ]
   },
   "evidence": [
-    { "kind": "design_documentation", "required": true, "description": "Проектная документация (стадия П, разделы ПОС/КР/АР) — stage-P design set lodged for expert review." },
-    { "kind": "expertise_conclusion", "required": true, "description": "Положительное заключение экспертизы (ГГЭ / негос. экспертиза) — the legal precondition for the permit." },
-    { "kind": "construction_permit", "required": true, "description": "Разрешение на строительство (ст.51 ГрК РФ) — issued by the building authority; carries permit_no and validity." },
-    { "kind": "gpzu", "required": false, "description": "Градостроительный план земельного участка (ГПЗУ) — fixes the build envelope." }
+    { "kind": "design_documentation", "required": true, "description": "Design documentation (stage P, sections POS/KR/AR) — stage-P design set lodged for expert review." },
+    { "kind": "expertise_conclusion", "required": true, "description": "Positive expert review conclusion (Main State Expertise / non-state expert review) — the legal precondition for the permit." },
+    { "kind": "construction_permit", "required": true, "description": "Construction permit (Art.51 of the Town Planning Code of the Russian Federation) — issued by the building authority; carries permit_no and validity." },
+    { "kind": "gpzu", "required": false, "description": "GPZU (land-use plan) of the land plot — fixes the build envelope." }
   ],
   "checks": [
     { "id": "permit-docs-present", "rule": "required_evidence", "kinds": ["design_documentation", "expertise_conclusion", "construction_permit"], "severity": "blocking", "description": "The permit is not valid without the design set and a positive expertise conclusion." },
@@ -24,10 +24,10 @@
     { "id": "zone-format", "rule": "field_pattern", "field": "zone", "pattern": "^(SITE|BLDG)(-[A-Z][0-9]{2})?$", "severity": "blocking", "description": "Building-level scope id (BLDG)." },
     { "id": "permit-valid-window", "rule": "date_window", "field": "valid_from", "start": "2026-01-01", "severity": "blocking", "description": "Permit validity start is on/after the project baseline." }
   ],
-  "reviewer": { "role": "client_technical_customer", "description": "Заказчик / технический заказчик." },
+  "reviewer": { "role": "client_technical_customer", "description": "Client / technical customer." },
   "decisions": ["accepted", "accepted_with_exceptions", "rejected", "returned_for_rework"],
   "consequences": [
-    { "id": "design-fee", "effect": "money", "on": ["accepted", "accepted_with_exceptions"], "basis": "fixed", "amount": 480000, "currency": "EUR", "vatRate": 0.2, "paymentTermsDays": 30, "estimateLine": "ПИР", "contractRef": "BOQ 1.1 'Проектная документация + РД + госэкспертиза'", "description": "Design milestone paid in full (lump), no retention." },
+    { "id": "design-fee", "effect": "money", "on": ["accepted", "accepted_with_exceptions"], "basis": "fixed", "amount": 480000, "currency": "EUR", "vatRate": 0.2, "paymentTermsDays": 30, "estimateLine": "Design & survey works", "contractRef": "BOQ 1.1 'Design documentation + working documentation + state expert review'", "description": "Design milestone paid in full (lump), no retention." },
     { "id": "unlock-excavation", "effect": "right_to_proceed", "on": ["accepted"], "unlocks": "site-mobilization-and-excavation", "description": "Releases the excavation phase." },
     { "id": "permit-liability", "effect": "risk", "on": ["accepted", "accepted_with_exceptions"], "assignedTo": "client_technical_customer", "description": "The technical customer owns permit validity." },
     { "id": "label", "effect": "dataset_label", "on": ["accepted", "accepted_with_exceptions", "rejected", "returned_for_rework"], "dataset": "construction.design_permit" }

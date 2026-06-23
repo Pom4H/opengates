@@ -1,5 +1,5 @@
 {
-  "name": "14-storey block · 6×4 grid · 2 basements + котлован + roof · parallel systems",
+  "name": "14-storey block · 6×4 grid · 2 basements + excavation pit + roof · parallel systems",
   "units": "m",
   "grid": {
     "nx": 6,

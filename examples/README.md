@@ -15,7 +15,7 @@ someone turns them into a gate.
 | [construction](construction/) | work-volume acceptance | contractor claims 120 m³; supervision surveys 117 | reference survey + tolerance + measurement uncertainty |
 | [logistics](logistics/) | delivery acceptance | carrier claims on-time delivery; it arrived a day late | POD + a delivery-window check |
 
-Construction also carries a second gate — [hidden-works (АОСР)](construction/hidden-works/) —
+Construction also carries a second gate — [hidden-works (AOSR)](construction/hidden-works/) —
 whose value is a *temporal* lock: the act must be signed before the work is covered.
 
 And [`construction/systems/`](construction/systems/) accepts four parallel systems

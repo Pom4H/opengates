@@ -51,7 +51,7 @@ The accepted case from [`examples/construction/scenario.accept.json`](examples/c
   "@type": "prov:Bundle",
   "@graph": [
     { "@id": "og:claim/excavation-117", "@type": "prov:Entity",
-      "og:quantity": "120 m3", "og:rate": "85 EUR/m3", "og:estimateLine": "ФЕР06-01-001-01" },
+      "og:quantity": "120 m3", "og:rate": "85 EUR/m3", "og:estimateLine": "FER06-01-001-01" },
     { "@id": "og:agent/surveyor", "@type": "prov:Agent",
       "og:role": "surveyor", "og:instrument": "Leica TS16", "og:calibration": "on-file" },
     { "@id": "og:agent/supervisor", "@type": "prov:Agent", "og:role": "supervisor" },

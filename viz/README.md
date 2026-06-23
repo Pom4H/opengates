@@ -10,8 +10,8 @@ block (*section × row × floor*) of a building.
 ## Grid of blocks, diagonal build, parallel systems
 
 The building is a **grid** — `nx` columns (X) × `nz` rows (Z) × `floors`, over
-`basements` below-grade levels, with a benched **котлован**, a **фундаментная
-плита** and a roof. Each block on each level is one zone (e.g. `B2-F03` = column
+`basements` below-grade levels, with a benched **excavation pit**, a **foundation
+raft** and a roof. Each block on each level is one zone (e.g. `B2-F03` = column
 B, row 2, floor 3; `B2-F91` = the same bay on basement −1). Site- and
 building-level scopes (`SITE`, `BLDG-L00` raft, `BLDG-R01` roof) anchor the acts
 that aren't per-bay. The canonical object is a 6×4 grid, 14 storeys + 2
@@ -91,11 +91,11 @@ python3 -m http.server 8099      # from the repo root
 ## End-to-end control surface
 
 The same `building.json` drives a full-lifecycle **operational cockpit** every
-role shares — the 3D object (котлован → плита → basements → storeys → roof)
+role shares — the 3D object (excavation pit → raft → basements → storeys → roof)
 coloured by what's **accepted** over a **timeline scrubber**, a **role lens**, a
-**КС-3 / EVM** money dashboard, a click-a-zone act panel and a live acts feed.
-A deterministic simulator folds the whole project (design → котлован → каркас →
-отделка → сдача → оплаты, ~1 560 acceptance cases) through the **unchanged**
+**KS-3 / EVM** money dashboard, a click-a-zone act panel and a live acts feed.
+A deterministic simulator folds the whole project (design → excavation pit → frame →
+fit-out → handover → payments, ~1 560 acceptance cases) through the **unchanged**
 engine and emits the data it reads:
 
 ```bash

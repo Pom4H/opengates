@@ -20,7 +20,7 @@
   "periods": [
     {
       "periodLabel": "2026-02",
-      "ks3Id": "КС-3 2026-02",
+      "ks3Id": "KS-3 2026-02",
       "lines": 1,
       "gross": 279936,
       "certifiedNet": 265939.2,
@@ -32,7 +32,7 @@
     },
     {
       "periodLabel": "2026-03",
-      "ks3Id": "КС-3 2026-03",
+      "ks3Id": "KS-3 2026-03",
       "lines": 11,
       "gross": 101568,
       "certifiedNet": 96489.6,
@@ -44,7 +44,7 @@
     },
     {
       "periodLabel": "2026-04",
-      "ks3Id": "КС-3 2026-04",
+      "ks3Id": "KS-3 2026-04",
       "lines": 31,
       "gross": 44159,
       "certifiedNet": 41951.05,
@@ -56,7 +56,7 @@
     },
     {
       "periodLabel": "2026-05",
-      "ks3Id": "КС-3 2026-05",
+      "ks3Id": "KS-3 2026-05",
       "lines": 52,
       "gross": 88961,
       "certifiedNet": 84512.95,
@@ -68,7 +68,7 @@
     },
     {
       "periodLabel": "2026-06",
-      "ks3Id": "КС-3 2026-06",
+      "ks3Id": "KS-3 2026-06",
       "lines": 86,
       "gross": 199906,
       "certifiedNet": 189910.69,
@@ -80,7 +80,7 @@
     },
     {
       "periodLabel": "2026-07",
-      "ks3Id": "КС-3 2026-07",
+      "ks3Id": "KS-3 2026-07",
       "lines": 110,
       "gross": 269033.5,
       "certifiedNet": 255581.81,
@@ -92,7 +92,7 @@
     },
     {
       "periodLabel": "2026-08",
-      "ks3Id": "КС-3 2026-08",
+      "ks3Id": "KS-3 2026-08",
       "lines": 110,
       "gross": 266905,
       "certifiedNet": 253559.72,
@@ -104,7 +104,7 @@
     },
     {
       "periodLabel": "2026-09",
-      "ks3Id": "КС-3 2026-09",
+      "ks3Id": "KS-3 2026-09",
       "lines": 100,
       "gross": 237835.5,
       "certifiedNet": 225943.7,
@@ -116,7 +116,7 @@
     },
     {
       "periodLabel": "2026-10",
-      "ks3Id": "КС-3 2026-10",
+      "ks3Id": "KS-3 2026-10",
       "lines": 118,
       "gross": 282014,
       "certifiedNet": 267913.28,
@@ -128,7 +128,7 @@
     },
     {
       "periodLabel": "2026-11",
-      "ks3Id": "КС-3 2026-11",
+      "ks3Id": "KS-3 2026-11",
       "lines": 102,
       "gross": 249678,
       "certifiedNet": 237194.08,
@@ -140,7 +140,7 @@
     },
     {
       "periodLabel": "2026-12",
-      "ks3Id": "КС-3 2026-12",
+      "ks3Id": "KS-3 2026-12",
       "lines": 106,
       "gross": 252384,
       "certifiedNet": 239764.78,
@@ -152,7 +152,7 @@
     },
     {
       "periodLabel": "2027-01",
-      "ks3Id": "КС-3 2027-01",
+      "ks3Id": "KS-3 2027-01",
       "lines": 119,
       "gross": 287240,
       "certifiedNet": 272877.97,
@@ -164,7 +164,7 @@
     },
     {
       "periodLabel": "2027-02",
-      "ks3Id": "КС-3 2027-02",
+      "ks3Id": "KS-3 2027-02",
       "lines": 92,
       "gross": 219543.5,
       "certifiedNet": 208566.31,
@@ -176,7 +176,7 @@
     },
     {
       "periodLabel": "2027-03",
-      "ks3Id": "КС-3 2027-03",
+      "ks3Id": "KS-3 2027-03",
       "lines": 117,
       "gross": 277240.5,
       "certifiedNet": 263378.45,
@@ -188,7 +188,7 @@
     },
     {
       "periodLabel": "2027-04",
-      "ks3Id": "КС-3 2027-04",
+      "ks3Id": "KS-3 2027-04",
       "lines": 102,
       "gross": 243117.5,
       "certifiedNet": 230961.61,
@@ -200,7 +200,7 @@
     },
     {
       "periodLabel": "2027-05",
-      "ks3Id": "КС-3 2027-05",
+      "ks3Id": "KS-3 2027-05",
       "lines": 105,
       "gross": 261819.5,
       "certifiedNet": 248728.49,
@@ -212,7 +212,7 @@
     },
     {
       "periodLabel": "2027-06",
-      "ks3Id": "КС-3 2027-06",
+      "ks3Id": "KS-3 2027-06",
       "lines": 83,
       "gross": 225382.5,
       "certifiedNet": 214113.36,
@@ -224,7 +224,7 @@
     },
     {
       "periodLabel": "2027-07",
-      "ks3Id": "КС-3 2027-07",
+      "ks3Id": "KS-3 2027-07",
       "lines": 59,
       "gross": 171902.5,
       "certifiedNet": 163307.37,
@@ -236,7 +236,7 @@
     },
     {
       "periodLabel": "2027-08",
-      "ks3Id": "КС-3 2027-08",
+      "ks3Id": "KS-3 2027-08",
       "lines": 28,
       "gross": 60078,
       "certifiedNet": 57074.1,
@@ -248,7 +248,7 @@
     },
     {
       "periodLabel": "2027-09",
-      "ks3Id": "КС-3 2027-09",
+      "ks3Id": "KS-3 2027-09",
       "lines": 5,
       "gross": 9690,
       "certifiedNet": 9205.5,
@@ -260,7 +260,7 @@
     },
     {
       "periodLabel": "2027-10",
-      "ks3Id": "КС-3 2027-10",
+      "ks3Id": "KS-3 2027-10",
       "lines": 1,
       "gross": 1938,
       "certifiedNet": 1841.1,

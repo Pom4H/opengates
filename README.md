@@ -103,11 +103,11 @@ facts the engine accepts are the same truth. Worked example:
 python3 -m http.server 8099      # from the repo root, then open /viz/viewer/
 ```
 
-**The whole cycle, end-to-end.** A full real project — design → котлован →
-фундамент → каркас → фасад → инженерка → отделка → сдача → **оплаты** — driven
-through the unchanged engine (~1 560 acceptance acts, real КС-2/КС-3, АОСР, обмер,
-ЗОС) and shown in one shared **control surface**: the 3D object over a timeline
-scrubber, a role lens, a КС-3/EVM money dashboard, and a click-a-zone act panel.
+**The whole cycle, end-to-end.** A full real project — design → excavation pit →
+foundation raft → frame → façade → MEP → fit-out → handover → **payments** — driven
+through the unchanged engine (~1 560 acceptance acts, real KS-2/KS-3, AOSR, survey,
+ZOS) and shown in one shared **control surface**: the 3D object over a timeline
+scrubber, a role lens, a KS-3/EVM money dashboard, and a click-a-zone act panel.
 Walkthrough: [`examples/construction/e2e/`](examples/construction/e2e/) · open
 `/viz/viewer/control/` after `node examples/construction/e2e/drive.ts` · feasibility
 verdict: [`docs/e2e-feasibility.md`](docs/e2e-feasibility.md).
@@ -177,7 +177,7 @@ Conveniences built **on** the Acceptance Act, not part of it:
 | | What | Where |
 |---|------|-------|
 | **Map** | spatial zones — 3D model, zone selector, OBJ, animation | [`viz/`](viz/README.md) |
-| **E2E** | a whole construction project (design → котлован → … → payments) folded through the engine on one shared control surface | [`examples/construction/e2e/`](examples/construction/e2e/) |
+| **E2E** | a whole construction project (design → excavation pit → … → payments) folded through the engine on one shared control surface | [`examples/construction/e2e/`](examples/construction/e2e/) |
 | **Cases** | the most expensive disputed fact, by industry | [`examples/`](examples/) |
 | **AR design** | field-captured (LiDAR) evidence, foundational architecture | [`docs/architecture/`](docs/architecture/spatial-evidence-and-ar.md) |
 

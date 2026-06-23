@@ -2,7 +2,7 @@
   "id": "construction.advance-payment",
   "name": "Advance payment against a bank guarantee",
   "domain": "construction",
-  "description": "Авансовый платёж (15%) под банковскую гарантию возврата аванса. The technical customer accepts the advance request once the guarantor bank's guarantee and the advance invoice are in place; a fixed advance is paid up front and amortized against later КС-3 in the rollup layer (зачёт аванса). Building-level scope (zone=BLDG). The advance amount is supplied at decision time via acceptedValues.advance_base = 15% of contract value.",
+  "description": "Advance payment (15%) against an advance-recovery bank guarantee. The technical customer accepts the advance request once the guarantor bank's guarantee and the advance invoice are in place; a fixed advance is paid up front and amortized against later KS-3 (a cost/payment certificate) in the rollup layer (advance offset). Building-level scope (zone=BLDG). The advance amount is supplied at decision time via acceptedValues.advance_base = 15% of contract value.",
   "claim": {
     "type": "advance_payment_request",
     "fields": [
@@ -12,18 +12,18 @@
     ]
   },
   "evidence": [
-    { "kind": "advance_bank_guarantee", "required": true, "description": "Банковская гарантия возврата аванса — irrevocable advance-recovery guarantee from the guarantor bank." },
-    { "kind": "advance_invoice", "required": true, "description": "Счёт на авансовый платёж — the advance invoice." }
+    { "kind": "advance_bank_guarantee", "required": true, "description": "Advance-recovery bank guarantee — irrevocable advance-recovery guarantee from the guarantor bank." },
+    { "kind": "advance_invoice", "required": true, "description": "Advance-payment invoice — the advance invoice." }
   ],
   "checks": [
     { "id": "guarantee-present", "rule": "required_evidence", "kinds": ["advance_bank_guarantee", "advance_invoice"], "severity": "blocking", "description": "No advance without a valid bank guarantee and an invoice." },
     { "id": "zone-format", "rule": "field_pattern", "field": "zone", "pattern": "^(SITE|BLDG)(-[A-Z][0-9]{2})?$", "severity": "blocking", "description": "Building-level scope id (BLDG)." },
     { "id": "guarantee-window", "rule": "date_window", "field": "guarantee_valid_to", "start": "2026-06-23", "severity": "blocking", "description": "The guarantee must still be valid." }
   ],
-  "reviewer": { "role": "client_technical_customer", "description": "Заказчик / технический заказчик." },
+  "reviewer": { "role": "client_technical_customer", "description": "Client / technical customer." },
   "decisions": ["accepted", "rejected", "returned_for_rework"],
   "consequences": [
-    { "id": "advance", "effect": "money", "on": ["accepted"], "basis": "accepted_quantity", "quantityField": "advance_base", "unitPrice": 1, "currency": "EUR", "vatRate": 0.2, "paymentTermsDays": 10, "estimateLine": "Аванс 15%", "contractRef": "Договор п.4 'Авансирование'", "description": "Fixed 15% advance paid up front (no retention on the advance); recovered against later КС-3." },
+    { "id": "advance", "effect": "money", "on": ["accepted"], "basis": "accepted_quantity", "quantityField": "advance_base", "unitPrice": 1, "currency": "EUR", "vatRate": 0.2, "paymentTermsDays": 10, "estimateLine": "Advance 15%", "contractRef": "Contract cl.4 'Advance financing'", "description": "Fixed 15% advance paid up front (no retention on the advance); recovered against later KS-3." },
     { "id": "unlock-mobilization", "effect": "right_to_proceed", "on": ["accepted"], "unlocks": "site-mobilization-and-excavation", "description": "Funds mobilization." },
     { "id": "advance-exposure", "effect": "risk", "on": ["accepted"], "assignedTo": "client_technical_customer", "description": "Customer owns advance exposure until recovered." },
     { "id": "label", "effect": "dataset_label", "on": ["accepted", "rejected", "returned_for_rework"], "dataset": "construction.advance_payment" }

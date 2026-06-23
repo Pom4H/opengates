@@ -44,7 +44,7 @@
       "type": "evidence.attached",
       "at": "2026-06-02T11:07:00Z",
       "actor": "contractor:alfa-stroy",
-      "evidence": { "kind": "aosr_ref", "values": { "act": "АОСР-2026-05-014" }, "ref": "aosr/2026-05-014.pdf" }
+      "evidence": { "kind": "aosr_ref", "values": { "act": "AOSR-2026-05-014" }, "ref": "aosr/2026-05-014.pdf" }
     },
     {
       "type": "decision.recorded",
@@ -53,7 +53,7 @@
       "reviewerRole": "technical_supervisor",
       "outcome": "accepted",
       "acceptedValues": { "quantity": 117 },
-      "note": "Обмер: claimed 120 m³, survey 117±4 m³ (k=2); |error|=3 m³ = 2.56% of reference, within the 5% tolerance and within U. Accept 117 m³. КС-3: 117×85 = 9 945 € gross, −5% retention 497.25 € = 9 447.75 € net certified."
+      "note": "Survey: claimed 120 m³, survey 117±4 m³ (k=2); |error|=3 m³ = 2.56% of reference, within the 5% tolerance and within U. Accept 117 m³. KS-3: 117×85 = 9 945 € gross, −5% retention 497.25 € = 9 447.75 € net certified."
     }
   ]
 }

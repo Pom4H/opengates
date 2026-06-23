@@ -1,9 +1,9 @@
 // Open Gates — end-to-end construction project simulator.
 //
 // Drives a WHOLE building through the real, unchanged fold engine: design and
-// permit → advance → котлован → фундаментная плита (АОСР + raft) → 384 bays ×
+// permit → advance → excavation pit → foundation raft (AOSR + raft) → 384 bays ×
 // 4 parallel systems (structure → envelope → MEP → fit-out) → fire-safety →
-// handover (ЗОС + акт ввода) → retention release in two tranches. Every case is
+// handover (ZOS + commissioning act) → retention release in two tranches. Every case is
 // a real Acceptance Act (claim → evidence → decision); money is paid on the
 // ACCEPTED (surveyed) quantity exactly as consequences.ts computes it.
 //
@@ -15,8 +15,8 @@
 // Emits, into viz/model/e2e/, the four files the control-surface viewer reads:
 //   attachments.json  — per-zone works + documents (extended ZoneAttachments)
 //   timeline.json     — every engine event + per-zone accepted-stage history
-//   ledger.json       — КС-3 periods, retention reserve, advance recovery
-//   certificate.json  — EVM (PV/EV/AC, SPI/CPI) + КС-3 line detail
+//   ledger.json       — KS-3 periods, retention reserve, advance recovery
+//   certificate.json  — EVM (PV/EV/AC, SPI/CPI) + KS-3 line detail
 //
 //   node examples/construction/e2e/drive.ts
 
@@ -115,7 +115,7 @@ function build(c: Omit<Case, "events" | "state"> & { raw: any[] }): Case {
 }
 
 // A normal acceptance: contractor claims slightly high, surveyor reads the
-// reference, technadzor accepts on the surveyed value. Rare seeded disputes
+// reference, technical supervision (technadzor) accepts on the surveyed value. Rare seeded disputes
 // (claim far above survey → returned_for_rework → corrected → accepted, with a
 // schedule slip) and punch-lists (accepted_with_exceptions) add realism.
 type SysSpec = {
@@ -163,11 +163,11 @@ function systemCase(s: SysSpec): Case {
       claim(over, sub),
       ...evidence(addDays(sub, 2)),
       { type: "decision.recorded", at: addDays(sub, 6), actor: "supervisor:ivanov", reviewerRole: "technical_supervisor",
-        outcome: "returned_for_rework", note: `Обмер ${survey} против заявленных ${over} ${s.unit} — расхождение вне допуска (>5% / U). Возврат на доработку.` },
+        outcome: "returned_for_rework", note: `Survey ${survey} against claimed ${over} ${s.unit} — discrepancy out of tolerance (>5% / U). Returned for rework.` },
       claim(claimHigh, addDays(sub, 25)),
       ...evidence(addDays(sub, 27)),
       { type: "decision.recorded", at: addDays(sub, 35), actor: "supervisor:ivanov", reviewerRole: "technical_supervisor",
-        outcome: "accepted", acceptedValues: { quantity: survey }, note: `Скорректировано и принято по обмеру ${survey} ${s.unit} (доработка ~1 мес.).` },
+        outcome: "accepted", acceptedValues: { quantity: survey }, note: `Corrected and accepted per survey ${survey} ${s.unit} (rework ~1 month).` },
     ];
   } else {
     const punch = remarks
@@ -179,7 +179,7 @@ function systemCase(s: SysSpec): Case {
       ...punch,
       { type: "decision.recorded", at: addDays(sub, remarks ? 5 : 4), actor: "supervisor:ivanov", reviewerRole: "technical_supervisor",
         outcome: remarks ? "accepted_with_exceptions" : "accepted", acceptedValues: { quantity: survey },
-        note: remarks ? `Принято с замечаниями (ведомость на 3 позиции), к устранению.` : `Принято по обмеру ${survey} ${s.unit}.` },
+        note: remarks ? `Accepted w/ remarks (punch list of 3 items), to be remedied.` : `Accepted per survey ${survey} ${s.unit}.` },
     ];
   }
   return build({ id: `${s.gate.id}#${s.zone}#${s.system}`, gate: s.gate, phase: s.phase, system: s.system, zone: s.zone,
@@ -215,11 +215,11 @@ build({
   plannedAt: project.schedule.preConstruction.design_permit_at, plannedNet: 480000,
   raw: [
     { type: "claim.submitted", at: addDays(project.schedule.preConstruction.design_permit_at, -8), actor: "contractor:alfa-stroy",
-      claim: { type: "design_ready_for_construction", values: { project_stage: "П + Рабочая документация", permit_no: "77-RU-77123000-2026", zone: "BLDG", valid_from: "2026-01-12" } } },
+      claim: { type: "design_ready_for_construction", values: { project_stage: "Design documentation + working documentation", permit_no: "77-RU-77123000-2026", zone: "BLDG", valid_from: "2026-01-12" } } },
     { type: "evidence.attached", at: addDays(project.schedule.preConstruction.design_permit_at, -6), actor: "contractor:alfa-stroy", evidence: { kind: "design_documentation", ref: "pd/PD-2025-corpus1.pdf" } },
     { type: "evidence.attached", at: addDays(project.schedule.preConstruction.design_permit_at, -4), actor: "authority:glavgosexpertiza", evidence: { kind: "expertise_conclusion", ref: "exp/77-1-1-3-2026.pdf" } },
     { type: "evidence.attached", at: addDays(project.schedule.preConstruction.design_permit_at, -2), actor: "authority:glavgosexpertiza", evidence: { kind: "construction_permit", ref: "permit/77-RU-77123000-2026.pdf" } },
-    { type: "decision.recorded", at: project.schedule.preConstruction.design_permit_at, actor: "client:technical-customer", reviewerRole: "client_technical_customer", outcome: "accepted", note: "Проектная документация и разрешение приняты — СМР разрешены." },
+    { type: "decision.recorded", at: project.schedule.preConstruction.design_permit_at, actor: "client:technical-customer", reviewerRole: "client_technical_customer", outcome: "accepted", note: "Design documentation and permit accepted — construction is authorized." },
   ],
 });
 
@@ -229,10 +229,10 @@ build({
   plannedAt: project.schedule.preConstruction.advance_at, plannedNet: advanceBase,
   raw: [
     { type: "claim.submitted", at: addDays(project.schedule.preConstruction.advance_at, -3), actor: "contractor:alfa-stroy",
-      claim: { type: "advance_payment_request", values: { scope: "Авансирование 15% по договору", zone: "BLDG", guarantee_valid_to: "2027-12-31" } } },
+      claim: { type: "advance_payment_request", values: { scope: "15% advance under the contract", zone: "BLDG", guarantee_valid_to: "2027-12-31" } } },
     { type: "evidence.attached", at: addDays(project.schedule.preConstruction.advance_at, -2), actor: "bank:guarantor", evidence: { kind: "advance_bank_guarantee", ref: "bg/BG-2026-0207.pdf" } },
     { type: "evidence.attached", at: addDays(project.schedule.preConstruction.advance_at, -1), actor: "contractor:alfa-stroy", evidence: { kind: "advance_invoice", ref: "inv/AV-2026-001.pdf" } },
-    { type: "decision.recorded", at: project.schedule.preConstruction.advance_at, actor: "client:technical-customer", reviewerRole: "client_technical_customer", outcome: "accepted", acceptedValues: { advance_base: advanceBase }, note: `Аванс 15% (${advanceBase.toLocaleString("ru-RU")} €) под банковскую гарантию.` },
+    { type: "decision.recorded", at: project.schedule.preConstruction.advance_at, actor: "client:technical-customer", reviewerRole: "client_technical_customer", outcome: "accepted", acceptedValues: { advance_base: advanceBase }, note: `Advance 15% (${advanceBase.toLocaleString("ru-RU")} €) under bank guarantee.` },
   ],
 });
 
@@ -244,16 +244,16 @@ build({
     id: GATES.excavation.id, gate: GATES.excavation, phase: "excavation", zone: "SITE",
     plannedAt: addDays(sub, 6), plannedNet: Math.round(pitVol * rate("excavation_earthworks") * 0.95 * 100) / 100,
     raw: [
-      { type: "claim.submitted", at: sub, actor: "contractor:alfa-stroy", claim: { type: "excavation_completed", values: { work_item: "Разработка котлована до −9.0 м", quantity: pitVol + 40, design_elevation: -9.0, zone: "SITE" } } },
+      { type: "claim.submitted", at: sub, actor: "contractor:alfa-stroy", claim: { type: "excavation_completed", values: { work_item: "Excavation pit dig to −9.0 m", quantity: pitVol + 40, design_elevation: -9.0, zone: "SITE" } } },
       { type: "evidence.attached", at: addDays(sub, 2), actor: "surveyor:geo-point", evidence: { kind: "geodetic_layout_act", ref: "geo/layout-axes.pdf" } },
       { type: "evidence.attached", at: addDays(sub, 3), actor: "surveyor:geo-point", evidence: { kind: "executive_survey", values: { quantity: pitVol, U: 60, unit: "m3" }, ref: "geo/pit-as-built.pdf" } },
       { type: "evidence.attached", at: addDays(sub, 4), actor: "lab:stroylab", evidence: { kind: "geotech_report", ref: "geo/soil-acceptance.pdf" } },
-      { type: "decision.recorded", at: addDays(sub, 6), actor: "supervisor:ivanov", reviewerRole: "technical_supervisor", outcome: "accepted", acceptedValues: { quantity: pitVol }, note: `Котлован принят по съёмке ${pitVol} м³, отметка дна −9.0 м.` },
+      { type: "decision.recorded", at: addDays(sub, 6), actor: "supervisor:ivanov", reviewerRole: "technical_supervisor", outcome: "accepted", acceptedValues: { quantity: pitVol }, note: `Excavation pit accepted per survey ${pitVol} m³, bottom elevation −9.0 m.` },
     ],
   });
 }
 
-// 4) FOUNDATION — hidden works (АОСР, BLDG-L00) then raft volume (work-volume gate)
+// 4) FOUNDATION — hidden works (AOSR, BLDG-L00) then raft volume (work-volume gate)
 {
   const fndA = (model.zones as any[]).find((z) => z.id === "BLDG-L00").arrival;
   const sub = arrivalToDate(fndA);
@@ -261,10 +261,10 @@ build({
     id: GATES.hiddenWorks.id + "#raft", gate: GATES.hiddenWorks, phase: "foundation", zone: "BLDG-L00",
     plannedAt: addDays(sub, 2), plannedNet: 0,
     raw: [
-      { type: "claim.submitted", at: sub, actor: "contractor:alfa-stroy", claim: { type: "hidden_work_ready_for_cover", values: { work_item: "Армирование фундаментной плиты A500С", axes: "оси 1–6 / А–Г", ready_at: addDays(sub, 0), zone: "BLDG-L00" } } },
+      { type: "claim.submitted", at: sub, actor: "contractor:alfa-stroy", claim: { type: "hidden_work_ready_for_cover", values: { work_item: "Foundation raft rebar A500C", axes: "axes 1–6 / A–G", ready_at: addDays(sub, 0), zone: "BLDG-L00" } } },
       { type: "evidence.attached", at: addDays(sub, 1), actor: "contractor:alfa-stroy", evidence: { kind: "executive_scheme", ref: "isp/raft-rebar-scheme.pdf" } },
       { type: "evidence.attached", at: addDays(sub, 1), actor: "contractor:alfa-stroy", evidence: { kind: "material_passport", ref: "pass/rebar-A500C.pdf" } },
-      { type: "decision.recorded", at: addDays(sub, 2), actor: "control:stroycontrol", reviewerRole: "construction_control", outcome: "accepted", note: "АОСР: армирование плиты освидетельствовано до бетонирования — разрешено бетонирование." },
+      { type: "decision.recorded", at: addDays(sub, 2), actor: "control:stroycontrol", reviewerRole: "construction_control", outcome: "accepted", note: "AOSR: raft rebar inspected before concreting — concreting authorized." },
     ],
   });
   const rsub = addDays(sub, 6);
@@ -272,12 +272,12 @@ build({
     id: GATES.workVolume.id + "#raft", gate: GATES.workVolume, phase: "foundation", zone: "BLDG-L00",
     plannedAt: addDays(rsub, 10), plannedNet: Math.round(raftVol * rate("foundation_concrete") * 0.95 * 100) / 100,
     raw: [
-      { type: "claim.submitted", at: rsub, actor: "contractor:alfa-stroy", claim: { type: "work_volume_completed", values: { work_item: "Бетон фундаментной плиты C25/30", quantity: round1(raftVol * 1.006), period: "2026-03", zone: "BLDG-L00" } } },
+      { type: "claim.submitted", at: rsub, actor: "contractor:alfa-stroy", claim: { type: "work_volume_completed", values: { work_item: "Foundation raft concrete C25/30", quantity: round1(raftVol * 1.006), period: "2026-03", zone: "BLDG-L00" } } },
       { type: "evidence.attached", at: addDays(rsub, 8), actor: "surveyor:geo-point", evidence: { kind: "executive_survey", values: { quantity: raftVol, U: 12, unit: "m3" }, ref: "geo/raft-as-built.pdf" } },
       { type: "evidence.attached", at: addDays(rsub, 9), actor: "lab:stroylab", evidence: { kind: "concrete_strength_protocol", values: { grade: "C25/30", R28: 32.4 }, ref: "lab/raft-28d.pdf" } },
       { type: "evidence.attached", at: addDays(rsub, 9), actor: "contractor:alfa-stroy", evidence: { kind: "works_log", ref: "log/raft.pdf" } },
       { type: "evidence.attached", at: addDays(rsub, 9), actor: "contractor:alfa-stroy", evidence: { kind: "aosr_ref", ref: "aosr/raft-rebar.pdf" } },
-      { type: "decision.recorded", at: addDays(rsub, 10), actor: "supervisor:ivanov", reviewerRole: "technical_supervisor", outcome: "accepted", acceptedValues: { quantity: raftVol }, note: `Плита принята по обмеру ${raftVol} м³ (C25/30, R28 32.4 МПа).` },
+      { type: "decision.recorded", at: addDays(rsub, 10), actor: "supervisor:ivanov", reviewerRole: "technical_supervisor", outcome: "accepted", acceptedValues: { quantity: raftVol }, note: `Raft accepted per survey ${raftVol} m³ (C25/30, R28 32.4 MPa).` },
     ],
   });
 }
@@ -286,10 +286,10 @@ build({
 const SYSGATE: Record<string, GateDefinition> = { structure: GATES.structure, envelope: GATES.envelope, mep: GATES.mep, fitout: GATES.fitout };
 const RATEKEY: Record<string, string> = { structure: "frame_concrete", envelope: "envelope_facade", mep: "mep_systems", fitout: "fit_out" };
 const WORKITEM: Record<string, (z: any) => string> = {
-  structure: () => "Монолитный каркас: колонны + перекрытие",
-  envelope: (z) => (facesOf(z) > 0 && z.level !== "basement" ? "Навесной фасад + остекление" : "Внутренние ограждающие конструкции / перегородки"),
-  mep: () => "Внутренние инженерные системы (ОВ+ВК+ЭОМ)",
-  fitout: () => "Отделочные работы / чистовая отделка",
+  structure: () => "Monolithic frame: columns + slab",
+  envelope: (z) => (facesOf(z) > 0 && z.level !== "basement" ? "Curtain façade + glazing" : "Internal enclosing structures / partitions"),
+  mep: () => "Internal MEP (engineering systems) (HVAC+plumbing+electrical)",
+  fitout: () => "Fit-out / finishing works",
 };
 const EXTRA: Record<string, (z: any) => any[]> = {
   structure: (z) => [{ kind: "concrete_strength_protocol", values: { grade: "C30/37", R28: 41.2 }, ref: `lab/${z.id}-frame-28d.pdf` }],
@@ -329,9 +329,9 @@ for (const f of levels) {
     id: GATES.fire.id + "#" + z.id, gate: GATES.fire, phase: "fire-safety", zone: z.id,
     plannedAt: addDays(sub, 2), plannedNet: 0,
     raw: [
-      { type: "claim.submitted", at: sub, actor: "contractor:alfa-stroy", claim: { type: "fire_safety_inspection", values: { scope: "АПС / СОУЭ / дымоудаление, этаж", zone: z.id } } },
+      { type: "claim.submitted", at: sub, actor: "contractor:alfa-stroy", claim: { type: "fire_safety_inspection", values: { scope: "fire alarm / warning system / smoke control, floor", zone: z.id } } },
       { type: "evidence.attached", at: addDays(sub, 1), actor: "lab:stroylab", evidence: { kind: "inspection_report", ref: `fire/${z.id}-aps-souet.pdf` } },
-      { type: "decision.recorded", at: addDays(sub, 2), actor: "fire:officer-petrov", reviewerRole: "fire_safety_officer", outcome: "accepted", note: "Противопожарные системы этажа приняты — право на эксплуатацию открыто." },
+      { type: "decision.recorded", at: addDays(sub, 2), actor: "fire:officer-petrov", reviewerRole: "fire_safety_officer", outcome: "accepted", note: "Fire-safety systems of the floor accepted — right to operate is granted." },
     ],
   });
 }
@@ -348,7 +348,7 @@ build({
     { type: "evidence.attached", at: addDays(handoverAt, -5), actor: "authority:glavgosexpertiza", evidence: { kind: "commissioning_act", ref: "vvod/RV-77-2027.pdf" } },
     { type: "evidence.attached", at: addDays(handoverAt, -3), actor: "supervisor:ivanov", evidence: { kind: "defects_list", ref: "punch/final-list.pdf", values: { items: 6 } } },
     { type: "evidence.attached", at: addDays(handoverAt, -2), actor: "contractor:alfa-stroy", evidence: { kind: "as_built_dossier", ref: "isp/as-built-dossier.zip" } },
-    { type: "decision.recorded", at: handoverAt, actor: "client:technical-customer", reviewerRole: "client_technical_customer", outcome: "accepted_with_exceptions", note: "Объект принят в эксплуатацию с устранимыми замечаниями (6 позиций) — возврат удержания запущен." },
+    { type: "decision.recorded", at: handoverAt, actor: "client:technical-customer", reviewerRole: "client_technical_customer", outcome: "accepted_with_exceptions", note: "Object commissioned with remediable remarks (6 items) — retention release initiated." },
   ],
 });
 
@@ -364,8 +364,8 @@ const tranche2 = Math.round((reserve - tranche1) * 100) / 100;
 const t1At = addDays(handoverAt, project.schedule.retentionTranche1LagDays);
 const t2At = addDays(handoverAt, project.schedule.defectsLiabilityDays);
 for (const [tr, amt, at, extra] of [
-  ["Транш 1 — 50% при вводе", tranche1, t1At, [] as any[]],
-  ["Транш 2 — 50% после гарантийного периода (730 дн.)", tranche2, t2At, [{ kind: "defects_liability_clearance", ref: "warranty/clearance.pdf" }]],
+  ["Tranche 1 — 50% at commissioning", tranche1, t1At, [] as any[]],
+  ["Tranche 2 — 50% after defects-liability period (730 days)", tranche2, t2At, [{ kind: "defects_liability_clearance", ref: "warranty/clearance.pdf" }]],
 ] as const) {
   build({
     id: GATES.release.id + "#" + (at === t1At ? "t1" : "t2"), gate: GATES.release, phase: "release", zone: "BLDG",
@@ -374,7 +374,7 @@ for (const [tr, amt, at, extra] of [
       { type: "claim.submitted", at: addDays(at, -3), actor: "contractor:alfa-stroy", claim: { type: "retention_release_request", values: { tranche: tr, system: at === t1At ? "release-t1" : "release-t2", zone: "BLDG", release_date: at.slice(0, 10) } } },
       { type: "evidence.attached", at: addDays(at, -2), actor: "client:technical-customer", evidence: { kind: "handover_ref", ref: "vvod/RV-77-2027.pdf" } },
       ...extra.map((e) => ({ type: "evidence.attached", at: addDays(at, -2), actor: "client:technical-customer", evidence: e })),
-      { type: "decision.recorded", at, actor: "client:technical-customer", reviewerRole: "client_technical_customer", outcome: "accepted", acceptedValues: { release_eur: amt }, note: `${tr}: возврат удержания ${amt.toLocaleString("ru-RU")} €.` },
+      { type: "decision.recorded", at, actor: "client:technical-customer", reviewerRole: "client_technical_customer", outcome: "accepted", acceptedValues: { release_eur: amt }, note: `${tr}: retention release ${amt.toLocaleString("ru-RU")} €.` },
     ],
   });
 }
@@ -471,20 +471,20 @@ for (const z of Object.keys(stageByZone)) {
   let done = 0;
   for (const s of stageByZone[z]) { if (s.system) done = Math.max(done, sysOrder[s.system] ?? done); s.systemsDone = done; }
 }
-// Roof closure is covered under the envelope/handover scope (no separate КС-3
+// Roof closure is covered under the envelope/handover scope (no separate KS-3
 // line); add a visualization-only milestone so the roof rises with the frame.
 const roofAt = iso(Math.max(...cases.filter((c) => c.system === "structure" && c.state.decidedAt).map((c) => Date.parse(c.state.decidedAt!))));
 for (const rid of ["BLDG-R01", "BLDG-R02"]) stageByZone[rid] = [{ at: roofAt, stage: "roof", system: null, phase: "roof", systemsDone: 1 }];
 
 const range = { minAt: tlEvents[0].at, maxAt: tlEvents[tlEvents.length - 1].at };
 
-// --- ledger.json (КС-3 periods, retention reserve, advance recovery) --------
+// --- ledger.json (KS-3 periods, retention reserve, advance recovery) --------
 const period = (at: string) => at.slice(0, 7); // YYYY-MM
 const periodsMap = new Map<string, any>();
 for (const c of cases) {
   const m = moneyEffect(c.state);
   if (!m || !ACCEPTED.includes(c.state.status) || !c.state.decidedAt) continue;
-  if (c.phase === "advance" || c.phase === "release" || c.phase === "design") continue; // design (ПИР) + advance + release are not construction КС-3 earned value
+  if (c.phase === "advance" || c.phase === "release" || c.phase === "design") continue; // design (design & survey works) + advance + release are not construction KS-3 earned value
   const p = period(c.state.decidedAt);
   const e = periodsMap.get(p) ?? { periodLabel: p, certifiedNet: 0, gross: 0, retentionThisPeriod: 0, vatMemo: 0, lines: 0, lastDue: c.state.decidedAt };
   e.certifiedNet += m.net; e.gross += m.gross; e.retentionThisPeriod += m.retention ?? 0; e.vatMemo += m.vat ?? 0; e.lines++;
@@ -496,11 +496,11 @@ const advancePct = smeta.terms.advancePct;
 let advRemaining = advanceBase;
 const periods = [...periodsMap.values()].sort((a, b) => (a.periodLabel < b.periodLabel ? -1 : 1)).map((e) => {
   // Recover the advance against each period's GROSS certified volume (15% of the
-  // КС-2 gross), so the 15%-of-contract advance fully amortizes by completion.
+  // KS-2 gross), so the 15%-of-contract advance fully amortizes by completion.
   const recovery = Math.min(advRemaining, Math.round(e.gross * advancePct * 100) / 100);
   advRemaining = Math.round((advRemaining - recovery) * 100) / 100;
   return {
-    periodLabel: e.periodLabel, ks3Id: "КС-3 " + e.periodLabel, lines: e.lines,
+    periodLabel: e.periodLabel, ks3Id: "KS-3 " + e.periodLabel, lines: e.lines,
     gross: round2(e.gross), certifiedNet: round2(e.certifiedNet), retentionThisPeriod: round2(e.retentionThisPeriod),
     advanceRecovery: recovery, vatMemo: round2(e.vatMemo), netPayment: round2(e.certifiedNet - recovery),
     paymentDueAt: addDays(e.lastDue, 0),
@@ -515,7 +515,7 @@ const ledger = {
   periods,
 };
 
-// --- certificate.json (EVM PV/EV/AC + КС-3 line detail) ---------------------
+// --- certificate.json (EVM PV/EV/AC + KS-3 line detail) ---------------------
 const moneyCases = cases.filter((c) => moneyEffect(c.state) && ACCEPTED.includes(c.state.status) && c.phase !== "advance" && c.phase !== "release" && c.phase !== "design");
 const acwp = 1 + fr.acwpOverrunPct;
 // Sample bi-weekly across the construction span so the dispute-driven schedule
@@ -563,6 +563,6 @@ const disputed = cases.filter((c) => c.state.log.some((l) => l.includes("returne
 const totalNet = round2(moneyCases.reduce((s, c) => s + (moneyEffect(c.state)!.net ?? 0), 0));
 console.log(`E2E fold complete — ${cases.length} acceptance cases (${accepted} accepted), ${disputed} went through dispute/rework.`);
 console.log(`Zones touched: ${Object.keys(byZone).length}. Timeline events: ${tlEvents.length} (${range.minAt.slice(0,10)} → ${range.maxAt.slice(0,10)}).`);
-console.log(`Contract value €${ledger.contractValue.toLocaleString("en-US")} · advance €${advanceBase.toLocaleString("en-US")} · earned value (net КС-3) €${totalNet.toLocaleString("en-US")} · retention reserve €${reserve.toLocaleString("en-US")} (released ${ledger.retention.released}).`);
+console.log(`Contract value €${ledger.contractValue.toLocaleString("en-US")} · advance €${advanceBase.toLocaleString("en-US")} · earned value (net KS-3) €${totalNet.toLocaleString("en-US")} · retention reserve €${reserve.toLocaleString("en-US")} (released ${ledger.retention.released}).`);
 console.log(`Lint: ${issues.length ? issues.length + " issue(s): " + issues.map((i) => i.kind).join(", ") : "ok — every referenced zone exists in the model, no duplicate acceptances"}.`);
 console.log(`Wrote viz/model/e2e/{attachments,timeline,ledger,certificate,roles}.json`);

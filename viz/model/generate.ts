@@ -5,8 +5,8 @@
 // agree.
 //
 // The building is a GRID of blocks: NX columns (X) × NZ rows (Z) × FLOORS, plus
-// a BELOW-GRADE reality — a benched котлован (excavation pit), a фундаментная
-// плита (foundation mat) and two basement levels — and a roof/plant level. A
+// a BELOW-GRADE reality — a benched excavation pit, a foundation raft
+// and two basement levels — and a roof/plant level. A
 // "zone" is one block on one level — the spatial unit a claim is bound to.
 //
 // Construction runs DIAGONALLY and in PARALLEL SYSTEMS. Each system (structure,
@@ -80,8 +80,8 @@ const GLASS_T = 0.14;
 const GRADE = 0;
 const GROUND_SLAB = 0.2; // basement −1 ceiling sits this far below grade
 const BFH = [3.4, 3.6]; // clear heights of B-1, B-2
-const FND_T = 1.2; // фундаментная плита thickness
-const PIT_BENCH = 6; // котлован extends this far beyond the footprint
+const FND_T = 1.2; // foundation raft thickness
+const PIT_BENCH = 6; // excavation pit extends this far beyond the footprint
 const PIT_BOTTOM = -9.0; // working bottom of the pit (below the mat)
 
 const COLS = ["A", "B", "C", "D", "E", "F"];
@@ -94,8 +94,8 @@ const PALETTE = {
   fitout: "#34d399", // 4 — fit-out → accepted
   glazing: "#7fd4ff",
   base: "#202833",
-  excavation: "#6b5a43", // котлован / earth
-  foundation_mat: "#5b6675", // фундаментная плита
+  excavation: "#6b5a43", // excavation pit / earth
+  foundation_mat: "#5b6675", // foundation raft
   roof: "#46566a", // roof / plant
   selected: "#22d3ee",
 };
@@ -212,7 +212,7 @@ function buildModel(p01: number): BuildingModel {
     }
   }
 
-  // --- site / building-level scope zones (anchors for котлован / плита / roof) ---
+  // --- site / building-level scope zones (anchors for excavation pit / raft / roof) ---
   const footMinX = x0g, footMaxX = x0g + totalX;
   const footMinZ = z0g, footMaxZ = z0g + totalZ;
   const siteBox = (inset: number, yb: number, yt: number): Box => ({
@@ -220,7 +220,7 @@ function buildModel(p01: number): BuildingModel {
     max: [footMaxX + inset, yt, footMaxZ + inset],
   });
 
-  // Котлован — benched (wider at top), drawn as the excavated envelope. The pit
+  // Excavation pit — benched (wider at top), drawn as the excavated envelope. The pit
   // is built first of all; its arrival is the earliest in the sweep.
   const pitArrival = MIN_ARRIVAL - FLOOR_STEP;
   zones.push({
@@ -244,7 +244,7 @@ function buildModel(p01: number): BuildingModel {
     scope: "site",
   });
 
-  // Фундаментная плита — the raft slab over the whole footprint.
+  // Foundation raft — the raft slab over the whole footprint.
   const fndArrival = MIN_ARRIVAL - 0.4 * FLOOR_STEP;
   zones.push({
     id: "BLDG-L00",
@@ -302,7 +302,7 @@ function buildModel(p01: number): BuildingModel {
   };
 
   return {
-    name: `${FLOORS}-storey block · ${NX}×${NZ} grid · ${BASEMENTS} basements + котлован + roof · parallel systems`,
+    name: `${FLOORS}-storey block · ${NX}×${NZ} grid · ${BASEMENTS} basements + excavation pit + roof · parallel systems`,
     units: "m",
     grid: { nx: NX, nz: NZ, floors: FLOORS, basements: BASEMENTS },
     block: { w: BW, d: BD, h: FH },
