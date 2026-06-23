@@ -1,0 +1,18 @@
+{
+  "name": "Operational overlay — resources feeding zone A1-F03",
+  "description": "Non-spatial anchors (sources, resources, capital works, account) for the resource-flow view. Zones live in building.json; this overlay references them by id. See docs/architecture/resource-flow-and-domains.md.",
+  "anchors": [
+    { "id": "SUP-rebar", "kind": "actor", "domain": "logistics", "label": "Rebar supplier" },
+    { "id": "YARD-crane", "kind": "actor", "domain": "logistics", "label": "Crane rental yard" },
+    { "id": "DEPOT-labor", "kind": "actor", "domain": "logistics", "label": "Crew depot" },
+
+    { "id": "MAT-rebar", "kind": "resource", "resourceKind": "material", "unit": "t", "label": "Rebar" },
+    { "id": "CREW-concrete", "kind": "resource", "resourceKind": "labor", "unit": "man-h", "label": "Concrete crew" },
+    { "id": "EQ-crane-1", "kind": "resource", "resourceKind": "equipment", "unit": "machine-h", "label": "Tower crane #1" },
+
+    { "id": "SYS-A1-F03-structure", "kind": "capital_work", "domain": "construction", "label": "Structure · A1-F03" },
+    { "id": "A1-F03", "kind": "zone", "domain": "construction", "label": "Zone A1-F03" },
+
+    { "id": "ACC-project", "kind": "account", "domain": "finance", "label": "Project account" }
+  ]
+}

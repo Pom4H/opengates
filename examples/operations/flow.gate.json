@@ -1,0 +1,39 @@
+{
+  "id": "operations.resource-flow",
+  "name": "Acceptance of a resource flow",
+  "domain": "operations",
+  "description": "A domain-agnostic flow of a resource between two anchors — a material delivery, an equipment rental, a crew ride, a stock issue (consume), or a payment. Each flow is one Acceptance Act; a domain pack (logistics, finance) specializes the reference it cross-checks against. See docs/architecture/resource-flow-and-domains.md.",
+  "claim": {
+    "type": "resource_flow",
+    "fields": [
+      { "name": "flowKind", "kind": "string", "required": true },
+      { "name": "resource", "kind": "string", "required": true },
+      { "name": "qty", "kind": "number", "required": true },
+      { "name": "unit", "kind": "string", "required": false },
+      { "name": "from", "kind": "string", "required": true },
+      { "name": "to", "kind": "string", "required": true }
+    ]
+  },
+  "evidence": [
+    { "kind": "reference_count", "required": false, "description": "An independent count of the moved quantity — a weighbridge ticket, telematics hours, a signed crew manifest." }
+  ],
+  "checks": [
+    { "id": "qty-present", "rule": "field_present", "field": "qty", "severity": "blocking", "description": "The moved quantity must be stated." },
+    {
+      "id": "qty-matches-reference",
+      "rule": "cross_check",
+      "claimField": "qty",
+      "evidenceKind": "reference_count",
+      "evidenceField": "qty",
+      "tolerance": 0.03,
+      "requireUnitMatch": false,
+      "severity": "warning",
+      "description": "Claimed quantity should be within 3% of the independent reference count — advisory."
+    }
+  ],
+  "reviewer": { "role": "goods_in", "description": "The receiving party that confirms the flow." },
+  "decisions": ["accepted", "accepted_with_exceptions", "rejected", "returned_for_rework"],
+  "consequences": [
+    { "id": "label", "effect": "dataset_label", "on": ["accepted", "accepted_with_exceptions", "rejected", "returned_for_rework"], "dataset": "operations.resource_flow" }
+  ]
+}

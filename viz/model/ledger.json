@@ -1,0 +1,29 @@
+{
+  "MAT-rebar": {
+    "resource": "MAT-rebar",
+    "unit": "t",
+    "resourceKind": "material",
+    "in": 23.8,
+    "out": 3.2,
+    "remaining": 20.6,
+    "flows": 2
+  },
+  "EQ-crane-1": {
+    "resource": "EQ-crane-1",
+    "unit": "machine-h",
+    "resourceKind": "equipment",
+    "in": 39.5,
+    "out": 8,
+    "remaining": 31.5,
+    "flows": 2
+  },
+  "CREW-concrete": {
+    "resource": "CREW-concrete",
+    "unit": "man-h",
+    "resourceKind": "labor",
+    "in": 64,
+    "out": 16,
+    "remaining": 48,
+    "flows": 2
+  }
+}

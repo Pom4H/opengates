@@ -106,6 +106,25 @@ python3 -m http.server 8099                # open http://localhost:8099/viz/view
 Walkthrough: [`examples/construction/e2e/`](../examples/construction/e2e/) ·
 verdict: [`docs/e2e-feasibility.md`](../docs/e2e-feasibility.md).
 
+## Resource flow — the "out of what" view
+
+The spatial view shows *what is built*; the **flow view** ([`viz/flow/`](flow/))
+shows the resources it was built from — materials, people and rented machines
+flowing in, each edge a gate, drawn down into the zone's systems. It reads two
+projection files written from accepted facts (the flow siblings of
+`attachments.json`):
+
+```bash
+npm run viz:flows      # writes viz/model/flows.json + ledger.json
+python3 -m http.server 8099    # then open /viz/flow/
+```
+
+The graph (`flowGraph`), the per-resource mass balance (`resourceLedger`) and the
+cross-case lint (`lintFlows`) live in
+[`packages/engine/src/flows.ts`](../packages/engine/src/flows.ts); the worked
+cross-domain path is [`examples/operations/`](../examples/operations). Design:
+[`docs/architecture/resource-flow-and-domains.md`](../docs/architecture/resource-flow-and-domains.md).
+
 ## Animation
 
 The README hero (`docs/media/building-progress.gif` / `.mp4`) is captured straight

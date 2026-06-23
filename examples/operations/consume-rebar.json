@@ -1,0 +1,11 @@
+{
+  "gate": "operations.resource-flow",
+  "events": [
+    {
+      "type": "claim.submitted",
+      "at": "2026-05-04T16:00:00Z",
+      "actor": "foreman:sidorov",
+      "claim": { "type": "resource_flow", "values": { "flowKind": "consume", "resource": "MAT-rebar", "qty": 3.2, "unit": "t", "from": "MAT-rebar", "to": "SYS-A1-F03-structure" } }
+    }
+  ]
+}
