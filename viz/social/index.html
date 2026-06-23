@@ -88,72 +88,67 @@
       compose(renderer.domElement);
 
       // ---- compose the 1280×640 card (3D + scrim + text) ----
+      // Pattern drawn from successful OSS social cards: dominant logo + wordmark
+      // (instantly readable repo name), ONE hero tagline, one value line, one
+      // understated proof line, a strong product visual, safe margins.
       function compose(gl) {
         const cv = document.getElementById("card"), ctx = cv.getContext("2d");
         ctx.drawImage(gl, 0, 0, W, H);
 
-        // left scrim for legibility
-        let g = ctx.createLinearGradient(0, 0, W * 0.72, 0);
-        g.addColorStop(0, "rgba(7,11,18,0.97)"); g.addColorStop(0.45, "rgba(7,11,18,0.86)"); g.addColorStop(1, "rgba(7,11,18,0)");
+        // left + bottom scrim so the text stays crisp over the 3D
+        let g = ctx.createLinearGradient(0, 0, W * 0.74, 0);
+        g.addColorStop(0, "rgba(7,11,18,0.98)"); g.addColorStop(0.5, "rgba(7,11,18,0.88)"); g.addColorStop(1, "rgba(7,11,18,0)");
         ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-        g = ctx.createLinearGradient(0, H, 0, H - 150);
-        g.addColorStop(0, "rgba(7,11,18,0.85)"); g.addColorStop(1, "rgba(7,11,18,0)");
+        g = ctx.createLinearGradient(0, H, 0, H - 140);
+        g.addColorStop(0, "rgba(7,11,18,0.8)"); g.addColorStop(1, "rgba(7,11,18,0)");
         ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
 
-        const X = 70;
+        const X = 72; // safe left margin (platforms crop toward 1.91:1; GitHub rounds corners)
         ctx.textBaseline = "alphabetic";
-        // eyebrow
-        ctx.fillStyle = "#4ade80"; ctx.font = `700 21px ${FONT}`; ctx.letterSpacing = "7px";
-        ctx.fillText("OPEN GATES", X, 118); ctx.letterSpacing = "0px";
-        // headline
-        ctx.fillStyle = "#eaf1f8"; ctx.font = `800 62px ${FONT}`;
-        ctx.fillText("See and control", X, 210);
-        ctx.fillText("your operations.", X, 282);
-        // subtitle
-        ctx.fillStyle = "#a6b6c9"; ctx.font = `400 23px ${FONT}`;
-        ctx.fillText("Every gate is an Acceptance Act —", X, 336);
-        ctx.fillStyle = "#7e8ea3";
-        ctx.fillText("a claim becomes a payable fact, on a live 3D map.", X, 368);
 
-        // stat chips
+        // brand row — logo mark + wordmark (the #1 thing: which repo is this)
+        drawLogo(ctx, X, 86, 46);
+        ctx.fillStyle = "#eef3f9"; ctx.font = `700 33px ${FONT}`;
+        ctx.fillText("Open Gates", X + 62, 120);
+
+        // hero tagline
+        ctx.fillStyle = "#f4f8fc"; ctx.font = `800 56px ${FONT}`;
+        ctx.fillText("See and control", X, 234);
+        ctx.fillText("your operations.", X, 298);
+
+        // one value line
+        ctx.fillStyle = "#aebfd2"; ctx.font = `400 23px ${FONT}`;
+        ctx.fillText("Every gate is an Acceptance Act — a claim", X, 352);
+        ctx.fillText("becomes a payable fact, on a live 3D map.", X, 384);
+
+        // one understated proof line
         const M = ledger ? (ledger.contractValue / 1e6).toFixed(1) : "4.0";
-        let cx = X, cy = 414;
-        cx = chip(ctx, cx, cy, "390 zones", "#22d3ee");
-        cx = chip(ctx, cx + 12, cy, "1,560 acceptance acts", "#34d399");
-        cx = chip(ctx, cx + 12, cy, `€${M}M certified`, "#34d399");
+        ctx.fillStyle = "#62758b"; ctx.font = `600 18px ${FONT}`;
+        ctx.fillText(`1,560 acceptance acts · €${M}M certified · one deterministic engine`, X, 442);
 
-        // system legend
-        const leg = [["structure", SYS[0].color], ["envelope", SYS[1].color], ["MEP", SYS[2].color], ["fit-out", SYS[3].color]];
-        let lx = X, ly = 470;
-        ctx.font = `600 16px ${FONT}`;
-        for (const [name, col] of leg) {
-          ctx.fillStyle = col; roundRect(ctx, lx, ly - 11, 13, 13, 3); ctx.fill();
-          ctx.fillStyle = "#9fb0c4"; ctx.fillText(name, lx + 20, ly + 1);
-          lx += 20 + ctx.measureText(name).width + 22;
-        }
-
-        // footer
-        ctx.fillStyle = "#6b7c93"; ctx.font = `500 18px ${FONT}`;
-        ctx.fillText("A whole construction — design → котлован → frame → fit-out → payments — folded through one unchanged engine.", X, H - 64);
-        ctx.fillStyle = "#4ade80"; ctx.font = `700 18px ${FONT}`;
-        ctx.fillText("github.com/Pom4H/opengates", X, H - 34);
+        // url
+        ctx.fillStyle = "#4ade80"; ctx.font = `700 19px ${FONT}`;
+        ctx.fillText("github.com/Pom4H/opengates", X, H - 52);
 
         window.__card = cv.toDataURL("image/png");
         window.__ready = true;
       }
 
+      // a small "open gate" mark: two posts + a top arch on a green rounded square
+      function drawLogo(ctx, x, y, s) {
+        ctx.fillStyle = "#4ade80"; roundRect(ctx, x, y, s, s, s * 0.26); ctx.fill();
+        ctx.strokeStyle = "#06170e"; ctx.lineWidth = s * 0.12; ctx.lineCap = "round";
+        const p = s * 0.27, midY = y + s * 0.48;
+        ctx.beginPath();
+        ctx.moveTo(x + p, y + s - p); ctx.lineTo(x + p, midY);
+        ctx.moveTo(x + s - p, y + s - p); ctx.lineTo(x + s - p, midY);
+        ctx.stroke();
+        ctx.beginPath(); ctx.arc(x + s / 2, midY, s / 2 - p, Math.PI, 0); ctx.stroke();
+      }
+
       function roundRect(ctx, x, y, w, h, r) {
         ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r);
         ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
-      }
-      function chip(ctx, x, y, label, dot) {
-        ctx.font = `600 19px ${FONT}`;
-        const tw = ctx.measureText(label).width, w = tw + 46, h = 36;
-        ctx.fillStyle = "rgba(14,22,34,0.85)"; roundRect(ctx, x, y - h + 7, w, h, 10); ctx.fill();
-        ctx.strokeStyle = "#1e2d40"; ctx.lineWidth = 1; roundRect(ctx, x, y - h + 7, w, h, 10); ctx.stroke();
-        ctx.fillStyle = dot; ctx.beginPath(); ctx.arc(x + 18, y - h + 7 + h / 2, 5, 0, 7); ctx.fill();
-        ctx.fillStyle = "#dbe6f2"; ctx.fillText(label, x + 32, y);
-        return x + w;
       }
     </script>
   </body>
