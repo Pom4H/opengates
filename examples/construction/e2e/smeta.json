@@ -1,0 +1,26 @@
+{
+  "name": "Смета / BOQ — unit-rate contract for the e2e object",
+  "currency": "EUR",
+  "terms": {
+    "retentionPct": 0.05,
+    "retentionCap": 25000,
+    "vatRate": 0.2,
+    "paymentTermsDays": 30,
+    "advancePct": 0.15,
+    "advancePaymentTermsDays": 10,
+    "defectsLiabilityDays": 730,
+    "_note": "Гарантийное удержание 5% (cap €25 000 per acceptance), НДС 20% (memo on net, excluded from earned value), оплата 30 дней от подписания акта, аванс 15%, гарантийный период 730 дней."
+  },
+  "lines": [
+    { "key": "design_and_permits", "phase": "design", "boq_ref": "BOQ 1.1", "estimateLine": "ПИР", "name_ru": "Проектная документация + РД, госэкспертиза → разрешение на строительство", "unit": "lump", "rate_eur": 480000, "basis": "fixed", "gate": "design-permit" },
+    { "key": "excavation_earthworks", "phase": "excavation", "boq_ref": "BOQ 2.1", "estimateLine": "ФЕР01-01-013", "name_ru": "Разработка грунта в котловане экскаватором + вывоз", "unit": "m3", "rate_eur": 18, "basis": "accepted_quantity", "gate": "excavation" },
+    { "key": "foundation_concrete", "phase": "foundation", "boq_ref": "BOQ 3.2", "estimateLine": "ФЕР06-01-001-01", "name_ru": "Бетон фундаментной плиты C25/30", "unit": "m3", "rate_eur": 85, "basis": "accepted_quantity", "gate": "work-volume" },
+    { "key": "frame_rebar", "phase": "frame", "boq_ref": "BOQ 4.2", "estimateLine": "ФЕР06-01-092", "name_ru": "Арматура А500С, монтаж (закрывается АОСР до бетонирования)", "unit": "t", "rate_eur": 1250, "basis": "accepted_quantity", "gate": "hidden-works", "billed": false, "note": "Reference line — closed via the АОСР hidden-works gate (right-to-pour, no separate КС-3 money); rebar cost is composite inside the frame_concrete ФЕР rate." },
+    { "key": "frame_concrete", "phase": "frame", "boq_ref": "BOQ 4.1", "estimateLine": "ФЕР06-01-015", "name_ru": "Монолитный каркас: колонны + перекрытия C30/37", "unit": "m3", "rate_eur": 140, "basis": "accepted_quantity", "gate": "structure", "system": "structure" },
+    { "key": "envelope_facade", "phase": "envelope", "boq_ref": "BOQ 5.1", "estimateLine": "ФЕРм15-01", "name_ru": "Навесной вентилируемый фасад + утепление", "unit": "m2", "rate_eur": 95, "basis": "accepted_quantity", "gate": "envelope", "system": "envelope" },
+    { "key": "envelope_glazing", "phase": "envelope", "boq_ref": "BOQ 5.2", "estimateLine": "ФЕРм15-04", "name_ru": "Светопрозрачные конструкции / остекление (двухкамерный стеклопакет)", "unit": "m2", "rate_eur": 210, "basis": "accepted_quantity", "gate": "envelope", "system": "envelope", "billed": false, "note": "Reference line — glazing area is folded into the envelope (façade) acceptance scope in this demo; kept for BOQ completeness." },
+    { "key": "mep_systems", "phase": "mep", "boq_ref": "BOQ 6.1", "estimateLine": "ФЕРм10-06", "name_ru": "Внутренние инженерные системы (ОВ + ВК + ЭОМ), приведено к площади зоны", "unit": "m2", "rate_eur": 120, "basis": "accepted_quantity", "gate": "mep", "system": "mep" },
+    { "key": "fit_out", "phase": "fitout", "boq_ref": "BOQ 7.1", "estimateLine": "ФЕР15-04-005", "name_ru": "Отделочные работы / чистовая отделка", "unit": "m2", "rate_eur": 60, "basis": "accepted_quantity", "gate": "fitout", "system": "fitout" },
+    { "key": "handover", "phase": "handover", "boq_ref": "BOQ 8.1", "estimateLine": "—", "name_ru": "Сдача-приёмка: ЗОС + акт ввода в эксплуатацию (запускает возврат удержания)", "unit": "lump", "rate_eur": 0, "basis": "fixed", "gate": "handover" }
+  ]
+}

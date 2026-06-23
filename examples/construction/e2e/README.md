@@ -1,0 +1,118 @@
+# End-to-end construction — the whole cycle, folded through the real engine
+
+> A real, full-lifecycle construction project — **проект → котлован → фундамент →
+> каркас → фасад → инженерка → отделка → сдача → оплаты** — driven through the
+> **unchanged** Open Gates fold engine, and shown in the one 3D model every role
+> shares. Built to test the hypothesis: *can Open Gates reproduce the physics of
+> a real build end-to-end?* It can — see [`docs/e2e-feasibility.md`](../../../docs/e2e-feasibility.md).
+
+The object: **ЖК «Открытые Ворота», корпус 1** — a monolithic RC mid-rise on a
+6×4 structural grid (6 m bays): a benched **котлован** at −9.0 m, a 1.2 m
+**фундаментная плита**, **2 подземных** + **14 надземных** storeys and a roof.
+That is **384 bays × 4 parallel systems** plus site/foundation/roof scopes —
+**390 zones** in [`viz/model/building.json`](../../../viz/model/building.json).
+
+## Run it
+
+```bash
+node viz/model/generate.ts            # 1. the spatial model (building.json)
+node examples/construction/e2e/drive.ts   # 2. fold the WHOLE project → viz/model/e2e/*.json
+python3 -m http.server 8099           # 3. then open the shared control surface:
+#    http://localhost:8099/viz/viewer/control/
+```
+
+The simulator folds **~1 560 acceptance cases** (≈7 700 events, 51 of them
+through a dispute→rework cycle), spanning **2026-01 → 2029-10**, and prints:
+
+```
+Contract value €4,030,332 (+ design fee €480 000, separate) · advance €604,550 (recovered)
+  · earned value (net КС-3) €3,828,815.12 · retention reserve €201,516.88 (released) · Lint: ok
+```
+
+Earned value (net КС-3) is construction only — the design fee (ПИР) and the
+advance are pre-/non-construction lumps held in the ledger header, so EV never
+exceeds the contract. EVM samples bi-weekly: the 51 disputed reworks slip
+acceptance ~1 month, showing as **SPI dipping to ~0.98** and recovering.
+
+It is **deterministic** — no `Date.now()`, no `Math.random()`; every date comes
+from a zone's build-order arrival, every "friction" case is seeded off a hash of
+the case id. Same inputs ⇒ byte-identical output, forever (verified by rerun).
+
+## The lifecycle — 12 phases, each a real Acceptance Act
+
+Every phase folds through the existing engine using only the existing primitives
+(6 check rules, 4 consequences, 4 outcomes). Money is paid on the **accepted**
+(surveyed) quantity exactly as [`consequences.ts`](../../../packages/engine/src/consequences.ts).
+
+| # | Phase | Gate | Scope | Reviewer | Money (BOQ rate) |
+|---|-------|------|-------|----------|------|
+| 1 | Проект + разрешение | `construction.design-permit-acceptance` | BLDG | заказчик | fixed €480 000 (ПИР) |
+| 2 | Аванс 15% | `construction.advance-payment` | BLDG | заказчик | fixed 15% under bank guarantee |
+| 3 | Котлован | `construction.excavation-acceptance` | SITE | технадзор | €18/m³ on surveyed pit (ФЕР01-01-013) |
+| 4 | Армирование плиты (АОСР) | `construction.hidden-works-acceptance` †| BLDG-L00 | стройконтроль | — (right to pour) |
+| 5 | Плита C25/30 | `construction.work-volume-acceptance` †| BLDG-L00 | технадзор | €85/m³ on обмер (ФЕР06-01-001-01) |
+| 6 | Каркас (этаж×бай) | `construction.structure-acceptance` | bay | технадзор | €140/m³ (ФЕР06-01-015) |
+| 7 | Фасад / ограждение | `construction.envelope-acceptance` | bay | технадзор | €95/m² (ФЕРм15-01) |
+| 8 | Инженерные системы | `construction.mep-acceptance` | bay | технадзор | €120/m² + опрессовка (ФЕРм10-06) |
+| 9 | Отделка | `construction.fitout-acceptance` | bay | технадзор | €60/m² (ФЕР15-04-005) |
+| 10 | Пожарная безопасность | `facilities.fire-safety-acceptance` †| bay | пожнадзор | — (right to occupancy) |
+| 11 | Сдача / ЗОС / акт ввода | `construction.handover-and-release` | BLDG | заказчик | lump 0 → triggers release |
+| 12 | Возврат удержания (2 транша) | `construction.final-retention-release` | BLDG | заказчик | 50% at handover, 50% +730 д |
+
+† kept **verbatim** from the repo (`examples/construction/gate.json`,
+`examples/construction/hidden-works/gate.json`, `examples/facilities/gate.json`).
+The other gates live in [`gates/`](gates/). The BOQ/смета rate table —
+[`smeta.json`](smeta.json) — is the single rate source of truth; the two reused
+gates' rates (€85, fit-out €60) match it exactly.
+
+## The roles and the acts they exchange
+
+Nine roles, each a real engine `actor`, exchange **17 real documents**
+([`project.json`](project.json)): the contractor (прораб) submits **КС-2**
+(a `claim`); the surveyor (геодезист) supplies the **обмерная ведомость /
+исполнительная съёмка** that is the trusted `cross_check` reference; the lab
+supplies **протокол бетона / опрессовки / ЭИ** (`evidence`); construction control
+signs the **АОСР** before a pour; the **технадзор** accepts on the surveyed
+quantity (a `decision`, → **КС-3** money); the **заказчик** pays, accepts handover
+(**ЗОС** + **акт ввода**) and returns the **гарантийное удержание**. Authorities
+and the bank only ever supply evidence — they never decide a gate (SPEC §10).
+
+The claim-vs-reality reconciliation is structural, not an email argument: the
+contractor's КС-2 claims slightly high, the обмер reads the reference, and money
+is certified on the **accepted** figure (`acceptedValues → surveyed → claim`).
+51 cases exceed tolerance and are **returned for rework**, then corrected and
+accepted with a visible schedule slip.
+
+## What the engine produces — and the viewer reads
+
+[`drive.ts`](drive.ts) folds everything and emits, into
+[`viz/model/e2e/`](../../../viz/model/e2e/):
+
+| File | What |
+|------|------|
+| `attachments.json` | per-zone works + documents (extended `ZoneAttachments`: who claimed/accepted, net, retention, payment-due, cycle days, doc class) |
+| `timeline.json` | every engine event + per-zone accepted-stage history (drives the scrubber recolor) |
+| `ledger.json` | 22 monthly **КС-3** periods, retention reserve, advance recovery |
+| `certificate.json` | **EVM** (PV / EV / AC, SPI / CPI) + КС-3 line detail |
+| `roles.json` | roles + acts catalog for the role lens |
+
+## The shared control surface — `viz/viewer/control/`
+
+One dependency-free page (the vendored three.js, no build step) that every role
+opens to the **same** live building:
+
+- the **3D model** (котлован → плита → 2 подземных → 14 этажей → кровля), coloured
+  by what is **accepted** at time *t*;
+- a **timeline scrubber** that replays the whole cycle from the real event
+  timestamps — press ▶ and watch the building rise from the pit and the money
+  accrue;
+- a **role lens** (прораб / технадзор / застройщик / геодезист / лаборатория) that
+  re-highlights the model and refilters the acts feed;
+- a **money / EVM dashboard** (certified КС-3, retention reserve, advance
+  outstanding, PV/EV/AC S-curve, SPI/CPI) — all as-of *t*;
+- a **click-a-zone panel** — its acts, who claimed/accepted/paid, the money, and
+  the documents (АОСР / обмер / протокол / …);
+- a live **acts feed** — `claim → evidence → decision` as it fires.
+
+The same `building.json` also still drives the original selector
+(`viz/viewer/`) and the Remotion animation — one spatial source of truth.

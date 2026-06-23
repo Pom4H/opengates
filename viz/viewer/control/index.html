@@ -1,0 +1,586 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <title>Open Gates — операционная модель стройки (e2e)</title>
+    <style>
+      :root {
+        --bg: #070b12; --panel: #0e1622d9; --border: #1e2d40; --text: #e6edf6; --dim: #7e8ea3;
+        --accent: #4ade80; --amber: #f5a524; --green: #34d399; --red: #f87171; --cyan: #22d3ee;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif; overflow: hidden; }
+      #app { position: fixed; inset: 0; }
+      .card { position: absolute; background: var(--panel); border: 1px solid var(--border);
+        border-radius: 14px; padding: 13px 15px; backdrop-filter: blur(9px); box-shadow: 0 8px 30px #0008; }
+      h1, h2 { margin: 0; }
+      #title { top: 16px; left: 16px; max-width: 330px; }
+      #title h1 { font-size: 14px; letter-spacing: 3px; color: var(--accent); }
+      #title .obj { font-size: 16px; font-weight: 700; margin-top: 5px; }
+      #title .sub { font-size: 12px; color: var(--dim); margin-top: 3px; line-height: 1.45; }
+      #roles { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 11px; }
+      .rolebtn { font-size: 11px; padding: 5px 9px; border-radius: 8px; cursor: pointer; border: 1px solid var(--border);
+        background: #121d2e; color: var(--text); transition: .12s; }
+      .rolebtn:hover { border-color: #34507a; }
+      .rolebtn.on { border-color: currentColor; box-shadow: 0 0 0 1px currentColor inset; font-weight: 700; }
+      #action { margin-top: 9px; font-size: 11px; color: var(--dim); }
+      #action b { color: var(--text); }
+
+      #acts { top: 250px; left: 16px; width: 320px; bottom: 150px; display: flex; flex-direction: column; padding: 12px 6px 12px 14px; }
+      #acts h2 { font-size: 11px; letter-spacing: 2px; color: var(--dim); }
+      #actsList { overflow-y: auto; margin-top: 8px; padding-right: 8px; }
+      .act { display: flex; gap: 8px; padding: 5px 0; border-bottom: 1px solid #16202f; font-size: 11.5px; align-items: baseline; }
+      .act .dot { width: 7px; height: 7px; border-radius: 50%; flex: none; margin-top: 4px; }
+      .act .t { color: var(--dim); font-variant-numeric: tabular-nums; font-size: 10px; flex: none; width: 56px; }
+      .act .b { flex: 1; line-height: 1.35; }
+      .act .b .a { color: var(--text); }
+      .act .b .g { color: var(--dim); }
+      .act .money { color: var(--green); white-space: nowrap; }
+
+      #money { top: 16px; right: 16px; width: 300px; font-family: ui-monospace, monospace; }
+      #money h2 { font-size: 11px; letter-spacing: 2px; color: var(--dim); }
+      .kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+      .kpi { background: #0c1521; border: 1px solid #16202f; border-radius: 9px; padding: 8px 9px; }
+      .kpi .l { font-size: 9.5px; color: var(--dim); letter-spacing: .4px; }
+      .kpi .v { font-size: 16px; font-weight: 700; margin-top: 2px; }
+      .evm { margin-top: 12px; }
+      .evm .hd { display: flex; justify-content: space-between; font-size: 10px; color: var(--dim); }
+      .badge { padding: 1px 7px; border-radius: 6px; border: 1px solid; font-size: 10px; }
+
+      #zonepanel { top: 16px; right: 332px; width: 290px; font-family: ui-monospace, monospace; display: none; max-height: 70vh; overflow-y: auto; }
+      #zonepanel .zid { font-size: 22px; font-weight: 700; }
+      #zonepanel .meta { font-size: 11px; color: var(--dim); margin-top: 3px; }
+      #zonepanel .grp { color: var(--dim); letter-spacing: 1px; margin: 11px 0 5px; font-size: 10px; }
+      #zonepanel .w { padding: 6px 8px; border: 1px solid #16202f; border-radius: 8px; margin-bottom: 5px; }
+      #zonepanel .w .top { display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
+      #zonepanel .w .sub { font-size: 10px; color: var(--dim); margin-top: 3px; line-height: 1.4; }
+      #zonepanel .doc { display: flex; gap: 7px; font-size: 10.5px; padding: 2px 0; }
+      #zonepanel .doc .k { color: var(--cyan); white-space: nowrap; }
+      #zonepanel .doc .r { color: var(--dim); word-break: break-all; }
+      .sbadge { font-size: 9.5px; padding: 1px 6px; border-radius: 5px; border: 1px solid; }
+      #zclose { float: right; cursor: pointer; color: var(--dim); font-size: 16px; line-height: 1; }
+
+      #legend { bottom: 150px; right: 16px; width: 300px; font-size: 11px; }
+      #legend .row { display: inline-flex; align-items: center; gap: 6px; margin: 3px 9px 3px 0; }
+      #legend .sw { width: 12px; height: 12px; border-radius: 3px; }
+
+      #timeline { left: 16px; right: 16px; bottom: 16px; height: 118px; padding: 10px 16px 8px; }
+      #tlhead { display: flex; align-items: center; gap: 14px; }
+      #playbtn { cursor: pointer; background: #16243a; border: 1px solid var(--border); color: var(--text);
+        border-radius: 8px; width: 34px; height: 30px; font-size: 14px; }
+      #playbtn:hover { border-color: #34507a; }
+      #tlnow { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
+      #tlphase { font-size: 12px; color: var(--accent); }
+      #tlspeed { margin-left: auto; font-size: 11px; color: var(--dim); }
+      #tlspeed select { background: #16243a; color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 2px 5px; }
+      #track { position: relative; margin-top: 8px; height: 56px; cursor: pointer; }
+      #track svg { display: block; width: 100%; height: 100%; }
+      .hint { font-size: 11px; color: var(--dim); }
+      #err { top: 50%; left: 50%; transform: translate(-50%,-50%); max-width: 440px; display: none; }
+      code { color: var(--cyan); }
+      #toast { position: absolute; bottom: 150px; left: 50%; transform: translateX(-50%); background: #16243aee;
+        border: 1px solid #34507a; border-radius: 9px; padding: 8px 14px; font-size: 12px; opacity: 0; transition: .25s; pointer-events: none; }
+      ::-webkit-scrollbar { width: 8px; } ::-webkit-scrollbar-thumb { background: #1e2d40; border-radius: 4px; }
+
+      /* ---- touch surfaces (all devices) ---- */
+      #app canvas { touch-action: none; }      /* finger orbits the model, page doesn't scroll/zoom */
+      #track { touch-action: none; }           /* finger drags the scrubber, page doesn't scroll */
+
+      /* ---- mobile bottom tab bar (hidden on desktop) ---- */
+      #tabbar { position: fixed; left: 8px; right: 8px; bottom: 8px; height: 54px; z-index: 40;
+        display: none; gap: 6px; padding: 6px; }
+      #tabbar button { flex: 1; min-height: 42px; border: 1px solid var(--border); background: #0e1622ee;
+        color: var(--dim); border-radius: 12px; font: inherit; font-size: 10px; cursor: pointer;
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; }
+      #tabbar button .ic { font-size: 15px; line-height: 1; }
+      #tabbar button.on { color: var(--text); border-color: #34507a; background: #16243a; }
+
+      /* ---- mobile layout: side panels become swipe-up sheets ---- */
+      @media (max-width: 920px) {
+        #title { left: 8px; right: 8px; top: 8px; max-width: none; padding: 9px 12px; }
+        #title h1 { font-size: 12px; letter-spacing: 2px; }
+        #title .obj { font-size: 14px; margin-top: 3px; }
+        #title .sub, #title #action { display: none; }
+        #roles { margin-top: 8px; flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 3px; }
+        .rolebtn { white-space: nowrap; min-height: 34px; display: inline-flex; align-items: center; }
+        #bldgbtn { font-size: 10px; min-height: 32px; }
+
+        #money, #acts, #legend, #zonepanel {
+          position: fixed !important; left: 0; right: 0; top: auto !important; bottom: 166px;
+          width: auto !important; max-width: none !important; max-height: 44vh; overflow-y: auto;
+          border-radius: 18px 18px 0 0; transform: translateY(calc(100% + 180px)); transition: transform .26s ease;
+          display: block !important; z-index: 30; }
+        #money.sheet-open, #acts.sheet-open, #legend.sheet-open, #zonepanel.sheet-open { transform: none !important; }
+        #acts #actsList { max-height: 36vh; }
+        #zonepanel { right: 0; }
+
+        #timeline { left: 8px; right: 8px; bottom: 70px; height: 88px; padding: 9px 12px 6px; }
+        #playbtn { width: 44px; height: 40px; font-size: 15px; }
+        #track { height: 56px; }
+        #tlnow { font-size: 13px; }
+        #tabbar { display: flex; }
+        #toast { bottom: 176px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+
+    <div id="title" class="card">
+      <h1>OPEN&nbsp;GATES · E2E</h1>
+      <div class="obj" id="objname">—</div>
+      <div class="sub" id="objsub"></div>
+      <div id="roles"></div>
+      <div id="action"></div>
+      <div id="bldgbtn" class="rolebtn" style="margin-top:9px;display:inline-block;color:#a78bfa">▢ Объект целиком (BLDG) — проект · аванс · сдача · удержание</div>
+    </div>
+
+    <div id="acts" class="card">
+      <h2>ЛЕНТА АКТОВ · claim → evidence → decision</h2>
+      <div id="actsList"></div>
+    </div>
+
+    <div id="money" class="card">
+      <h2>ДЕНЬГИ · КС-3 / EVM — на дату</h2>
+      <div class="kpis" id="kpis"></div>
+      <div class="evm">
+        <div class="hd"><span>Освоение (S-curve): <b style="color:var(--green)">EV</b> · <b style="color:var(--dim)">PV</b> · <b style="color:var(--amber)">AC</b></span><span id="spicpi"></span></div>
+        <div id="evmchart"></div>
+      </div>
+    </div>
+
+    <div id="zonepanel" class="card">
+      <span id="zclose">×</span>
+      <div class="zid" id="zid">—</div>
+      <div class="meta" id="zmeta"></div>
+      <div id="zbody"><div class="hint" style="padding:4px 0">Коснитесь блока на 3D-модели, чтобы увидеть его акты, документы и оплаты.</div></div>
+    </div>
+
+    <div id="legend" class="card">
+      <div class="grp" style="color:var(--dim);font-size:10px;letter-spacing:1px;margin-bottom:4px">ЖИЗНЕННЫЙ ЦИКЛ — цвет = что ПРИНЯТО на дату</div>
+      <div id="legrows"></div>
+    </div>
+
+    <div id="timeline" class="card">
+      <div id="tlhead">
+        <button id="playbtn">▶</button>
+        <div id="tlnow">—</div>
+        <div id="tlphase"></div>
+        <div id="tlspeed">скорость
+          <select id="speed"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select>
+        </div>
+      </div>
+      <div id="track"></div>
+    </div>
+
+    <div id="tabbar">
+      <button data-sheet="" class="on"><span class="ic">◳</span>3D</button>
+      <button data-sheet="money"><span class="ic">€</span>Деньги</button>
+      <button data-sheet="acts"><span class="ic">≡</span>Акты</button>
+      <button data-sheet="zone"><span class="ic">▢</span>Зона</button>
+      <button data-sheet="legend"><span class="ic">◧</span>Цвета</button>
+    </div>
+
+    <div id="toast"></div>
+
+    <div id="err" class="card">
+      <b>Не удалось загрузить модель.</b>
+      <p class="hint">Откройте по HTTP, не <code>file://</code>. Из корня репозитория: <code>python3 -m http.server 8099</code>, затем
+        <code>/viz/viewer/control/</code>. Перед этим: <code>node viz/model/generate.ts &amp;&amp; node examples/construction/e2e/drive.ts</code>.</p>
+    </div>
+
+    <!-- Absolute paths from the repo root (serve with `python3 -m http.server`
+         from the repo root) so module resolution doesn't depend on the page's
+         trailing slash or the directory it's opened from. -->
+    <script type="importmap">
+      { "imports": { "three": "/viz/viewer/vendor/three/three.module.js", "three/addons/": "/viz/viewer/vendor/three/addons/" } }
+    </script>
+
+    <script type="module">
+      import * as THREE from "three";
+      import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+      const $ = (id) => document.getElementById(id);
+      const fmt = (n) => "€" + (Math.abs(n) < 0.5 ? 0 : Math.round(n)).toLocaleString("ru-RU");
+      const fmtK = (n) => (Math.abs(n) < 0.5 ? "€0" : Math.abs(n) >= 1e6 ? "€" + (n / 1e6).toFixed(2) + "M" : Math.abs(n) >= 1e3 ? "€" + (n / 1e3).toFixed(0) + "k" : fmt(n));
+      const ms = (s) => Date.parse(s);
+      const day = (t) => new Date(t).toISOString().slice(0, 10);
+      const hexNum = (h) => parseInt(h.slice(1), 16);
+
+      async function getJSON(p) { const r = await fetch(p, { cache: "no-store" }); if (!r.ok) throw new Error(p); return r.json(); }
+
+      Promise.all([
+        getJSON("/viz/model/building.json"),
+        getJSON("/viz/model/e2e/timeline.json"),
+        getJSON("/viz/model/e2e/attachments.json"),
+        getJSON("/viz/model/e2e/ledger.json"),
+        getJSON("/viz/model/e2e/certificate.json"),
+        getJSON("/viz/model/e2e/roles.json"),
+      ]).then(main).catch((e) => { console.error(e); $("err").style.display = "block"; });
+
+      function main([model, timeline, attach, ledger, cert, meta]) {
+        // ---- palette / lifecycle ----
+        const P = model.palette;
+        const SYS = model.systems.map((s) => hexNum(s.color));
+        const NOT = hexNum(P.not_started), GLAZE = hexNum(P.glazing), SEL = hexNum(P.selected);
+        const colourFor = (n) => (n <= 0 ? NOT : SYS[Math.min(SYS.length, n) - 1]);
+        const SCOPECOL = { excavation: hexNum(P.excavation), foundation: hexNum(P.foundation_mat), roof: hexNum(P.roof) };
+        const STAGE_COL = { kotlovan: P.excavation, raft: P.foundation_mat, structure: model.systems[0].color, envelope: model.systems[1].color, mep: model.systems[2].color, fitout: model.systems[3].color, "fire-safety": "#a78bfa", roof: P.roof, handover: "#a78bfa", accepted: model.systems[3].color };
+        const STATUS_COL = { accepted: "#34d399", accepted_with_exceptions: "#34d399", under_review: "#f5a524", submitted: "#f5a524", returned_for_rework: "#f87171", rejected: "#f87171" };
+
+        // ---- object header ----
+        $("objname").textContent = meta.object.name;
+        $("objsub").textContent = `котлован −9 м → плита → ${model.grid.basements} подземных → ${model.grid.floors} надземных → кровля · ${Object.keys(attach).length} зон`;
+
+        // ---- legend ----
+        const legend = [["котлован", P.excavation], ["плита", P.foundation_mat], ["1·каркас", model.systems[0].color], ["2·фасад", model.systems[1].color], ["3·инженерка", model.systems[2].color], ["4·отделка (принято)", model.systems[3].color], ["кровля", P.roof], ["не начато", P.not_started]];
+        $("legrows").innerHTML = legend.map(([l, c]) => `<span class="row"><span class="sw" style="background:${c}"></span>${l}</span>`).join("");
+
+        // ---- three scene ----
+        const app = $("app");
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x070b12);
+        scene.fog = new THREE.Fog(0x070b12, 130, 280);
+        const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 2000);
+        camera.position.set(58, 46, 86);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+        renderer.setSize(innerWidth, innerHeight); renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+        app.appendChild(renderer.domElement);
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.target.set(0, 16, 0); controls.enableDamping = true;
+        scene.add(new THREE.AmbientLight(0xffffff, 0.62));
+        const key = new THREE.DirectionalLight(0xffffff, 1.45); key.position.set(40, 70, 35); scene.add(key);
+        const fill = new THREE.DirectionalLight(0x88aaff, 0.4); fill.position.set(-35, 26, -28); scene.add(fill);
+        const ground = new THREE.Mesh(new THREE.PlaneGeometry(420, 420), new THREE.MeshStandardMaterial({ color: 0x0a121d, roughness: 1 }));
+        ground.rotation.x = -Math.PI / 2; ground.position.y = -9.25; scene.add(ground);
+        const grade = new THREE.Mesh(new THREE.PlaneGeometry(120, 90), new THREE.MeshStandardMaterial({ color: 0x121a26, roughness: 1, transparent: true, opacity: 0.5 }));
+        grade.rotation.x = -Math.PI / 2; grade.position.y = -0.05; scene.add(grade);
+
+        const size = (b) => [b.max[0] - b.min[0], b.max[1] - b.min[1], b.max[2] - b.min[2]];
+        const center = (b) => [(b.min[0] + b.max[0]) / 2, (b.min[1] + b.max[1]) / 2, (b.min[2] + b.max[2]) / 2];
+
+        // ---- build meshes ----
+        const Z = {}; // id -> {zone, mesh, glass[], level}
+        const selectable = [];
+        for (const z of model.zones) {
+          if (z.level === "marker") continue;
+          const s = size(z.structure), c = center(z.structure);
+          if (s[0] <= 0 || s[1] <= 0 || s[2] <= 0) continue;
+          const excav = z.level === "excavation";
+          const mat = new THREE.MeshStandardMaterial({
+            color: NOT, roughness: excav ? 1 : 0.82, metalness: 0.05,
+            transparent: true, opacity: 1, depthWrite: !excav,
+          });
+          const mesh = new THREE.Mesh(new THREE.BoxGeometry(s[0], s[1], s[2]), mat);
+          mesh.position.set(c[0], c[1], c[2]); mesh.userData.zone = z;
+          scene.add(mesh);
+          const glass = [];
+          for (const g of z.glazing || []) {
+            const gs = size(g.box), gc = center(g.box);
+            const gm = new THREE.Mesh(new THREE.BoxGeometry(gs[0], gs[1], gs[2]),
+              new THREE.MeshStandardMaterial({ color: GLAZE, transparent: true, opacity: 0.78, roughness: 0.08, metalness: 0.7, emissive: GLAZE, emissiveIntensity: 0.45 }));
+            gm.position.set(gc[0], gc[1], gc[2]); gm.visible = false; scene.add(gm); glass.push(gm);
+          }
+          Z[z.id] = { zone: z, mesh, glass, level: z.level };
+          selectable.push(mesh);
+        }
+        // BLDG is a non-geometry marker — register it (no mesh) so its
+        // building-level acts (design, advance, handover, release) are reachable.
+        const bldgZone = model.zones.find((z) => z.id === "BLDG");
+        if (bldgZone) Z["BLDG"] = { zone: bldgZone, mesh: null, glass: [], level: "marker" };
+
+        // ---- timeline / stage lookup ----
+        const stageByZone = {};
+        for (const [zid, arr] of Object.entries(timeline.stageByZone))
+          stageByZone[zid] = arr.map((e) => ({ at: ms(e.at), systemsDone: e.systemsDone || 0, stage: e.stage }));
+        const evAt = (zid, t) => { const a = stageByZone[zid]; if (!a) return null; let r = null; for (const e of a) { if (e.at <= t) r = e; else break; } return r; };
+        const scopeAt = {};
+        const firstStage = (zid) => (stageByZone[zid] ? stageByZone[zid][0].at : Infinity);
+        scopeAt.excavation = firstStage("SITE");
+        scopeAt.foundation = firstStage("BLDG-L00");
+        scopeAt.roof = firstStage("BLDG-R01");
+
+        const MIN = ms(timeline.range.minAt), MAX = ms(timeline.range.maxAt);
+        const events = timeline.events; const evMs = events.map((e) => ms(e.at));
+
+        // ---- role lens ----
+        const roleByActor = {}; for (const r of meta.roles) roleByActor[r.actor] = r.key;
+        const lensRoles = meta.roles.filter((r) => r.lens);
+        const ACTIONS = {
+          contractor: "Подать <b>КС-2</b> по выбранной зоне", technical_supervisor: "Принять / вернуть работу (<b>decision</b>)",
+          client_technical_customer: "Подтвердить оплату <b>КС-3</b>", surveyor: "Приложить <b>исполнительную съёмку</b>", lab: "Приложить <b>протокол</b>",
+        };
+        let lens = null;
+        const rolesDiv = $("roles");
+        rolesDiv.innerHTML = `<span class="rolebtn on" data-k="" style="color:var(--text)">Все</span>` +
+          lensRoles.map((r) => `<span class="rolebtn" data-k="${r.key}" style="color:${r.color}">${r.short}</span>`).join("");
+        rolesDiv.querySelectorAll(".rolebtn").forEach((b) => b.addEventListener("click", () => {
+          rolesDiv.querySelectorAll(".rolebtn").forEach((x) => x.classList.remove("on"));
+          b.classList.add("on"); lens = b.dataset.k || null;
+          $("action").innerHTML = lens && ACTIONS[lens] ? "Действие роли: " + ACTIONS[lens] : "Роль определяет, что подсвечено и какие акты в ленте.";
+          paintAll(); renderActs();
+        }));
+        $("action").innerHTML = "Роль определяет, что подсвечено и какие акты в ленте.";
+
+        // ---- mobile bottom-sheet tab bar ----
+        const isMobile = () => matchMedia("(max-width: 920px)").matches;
+        const tabbar = $("tabbar");
+        const SHEETS = { money: "money", acts: "acts", zone: "zonepanel", legend: "legend" };
+        function setSheet(name) {
+          for (const [k, id] of Object.entries(SHEETS)) $(id).classList.toggle("sheet-open", k === name);
+          tabbar.querySelectorAll("button").forEach((b) => b.classList.toggle("on", (b.dataset.sheet || "") === (name || "")));
+        }
+        tabbar.querySelectorAll("button").forEach((b) =>
+          b.addEventListener("click", () => setSheet(b.classList.contains("on") ? "" : b.dataset.sheet || "")));
+
+        // role highlight predicate over a bay's at-t state
+        function lensGlow(zid, st) {
+          if (!lens || !st) return false;
+          const done = st.systemsDone || 0; const recent = st.at > T - 26 * 864e5;
+          if (lens === "technical_supervisor") return done >= 1 && done < 4; // awaiting acceptance
+          if (lens === "contractor") return recent && done < 4; // the active build frontier
+          if (lens === "client_technical_customer") return done >= 4;
+          if (lens === "surveyor") return recent;
+          if (lens === "lab") return recent && (st.stage === "structure" || st.stage === "mep");
+          return false;
+        }
+
+        // ---- selection ----
+        let selected = null;
+        function paintOne(id) {
+          const o = Z[id]; if (!o || !o.mesh) return; const z = o.zone; const isSel = o.mesh === selected;
+          let built, col, op = 1;
+          if (z.scope === "bay") {
+            const st = evAt(id, T); built = !!st; const done = st ? st.systemsDone : 0;
+            col = colourFor(done); op = done === 0 ? 0.28 : 1;
+            o.glass.forEach((g) => (g.visible = built && done >= 2));
+            if (!isSel && lensGlow(id, st)) { col = blend(col, 0xffffff, 0.18); op = 1; }
+          } else if (z.level === "excavation") {
+            built = T >= scopeAt.excavation; col = SCOPECOL.excavation; op = 0.16;
+          } else if (z.level === "foundation") {
+            built = T >= scopeAt.foundation; col = SCOPECOL.foundation; op = 1;
+          } else if (z.level === "roof") {
+            built = T >= scopeAt.roof; col = SCOPECOL.roof; op = 1;
+          } else { built = false; }
+          o.mesh.visible = built;
+          if (isSel) { col = SEL; op = 1; }
+          o.mesh.material.color.setHex(col); o.mesh.material.opacity = op;
+          o.mesh.material.emissive.setHex(isSel ? SEL : (lensGlow(id, z.scope === "bay" ? evAt(id, T) : null) ? col : 0x000000));
+          o.mesh.material.emissiveIntensity = isSel ? 0.4 : (o.mesh.material.emissive.getHex() ? 0.22 : 0);
+        }
+        function blend(a, b, t) { const ar = (a >> 16) & 255, ag = (a >> 8) & 255, ab = a & 255, br = (b >> 16) & 255, bg = (b >> 8) & 255, bb = b & 255;
+          return ((ar + (br - ar) * t) << 16 | (ag + (bg - ag) * t) << 8 | (ab + (bb - ab) * t)) & 0xffffff; }
+        function paintAll() { for (const id in Z) paintOne(id); }
+
+        // ---- raycast select ----
+        const ray = new THREE.Raycaster(), ptr = new THREE.Vector2(); let down = null;
+        renderer.domElement.addEventListener("pointerdown", (e) => (down = { x: e.clientX, y: e.clientY }));
+        renderer.domElement.addEventListener("pointerup", (e) => {
+          if (!down) return; const moved = Math.hypot(e.clientX - down.x, e.clientY - down.y); down = null; if (moved > 5) return;
+          ptr.x = (e.clientX / innerWidth) * 2 - 1; ptr.y = -(e.clientY / innerHeight) * 2 + 1;
+          ray.setFromCamera(ptr, camera);
+          const hit = ray.intersectObjects(selectable.filter((m) => m.visible), false)[0];
+          if (hit) selectZone(hit.object.userData.zone.id);
+        });
+        function selectZone(id) {
+          const prev = selected ? selected.userData.zone.id : null; selected = Z[id].mesh;
+          if (prev) paintOne(prev); paintOne(id); renderZone(id); $("zonepanel").style.display = "block";
+          if (isMobile()) setSheet("zone"); // pop the zone sheet up on phones
+        }
+        $("zclose").addEventListener("click", () => { const p = selected ? selected.userData.zone.id : null; selected = null; if (p) paintOne(p); $("zonepanel").style.display = "none"; setSheet(""); });
+        $("bldgbtn").addEventListener("click", () => selectZone("BLDG"));
+
+        function renderZone(id) {
+          const z = Z[id].zone; const a = attach[id];
+          $("zid").textContent = id;
+          const where = z.scope === "bay" ? `ось ${z.col} · ряд ${z.row} · ${z.floor >= 90 ? "подземный −" + (z.floor - 90) : "этаж " + z.floor}` : ({ excavation: "котлован", foundation: "фундаментная плита", roof: "кровля / плант", marker: "объект целиком" }[z.level] || z.scope);
+          $("zmeta").textContent = where + (z.scope === "bay" ? ` · ${z.id}` : "");
+          if (!a) { $("zbody").innerHTML = `<div class="grp">РАБОТЫ НЕ ПРИВЯЗАНЫ</div><div class="hint">К этой зоне не привязан ни один акт.</div>`; return; }
+          let h = `<div class="grp">РАБОТЫ · ${a.rollup.accepted}/${a.rollup.total} принято</div>`;
+          for (const w of a.works) {
+            const col = STATUS_COL[w.status] || "var(--dim)"; const visible = (w.acceptedAt ? ms(w.acceptedAt) : ms(w.claimedAt)) <= T;
+            const money = w.net != null ? ` · <span class="money">${fmt(w.net)}</span>` : "";
+            const due = w.paymentDueAt ? ` · оплата до ${day(ms(w.paymentDueAt))}` : "";
+            h += `<div class="w" style="opacity:${visible ? 1 : 0.4}"><div class="top"><span>${ru(w.system) || PHASE_RU[w.phase] || w.title || w.gateId}</span><span class="sbadge" style="color:${col};border-color:${col}66">${ruStatus(w.status)}</span></div>` +
+              `<div class="sub">${w.quantity != null ? "обмер " + w.quantity + " · " : ""}${w.unitPrice ? "@" + w.unitPrice + " €" : ""}${money}${due}<br>` +
+              `${w.claimedBy ? "КС-2: " + actorShort(w.claimedBy) : ""}${w.acceptedBy ? " → принял " + actorShort(w.acceptedBy) + " " + (w.acceptedAt ? day(ms(w.acceptedAt)) : "") : ""}${w.cycleDays != null ? " · цикл " + w.cycleDays + " дн" : ""}</div></div>`;
+          }
+          const groups = {};
+          for (const d of a.documents) (groups[d.docClass] ||= []).push(d);
+          h += `<div class="grp">ДОКУМЕНТЫ</div>`;
+          for (const [cls, ds] of Object.entries(groups)) for (const d of ds)
+            h += `<div class="doc"><span class="k">${DOCRU[cls] || cls}</span><span class="r">${d.ref || "—"}</span></div>`;
+          $("zbody").innerHTML = h;
+        }
+        const DOCRU = { aosr: "АОСР", obmer: "обмер", protokol: "протокол", permit: "разрешение/ЗОС", inspection: "освид.", defects: "замечания", photo: "фото", doc: "док." };
+        const RU = { structure: "1 · Каркас (монолит)", envelope: "2 · Фасад / ограждение", mep: "3 · Инженерные системы", fitout: "4 · Отделка" };
+        const ru = (s) => RU[s] || null;
+        const PHASE_RU = { design: "Проект + разрешение", advance: "Аванс 15%", excavation: "Котлован", foundation: "Фундамент (АОСР + плита)", "fire-safety": "Пожарная безопасность", handover: "Сдача / ЗОС / акт ввода", release: "Возврат удержания" };
+        const RUSTATUS = { accepted: "принято", accepted_with_exceptions: "принято с замеч.", under_review: "на проверке", submitted: "подано", returned_for_rework: "возврат", rejected: "отклонено" };
+        const ruStatus = (s) => RUSTATUS[s] || s;
+        const SHORT = {}; for (const r of meta.roles) SHORT[r.actor] = r.short;
+        const actorShort = (a) => SHORT[a] || a;
+
+        // ---- money / EVM panel ----
+        const stepCum = (arr, t) => { let v = 0; for (const p of arr) { if (ms(p.at) <= t) v = p.cum; else break; } return v; };
+        const monthLE = (t) => day(t).slice(0, 7);
+        function moneyAsOf() {
+          const certified = stepCum(cert.evm.ev, T);
+          let retHeld = 0, recovered = 0, paid = 0, released = 0;
+          const mo = monthLE(T);
+          for (const p of ledger.periods) { if (p.periodLabel <= mo) { retHeld += p.retentionThisPeriod; recovered += p.advanceRecovery; } if (ms(p.paymentDueAt) <= T) paid += p.netPayment; }
+          if (T >= ms(ledger.retention.tranche1At)) released += ledger.retention.tranche1;
+          if (T >= ms(ledger.retention.tranche2At)) released += ledger.retention.tranche2;
+          const reserve = retHeld - released;
+          const advOut = Math.max(0, ledger.advance.issued - recovered);
+          let spi = 1, cpi = 1; for (const s of cert.spiCpiAt) { if (ms(s.at) <= T) { spi = s.spi; cpi = s.cpi; } else break; }
+          $("kpis").innerHTML = [
+            ["Сертифиц. КС-3", fmtK(certified), "var(--green)"],
+            ["Оплачено", fmtK(paid), "var(--text)"],
+            ["Удержание (резерв)", fmtK(reserve), "var(--amber)"],
+            ["Аванс не закрыт", fmtK(advOut), "var(--text)"],
+          ].map(([l, v, c]) => `<div class="kpi"><div class="l">${l}</div><div class="v" style="color:${c}">${v}</div></div>`).join("");
+          $("spicpi").innerHTML = `<span class="badge" style="color:${spi >= 0.99 ? "var(--green)" : "var(--amber)"};border-color:currentColor">SPI ${spi.toFixed(2)}</span> <span class="badge" style="color:${cpi >= 0.99 ? "var(--green)" : "var(--amber)"};border-color:currentColor">CPI ${cpi.toFixed(2)}</span>`;
+          drawEVM();
+        }
+        function drawEVM() {
+          const W = 268, H = 86, pad = 2; const bac = cert.evm.bac;
+          const x = (t) => pad + tToF(t) * (W - 2 * pad);
+          const y = (v) => H - pad - (v / bac) * (H - 2 * pad);
+          // extend each curve flat to the right edge (earned value is settled after
+          // completion, so PV/EV/AC hold their final value through the tail).
+          const ext = (arr) => (arr.length ? arr.concat([{ at: new Date(MAX).toISOString(), cum: arr[arr.length - 1].cum }]) : arr);
+          const path = (arr) => ext(arr).map((p, i) => (i ? "L" : "M") + x(ms(p.at)).toFixed(1) + " " + y(p.cum).toFixed(1)).join(" ");
+          const px = x(Math.min(MAX, Math.max(MIN, T)));
+          $("evmchart").innerHTML = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:86px">
+            <path d="${path(cert.evm.pv)}" fill="none" stroke="#7e8ea3" stroke-width="1.3" stroke-dasharray="3 2"/>
+            <path d="${path(cert.evm.ac)}" fill="none" stroke="#f5a524" stroke-width="1.3"/>
+            <path d="${path(cert.evm.ev)}" fill="none" stroke="#34d399" stroke-width="1.8"/>
+            <line x1="${px}" y1="0" x2="${px}" y2="${H}" stroke="#22d3ee" stroke-width="1"/>
+          </svg>`;
+        }
+
+        // ---- acts feed ----
+        function renderActs() {
+          let idx = upper(evMs, T); const out = []; let n = 0;
+          for (let i = idx - 1; i >= 0 && n < 48; i--) {
+            const e = events[i]; if (lens && roleByActor[e.actor] !== lens) continue; n++;
+            const role = meta.roles.find((r) => r.actor === e.actor); const col = role ? role.color : "#7e8ea3";
+            const verb = VERB[e.verb] || e.verb; const money = e.money ? `<span class="money">${fmt(e.money.net)}</span>` : "";
+            const zone = e.zone ? `<span class="g"> · ${e.zone}</span>` : "";
+            out.push(`<div class="act"><span class="dot" style="background:${col}"></span><span class="t">${day(evMs[i]).slice(5)}</span><span class="b"><span class="a">${actorShort(e.actor)}</span> ${verb}${e.evidenceKind ? " <span class='g'>" + (DOCRU[e.docClass] || e.evidenceKind) + "</span>" : ""}${zone}</span>${money}</div>`);
+          }
+          $("actsList").innerHTML = out.join("") || `<div class="hint">Нет актов этой роли до выбранной даты.</div>`;
+        }
+        const VERB = { claimed: "подал КС-2", attached: "приложил", accepted: "<b style='color:var(--green)'>принял</b>", accepted_with_exceptions: "<b style='color:var(--green)'>принял с замеч.</b>", returned_for_rework: "<b style='color:var(--red)'>вернул</b>", rejected: "<b style='color:var(--red)'>отклонил</b>" };
+        function upper(arr, t) { let lo = 0, hi = arr.length; while (lo < hi) { const m = (lo + hi) >> 1; if (arr[m] <= t) lo = m + 1; else hi = m; } return lo; }
+
+        // ---- scrubber ----
+        let T = MAX;
+        // The defects-liability (гарантийный) period is a ~2-year event-free gap
+        // between the first and second retention tranches. Compress it on the axis
+        // so the dense build phase stays readable and the final release stays
+        // visible. tToF: time → axis fraction [0,1]; fToT: its inverse.
+        const GAP = (() => {
+          let lo = MIN, hi = MAX, best = 0;
+          for (let i = 1; i < evMs.length; i++) { const g = evMs[i] - evMs[i - 1]; if (g > best) { best = g; lo = evMs[i - 1]; hi = evMs[i]; } }
+          return best > 150 * 864e5 && lo > MIN && hi < MAX ? { lo, hi } : null;
+        })();
+        const FA = 0.85, FB = 0.9; // [0..FA] build · [FA..FB] compressed gap · [FB..1] tail
+        function tToF(t) {
+          if (!GAP) return (t - MIN) / (MAX - MIN);
+          if (t <= GAP.lo) return ((t - MIN) / (GAP.lo - MIN)) * FA;
+          if (t < GAP.hi) return FA + ((t - GAP.lo) / (GAP.hi - GAP.lo)) * (FB - FA);
+          return FB + ((t - GAP.hi) / (MAX - GAP.hi)) * (1 - FB);
+        }
+        function fToT(f) {
+          if (!GAP) return MIN + f * (MAX - MIN);
+          if (f <= FA) return MIN + (f / FA) * (GAP.lo - MIN);
+          if (f < FB) return GAP.lo + ((f - FA) / (FB - FA)) * (GAP.hi - GAP.lo);
+          return GAP.hi + ((f - FB) / (1 - FB)) * (MAX - GAP.hi);
+        }
+        const PHASES = [["проект+аванс", "#a78bfa"], ["котлован/плита", P.excavation], ["каркас→фасад→инженерка→отделка", P.foundation_mat], ["сдача/оплаты", "#a78bfa"]];
+        function phaseAt(t) {
+          if (t < scopeAt.excavation) return "Проектирование · разрешение · аванс";
+          if (t < scopeAt.foundation) return "Котлован · геодезия · приёмка грунта";
+          if (t < ms(ledger.retention.tranche1At) - 30 * 864e5) return "СМР: каркас → фасад → инженерка → отделка";
+          return "Сдача-приёмка · ЗОС · возврат удержания";
+        }
+        const trackEl = $("track");
+        function drawTrack() {
+          const W = 1000, H = 56; const x = (t) => tToF(t) * W; const bac = cert.evm.bac;
+          const yv = (c) => H - (c / bac) * (H - 6);
+          // cumulative certified area (EV) under the track, held flat through the tail
+          const pts = cert.evm.ev.map((p) => `${x(ms(p.at)).toFixed(1)},${yv(p.cum).toFixed(1)}`);
+          const lastY = cert.evm.ev.length ? yv(cert.evm.ev[cert.evm.ev.length - 1].cum) : H;
+          const area = `M0,${H} L` + pts.join(" L") + ` L${W},${lastY.toFixed(1)} L${W},${H} Z`;
+          const curve = "M" + pts.join(" L") + ` L${W},${lastY.toFixed(1)}`;
+          // compressed-gap band (the гарантийный period)
+          let band = "";
+          if (GAP) { const gx0 = x(GAP.lo), gx1 = x(GAP.hi); band = `<rect x="${gx0}" y="0" width="${gx1 - gx0}" height="${H}" fill="#0c1521" stroke="#1e2d40" stroke-dasharray="2 2"/>`; }
+          // year labels (skip those inside the compressed gap)
+          let grid = "";
+          for (let yy = new Date(MIN).getUTCFullYear(); yy <= new Date(MAX).getUTCFullYear(); yy++) {
+            const t = Date.parse(yy + "-01-01T00:00:00Z"); if (t < MIN || t > MAX || (GAP && t > GAP.lo && t < GAP.hi)) continue;
+            const gx = x(t); grid += `<line x1="${gx}" y1="0" x2="${gx}" y2="${H}" stroke="#16202f"/>`;
+          }
+          const hx = x(T);
+          trackEl.innerHTML = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+            ${grid}${band}
+            <path d="${area}" fill="#34d39922"/>
+            <path d="${curve}" fill="none" stroke="#34d399" stroke-width="1"/>
+            <line x1="${hx}" y1="0" x2="${hx}" y2="${H}" stroke="#22d3ee" stroke-width="2"/>
+            <circle cx="${hx}" cy="4" r="4" fill="#22d3ee"/>
+          </svg>`;
+          // HTML overlays (not stretched by the SVG's preserveAspectRatio=none):
+          // year ticks + the compressed-gap caption.
+          let ov = "";
+          for (let yy = new Date(MIN).getUTCFullYear(); yy <= new Date(MAX).getUTCFullYear(); yy++) {
+            const t = Date.parse(yy + "-01-01T00:00:00Z"); if (t < MIN || t > MAX || (GAP && t > GAP.lo && t < GAP.hi)) continue;
+            ov += `<span style="position:absolute;left:${(tToF(t) * 100).toFixed(2)}%;top:0;font-size:9px;color:#41506a;padding-left:3px;pointer-events:none">${yy}</span>`;
+          }
+          if (GAP) { const f0 = tToF(GAP.lo) * 100, f1 = tToF(GAP.hi) * 100; ov += `<span style="position:absolute;left:${f0}%;width:${(f1 - f0).toFixed(2)}%;bottom:1px;text-align:center;font-size:7.5px;line-height:1.05;color:#5b6b82;pointer-events:none">гаран-<br>тийный</span>`; }
+          trackEl.insertAdjacentHTML("beforeend", `<div style="position:absolute;inset:0;pointer-events:none">${ov}</div>`);
+        }
+        function setT(t, redrawTrack = true) {
+          T = Math.max(MIN, Math.min(MAX, t));
+          $("tlnow").textContent = day(T); $("tlphase").textContent = phaseAt(T);
+          paintAll(); moneyAsOf(); renderActs(); if (redrawTrack) drawTrack();
+        }
+        function trackToT(clientX) { const r = trackEl.getBoundingClientRect(); const f = Math.max(0, Math.min(1, (clientX - r.left) / r.width)); return fToT(f); }
+        let dragging = false;
+        trackEl.addEventListener("pointerdown", (e) => { dragging = true; stop(); setT(trackToT(e.clientX)); });
+        addEventListener("pointermove", (e) => { if (dragging) setT(trackToT(e.clientX)); });
+        addEventListener("pointerup", () => (dragging = false));
+
+        // ---- play ----
+        let playing = false, raf = 0, lastTick = 0;
+        const speed = $("speed");
+        function stop() { playing = false; $("playbtn").textContent = "▶"; if (raf) cancelAnimationFrame(raf); raf = 0; }
+        function play() {
+          playing = true; $("playbtn").textContent = "⏸"; if (T >= MAX) T = MIN; lastTick = performance.now();
+          const loop = (now) => {
+            if (!playing) return; const dt = (now - lastTick) / 1000; lastTick = now;
+            // advance on the (compressed) AXIS so the playhead moves at a uniform
+            // visual speed — the compressed гарантийный gap passes quickly.
+            const f = tToF(T) + dt * (1 / 26) * parseFloat(speed.value); // whole timeline in ~26s at 1×
+            if (f >= 1) { setT(MAX); stop(); return; }
+            setT(fToT(f)); raf = requestAnimationFrame(loop);
+          }; raf = requestAnimationFrame(loop);
+        }
+        $("playbtn").addEventListener("click", () => (playing ? stop() : play()));
+
+        // ---- toast for role actions ----
+        function toast(msg) { const t = $("toast"); t.innerHTML = msg; t.style.opacity = 1; clearTimeout(t._h); t._h = setTimeout(() => (t.style.opacity = 0), 2600); }
+        $("action").addEventListener("click", () => { if (lens) toast("В реальном развёртывании это отправит событие Open Gates (claim/evidence/decision) по выбранной зоне."); });
+
+        // ---- go ----
+        setT(MAX);
+        addEventListener("resize", () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
+        (function render() { requestAnimationFrame(render); controls.update(); renderer.render(scene, camera); })();
+      }
+    </script>
+  </body>
+</html>

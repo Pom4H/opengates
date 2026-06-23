@@ -1,0 +1,31 @@
+{
+  "id": "construction.final-retention-release",
+  "name": "Release of guarantee retention (гарантийное удержание)",
+  "domain": "construction",
+  "description": "Возврат гарантийного удержания in two tranches: 50% at handover (behind the handover right_to_proceed, against the акт ввода reference) and 50% after the 730-day defects-liability period (against the defects-liability clearance act). Each release is a fresh fixed-amount payment drawing down the retention reserve — never a recomputation of immutable historical net. The released amount is supplied at decision time via acceptedValues.release_eur. Building-level scope (zone=BLDG).",
+  "claim": {
+    "type": "retention_release_request",
+    "fields": [
+      { "name": "tranche", "kind": "string", "required": true },
+      { "name": "zone", "kind": "zone", "required": true },
+      { "name": "release_date", "kind": "date", "required": true }
+    ]
+  },
+  "evidence": [
+    { "kind": "handover_ref", "required": true, "description": "Ссылка на акт ввода / ЗОС — proof that handover was accepted." },
+    { "kind": "defects_liability_clearance", "required": false, "description": "Акт об отсутствии гарантийных замечаний — required for the second tranche after the defects-liability period." }
+  ],
+  "checks": [
+    { "id": "handover-accepted", "rule": "required_evidence", "kinds": ["handover_ref"], "severity": "blocking", "description": "A release requires an accepted handover." },
+    { "id": "release-date-present", "rule": "field_present", "field": "release_date", "severity": "blocking" },
+    { "id": "zone-format", "rule": "field_pattern", "field": "zone", "pattern": "^(SITE|BLDG)(-[A-Z][0-9]{2})?$", "severity": "blocking", "description": "Building-level scope id (BLDG)." }
+  ],
+  "reviewer": { "role": "client_technical_customer", "description": "Заказчик / технический заказчик." },
+  "decisions": ["accepted", "rejected", "returned_for_rework"],
+  "consequences": [
+    { "id": "release", "effect": "money", "on": ["accepted"], "basis": "accepted_quantity", "quantityField": "release_eur", "unitPrice": 1, "currency": "EUR", "vatRate": 0.2, "paymentTermsDays": 30, "estimateLine": "Возврат удержания", "contractRef": "Договор п.6 'Гарантийное удержание'", "description": "Fixed tranche of accumulated retention released; no new retention on a release." },
+    { "id": "close-contract", "effect": "right_to_proceed", "on": ["accepted"], "unlocks": "contract-closed", "description": "Releasing the final tranche closes the contract." },
+    { "id": "release-liability", "effect": "risk", "on": ["accepted"], "assignedTo": "client_technical_customer" },
+    { "id": "label", "effect": "dataset_label", "on": ["accepted", "rejected", "returned_for_rework"], "dataset": "construction.retention_release" }
+  ]
+}

@@ -9,8 +9,13 @@ block (*section × row × floor*) of a building.
 
 ## Grid of blocks, diagonal build, parallel systems
 
-The building is a **grid** — `nx` columns (X) × `nz` rows (Z) × `floors`. Each
-block on each floor is one zone (e.g. `B2-F03` = column B, row 2, floor 3).
+The building is a **grid** — `nx` columns (X) × `nz` rows (Z) × `floors`, over
+`basements` below-grade levels, with a benched **котлован**, a **фундаментная
+плита** and a roof. Each block on each level is one zone (e.g. `B2-F03` = column
+B, row 2, floor 3; `B2-F91` = the same bay on basement −1). Site- and
+building-level scopes (`SITE`, `BLDG-L00` raft, `BLDG-R01` roof) anchor the acts
+that aren't per-bay. The canonical object is a 6×4 grid, 14 storeys + 2
+basements — **389 zones**.
 
 Construction runs **diagonally** (a zone's `arrival` orders the sweep across the
 plan and up the floors) and in **four parallel systems**, each trailing the one
@@ -48,7 +53,7 @@ viz/model/generate.ts   →   building.json   (canonical)
 Regenerate (snapshot fraction `p`, 0→1 through the whole build):
 
 ```bash
-node viz/model/generate.ts            # default snapshot (p=0.58)
+node viz/model/generate.ts            # default snapshot (p=0.62)
 node viz/model/generate.ts --p=0.85   # further along
 ```
 
@@ -82,6 +87,24 @@ advances the snapshot a system. Glazing appears once the envelope is in.
 python3 -m http.server 8099      # from the repo root
 # open http://localhost:8099/viz/viewer/
 ```
+
+## End-to-end control surface
+
+The same `building.json` drives a full-lifecycle **operational cockpit** every
+role shares — the 3D object (котлован → плита → basements → storeys → roof)
+coloured by what's **accepted** over a **timeline scrubber**, a **role lens**, a
+**КС-3 / EVM** money dashboard, a click-a-zone act panel and a live acts feed.
+A deterministic simulator folds the whole project (design → котлован → каркас →
+отделка → сдача → оплаты, ~1 560 acceptance cases) through the **unchanged**
+engine and emits the data it reads:
+
+```bash
+node examples/construction/e2e/drive.ts    # → viz/model/e2e/{attachments,timeline,ledger,certificate,roles}.json
+python3 -m http.server 8099                # open http://localhost:8099/viz/viewer/control/
+```
+
+Walkthrough: [`examples/construction/e2e/`](../examples/construction/e2e/) ·
+verdict: [`docs/e2e-feasibility.md`](../docs/e2e-feasibility.md).
 
 ## Animation
 

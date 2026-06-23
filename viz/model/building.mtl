@@ -27,6 +27,18 @@ newmtl base
 Kd 0.125 0.157 0.200
 d 1.0
 
+newmtl excavation
+Kd 0.420 0.353 0.263
+d 0.45
+
+newmtl foundation_mat
+Kd 0.357 0.400 0.459
+d 1.0
+
+newmtl roof
+Kd 0.275 0.337 0.416
+d 1.0
+
 newmtl selected
 Kd 0.133 0.827 0.933
 d 1.0

@@ -1,0 +1,35 @@
+{
+  "id": "construction.excavation-acceptance",
+  "name": "Excavation of the pit (котлован) with geodetic set-out",
+  "domain": "construction",
+  "description": "Разработка котлована с геодезической разбивкой. The contractor claims a dug volume; the surveyor's as-built geodetic survey (исполнительная съёмка котлована) is the trusted reference, the geotech report confirms the design soil was reached at the котлован bottom (−9.0 m). Technical supervision accepts on the SURVEYED volume; money is КС-2/КС-3 at the excavation rate. Site scope (zone=SITE).",
+  "claim": {
+    "type": "excavation_completed",
+    "fields": [
+      { "name": "work_item", "kind": "string", "required": true },
+      { "name": "quantity", "kind": "number", "unit": "m3", "required": true },
+      { "name": "design_elevation", "kind": "number", "unit": "m", "required": true },
+      { "name": "zone", "kind": "zone", "required": true }
+    ]
+  },
+  "evidence": [
+    { "kind": "executive_survey", "required": true, "description": "Исполнительная геодезическая съёмка котлована (обмер объёма выемки) — surveyed reference for the excavated volume and the achieved bottom elevation. Drives payment." },
+    { "kind": "geodetic_layout_act", "required": true, "description": "Акт геодезической разбивочной основы / выноса осей в натуру — site axes and pit outline transferred to the ground from the design." },
+    { "kind": "geotech_report", "required": true, "description": "Акт освидетельствования грунтов основания / отчёт по геологии — confirms the design bearing soil at pit bottom." },
+    { "kind": "works_log", "required": false, "description": "Общий журнал работ — daily works log for the earthworks." }
+  ],
+  "checks": [
+    { "id": "earthworks-docs-present", "rule": "required_evidence", "kinds": ["executive_survey", "geodetic_layout_act", "geotech_report"], "severity": "blocking", "description": "Set-out act, as-built survey and bearing-soil acceptance are all attached." },
+    { "id": "claim-matches-survey", "rule": "cross_check", "claimField": "quantity", "claimUnit": "m3", "evidenceKind": "executive_survey", "evidenceField": "quantity", "uncertaintyField": "U", "requireUnitMatch": true, "tolerance": 0.05, "absolute": 2, "severity": "blocking", "description": "Claimed excavated volume vs the as-built survey within 5% / 2 m³ (whichever greater) and within the survey's uncertainty U. Error normalized by the survey (VIM §2.16)." },
+    { "id": "bottom-at-or-below-grade", "rule": "field_range", "field": "design_elevation", "max": 0, "severity": "blocking", "description": "Pit bottom is at/below grade." },
+    { "id": "zone-format", "rule": "field_pattern", "field": "zone", "pattern": "^(SITE|BLDG)(-[A-Z][0-9]{2})?$", "severity": "blocking", "description": "Site-level scope id (SITE)." }
+  ],
+  "reviewer": { "role": "technical_supervisor", "description": "Технадзор заказчика." },
+  "decisions": ["accepted", "accepted_with_exceptions", "rejected", "returned_for_rework"],
+  "consequences": [
+    { "id": "earned-value", "effect": "money", "on": ["accepted", "accepted_with_exceptions"], "basis": "accepted_quantity", "quantityField": "quantity", "unitPrice": 18, "currency": "EUR", "retentionPct": 0.05, "retentionCap": 25000, "vatRate": 0.2, "paymentTermsDays": 30, "estimateLine": "ФЕР01-01-013", "contractRef": "BOQ 2.1 'Разработка грунта в котловане' @ EUR 18.00/m³", "description": "КС-3 on the surveyed pit volume, less 5% retention." },
+    { "id": "unlock-foundation", "effect": "right_to_proceed", "on": ["accepted"], "unlocks": "foundation-raft", "description": "Pit bottom accepted, the raft may start." },
+    { "id": "acceptance-liability", "effect": "risk", "on": ["accepted", "accepted_with_exceptions"], "assignedTo": "technical_supervisor" },
+    { "id": "label", "effect": "dataset_label", "on": ["accepted", "accepted_with_exceptions", "rejected", "returned_for_rework"], "dataset": "construction.excavation" }
+  ]
+}
