@@ -32,25 +32,63 @@
         const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
       };
 
-      // graded construction site (earth apron + open pit + concrete edge + ground
-      // slab + road) so the building plants into the ground instead of floating
+      // graded construction site + props (crane/cabins/hoarding/materials/truck)
+      // so the building plants into the ground instead of floating. Returns
+      // { animate(elapsed) } — a pure function of time for the ambient motion.
       function buildSite(scene, shadows) {
         const SITE_X = 76, SITE_Z = 58, PIT_X = 22, PIT_Z = 16, FX = 18.3, FZ = 12.3;
-        const matt = (color) => new THREE.MeshStandardMaterial({ color, roughness: 1, metalness: 0 });
+        const matt = (color, o) => new THREE.MeshStandardMaterial({ color, roughness: 1, metalness: 0, ...(o || {}) });
         const flat = (w, d, color, y) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), matt(color)); m.rotation.x = -Math.PI / 2; m.position.y = y; m.receiveShadow = shadows; scene.add(m); return m; };
         const ring = (color, y, ox, oz, ix, iz) => {
           const s = new THREE.Shape(); s.moveTo(-ox, -oz); s.lineTo(ox, -oz); s.lineTo(ox, oz); s.lineTo(-ox, oz); s.closePath();
           const h = new THREE.Path(); h.moveTo(-ix, -iz); h.lineTo(-ix, iz); h.lineTo(ix, iz); h.lineTo(ix, -iz); h.closePath(); s.holes.push(h);
           const m = new THREE.Mesh(new THREE.ShapeGeometry(s), matt(color)); m.rotation.x = -Math.PI / 2; m.position.y = y; m.receiveShadow = shadows; scene.add(m); return m;
         };
+        const box = (w, h, d, mat, x, y, z, parent) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); m.position.set(x, y, z); m.castShadow = shadows; m.receiveShadow = shadows; (parent || scene).add(m); return m; };
+
         flat(580, 580, 0x070b11, -9.3);
         const grid = new THREE.GridHelper(330, 66, 0x1b2942, 0x0f1827); grid.position.y = -9.24; grid.material.transparent = true; grid.material.opacity = 0.18; scene.add(grid);
         ring(0x232720, 0, SITE_X, SITE_Z, PIT_X, PIT_Z);
         ring(0x33373d, 0.012, PIT_X + 2.4, PIT_Z + 2.4, PIT_X, PIT_Z);
-        const slab = new THREE.Mesh(new THREE.BoxGeometry(2 * FX, 0.5, 2 * FZ), matt(0x2a2f36)); slab.position.set(0, -0.1, 0); slab.castShadow = shadows; slab.receiveShadow = shadows; scene.add(slab);
+        box(2 * FX, 0.5, 2 * FZ, matt(0x2a2f36), 0, -0.1, 0);
         flat(2 * SITE_X, 9, 0x121419, 0.03).position.set(0, 0.03, -38);
         flat(11, 22, 0x121419, 0.03).position.set(0, 0.03, -28);
         for (let x = -SITE_X + 6; x < SITE_X; x += 11) { const d = new THREE.Mesh(new THREE.PlaneGeometry(4.5, 0.45), matt(0xb7c0cb)); d.rotation.x = -Math.PI / 2; d.position.set(x, 0.05, -38); scene.add(d); }
+
+        const steel = matt(0xcf9f38, { roughness: 0.6, metalness: 0.25 });
+        const dark = matt(0x24272d, { roughness: 0.85 });
+        const concrete = matt(0x39414a, { roughness: 1 });
+        const HX = 31, HZ = 23, HH = 2.4;
+        box(2 * HX, HH, 0.3, concrete, 0, HH / 2, HZ);
+        box(0.3, HH, 2 * HZ, concrete, HX, HH / 2, 0);
+        box(0.3, HH, 2 * HZ, concrete, -HX, HH / 2, 0);
+        box(HX - 6, HH, 0.3, concrete, -(HX / 2 + 3), HH / 2, -HZ);
+        box(HX - 6, HH, 0.3, concrete, HX / 2 + 3, HH / 2, -HZ);
+        box(6.6, 2.7, 2.7, matt(0x2c4f6e, { roughness: 0.7 }), 26, 1.35, -19);
+        box(6.6, 2.7, 2.7, matt(0x4a5560, { roughness: 0.7 }), 26, 4.15, -19);
+        box(6.6, 2.7, 2.7, matt(0x4a5560, { roughness: 0.7 }), 26, 1.35, -22.9);
+        box(12, 0.55, 0.55, steel, -26, 0.3, 4); box(12, 0.55, 0.55, steel, -26, 0.3, 4.7); box(12, 0.55, 0.55, steel, -26, 0.85, 4.35);
+        box(3, 1.4, 3, concrete, -26, 0.7, -8); box(2.6, 0.6, 2.6, matt(0x8a7d5a), -26, 1.7, -8);
+        const pile = new THREE.Mesh(new THREE.ConeGeometry(4, 3, 18), matt(0x47432f)); pile.position.set(25, 1.5, 9); pile.castShadow = shadows; pile.receiveShadow = shadows; scene.add(pile);
+        box(7.5, 1, 2.6, concrete, 0, 1.5, -28); box(3, 2.1, 2.6, dark, 2.6, 1.7, -28); box(5, 1.3, 2.1, matt(0x6b7280), -0.8, 2.6, -28);
+
+        const crane = new THREE.Group(); crane.position.set(-15, 0, -16); scene.add(crane);
+        const MAST_H = 57;
+        box(1.6, MAST_H, 1.6, steel, 0, MAST_H / 2, 0, crane);
+        const slew = new THREE.Group(); slew.position.y = MAST_H; crane.add(slew);
+        box(2.0, 2.0, 2.0, steel, 0, 1.0, 0, slew);
+        box(0.5, 5, 0.5, steel, 0, 4.6, 0, slew);
+        box(42, 1.0, 1.1, steel, 21, 2.7, 0, slew);
+        box(14, 1.0, 1.1, steel, -7, 2.7, 0, slew);
+        box(3.4, 2.8, 2.8, dark, -13, 1.9, 0, slew);
+        const hook = new THREE.Group(); hook.position.set(27, 2.4, 0); slew.add(hook);
+        box(0.14, 10, 0.14, dark, 0, -5, 0, hook);
+        box(1.0, 1.0, 1.0, dark, 0, -10.3, 0, hook);
+
+        const BASE = -0.8;
+        const animate = (e) => { slew.rotation.y = BASE + Math.sin(e * 0.16) * 0.7; hook.position.y = 2.2 + Math.sin(e * 0.5) * 1.4; };
+        animate(0);
+        return { animate };
       }
 
       const W = 1280, H = 640, BG = 0x070b12;
