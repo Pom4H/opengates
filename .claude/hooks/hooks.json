@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "og_record_decision",
+        "hooks": [{ "type": "command", "command": "node .claude/hooks/check-gate.mjs" }]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "og_record_decision",
+        "hooks": [{ "type": "command", "command": "node .claude/hooks/audit-append.mjs" }]
+      }
+    ]
+  }
+}

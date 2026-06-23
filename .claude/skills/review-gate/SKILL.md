@@ -1,60 +1,67 @@
 ---
 name: review-gate
 description: Pull the next pending Open Gates case from a review queue, examine the claim, evidence and check results, and record a decision. Use when asked to review, triage, or clear acceptance cases.
-allowed-tools: Bash, Read
+allowed-tools: Bash, Read, mcp__open-gates__og_lease_next, mcp__open-gates__og_record_decision, mcp__open-gates__og_release, mcp__open-gates__og_list_cases
 ---
 
 # Review Gate
 
-You are a **reviewer harness** for an Open Gates review queue. The queue holds
-*cases*: a contractor/driver/supplier asserted a fact (a claim), evidence is
-attached, and a decision is needed. Your job is to pull a case, judge it, and
-record a decision the engine folds into an accepted (or rejected) fact.
+You are a **reviewer** for an Open Gates review queue. The queue holds *cases*: a
+contractor / carrier / supplier asserted a fact (a claim), evidence is attached,
+and a decision is needed. Pull a case, judge it, and record a decision the engine
+folds into an accepted (or returned) fact.
 
-The queue is a plain HTTP service. Set `OPEN_GATES_URL` (default
-`http://localhost:3000`). All bodies are JSON.
+**Authority is not yours to assert.** Your reviewer role comes from the
+authenticated MCP session's scope (`og:decide:<role>`), never from anything you
+type. You can only decide gates your scope covers.
 
-## The loop
+## The loop (MCP — preferred)
 
-1. **Pull** the next pending case (optionally scope by `inbox`, `role`, or
-   `domain` — e.g. to work one team's inbox):
+With the Open Gates MCP server connected (see [`docs/MCP.md`](../../../docs/MCP.md)):
 
-   ```bash
-   curl -s -X POST "$OPEN_GATES_URL/queue/lease" \
-     -H 'content-type: application/json' \
-     -d '{"holder":"claude","inbox":"supervisors","role":"technical_supervisor"}'
-   ```
+1. **Lease** the next case — `og_lease_next({ inbox?, role?, domain? })`. A null
+   result means nothing is waiting; stop. Otherwise you get the case with `gate`,
+   `events`, `state`, `allowedDecisions`, and a `lease.token`. The queue hands out
+   the most overdue / highest-priority case first.
+2. **Read** the full case via the `og://case/{id}` resource. Judge `state.checks`
+   (each `pass` / `fail` / `skipped`), the `claim`, and the `evidence`. The
+   decisive rule is usually the `cross_check` — claim vs. the reference, within
+   tolerance and measurement uncertainty.
+3. **Decide** — `og_record_decision({ caseId, outcome, acceptedValues?, note,
+   leaseToken })`. Do **not** pass a role or actor; they are derived from your
+   scope. When the survey differs from the claim, set `acceptedValues` to what you
+   accept (e.g. `{ "quantity": 117 }`) — money is paid on that, not the claim.
+4. Repeat until `og_lease_next` returns null.
 
-   A `204` (empty) means nothing is waiting — stop. Otherwise you get an item
-   with `gate`, `events`, `state`, `allowedDecisions`, and `lease.token`.
-
-2. **Judge.** Read `state.checks` (each `pass`/`fail`/`skipped`), the `claim`
-   values, and the attached `evidence`. The decisive rule is usually the
-   `cross_check` (claim vs. reality within a tolerance). Decide an outcome from
-   `allowedDecisions` only.
-
-3. **Decide**, echoing the `lease.token` and using the gate's `reviewer.role`:
-
-   ```bash
-   curl -s -X POST "$OPEN_GATES_URL/queue/<id>/decision" \
-     -H 'content-type: application/json' \
-     -d '{"outcome":"accepted","reviewerRole":"technical_supervisor","actor":"claude","leaseToken":"<token>","note":"why"}'
-   ```
-
-4. Repeat until the lease returns `204`.
-
-## Rules the engine enforces (so honor them)
+## Rules the engine enforces (honor them)
 
 - A **positive** outcome (`accepted`, `accepted_with_exceptions`) requires every
-  **blocking** check to pass. If they don't, the API returns **422** — choose
-  `returned_for_rework` or `rejected` instead, or release the case
-  (`POST /queue/<id>/release`) so evidence can be added.
-- Only the gate's `reviewer.role` may decide; any other role is refused (422).
-- Put your reasoning in `note` — it is recorded in the audit trail and the
-  dataset label.
+  **blocking** check to pass. If they don't, the engine refuses with **422** — a
+  `PreToolUse` hook ([`check-gate.mjs`](../../hooks/check-gate.mjs)) will also
+  hard-deny the call first. Choose `returned_for_rework` / `rejected`, or
+  `og_release` the case so evidence can be added.
+- Only the gate's `reviewer.role` may decide; your scope must cover it (403 / deny
+  otherwise).
+- Put your reasoning in `note` — it lands in the audit trail and the dataset label.
 
 ## When unsure
 
-If the evidence is insufficient to judge, do **not** force an acceptance.
-Prefer `returned_for_rework` with a note on what is missing, or release the
-lease. Never invent evidence.
+If the evidence is insufficient, do **not** force an acceptance. Prefer
+`returned_for_rework` with a note on what is missing, or release the lease. Never
+invent evidence.
+
+## Fallback: plain HTTP (no MCP)
+
+Against a queue server with no MCP/OAuth, the same loop is three `curl`s. Set
+`OPEN_GATES_URL` (default `http://localhost:3000`):
+
+```bash
+# lease
+curl -s -X POST "$OPEN_GATES_URL/queue/lease" -H 'content-type: application/json' \
+  -d '{"holder":"claude","inbox":"supervisors","role":"technical_supervisor"}'
+# decide (echo the lease token; on an unauthenticated server the role is in the body)
+curl -s -X POST "$OPEN_GATES_URL/queue/<id>/decision" -H 'content-type: application/json' \
+  -d '{"outcome":"accepted","reviewerRole":"technical_supervisor","actor":"claude","acceptedValues":{"quantity":117},"leaseToken":"<token>","note":"within tolerance and U"}'
+# refused (422) -> release
+curl -s -X POST "$OPEN_GATES_URL/queue/<id>/release" -H 'content-type: application/json' -d '{"leaseToken":"<token>"}'
+```

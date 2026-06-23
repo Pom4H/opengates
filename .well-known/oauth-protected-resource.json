@@ -1,0 +1,15 @@
+{
+  "resource": "https://gates.example.com",
+  "authorization_servers": ["https://auth.example.com"],
+  "scopes_supported": [
+    "og:read",
+    "og:enqueue",
+    "og:lease",
+    "og:decide:technical_supervisor",
+    "og:decide:customer_receiver",
+    "og:decide:construction_control",
+    "og:decide:*"
+  ],
+  "bearer_methods_supported": ["header"],
+  "resource_documentation": "https://github.com/Pom4H/opengates/blob/main/docs/MCP.md"
+}
