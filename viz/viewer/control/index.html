@@ -265,34 +265,47 @@
 
         // --- tower crane (mast + slewing jib + counter-jib + hook) ---
         const crane = new THREE.Group(); crane.position.set(-34, 0, 22); scene.add(crane);
-        const MAST_H = 54, JIBY = 2.7, JIBW = MAST_H + JIBY; // jib world height
-        box(1.6, MAST_H, 1.6, steel, 0, MAST_H / 2, 0, crane); // mast
-        const slew = new THREE.Group(); slew.position.y = MAST_H; crane.add(slew);
+        const JIBY = 2.7, BASE = 0.575; // jib points over the building
+        const mast = box(1.6, 1, 1.6, steel, 0, 0.5, 0, crane); // unit mast, SCALED to climb with the build
+        const slew = new THREE.Group(); crane.add(slew); // lifted to the crane top each frame
         box(2.0, 2.0, 2.0, steel, 0, 1.0, 0, slew); // turntable / cab
         box(0.5, 5, 0.5, steel, 0, 4.6, 0, slew); // apex
         box(42, 1.0, 1.1, steel, 21, JIBY, 0, slew); // jib (+x)
         box(14, 1.0, 1.1, steel, -7, JIBY, 0, slew); // counter-jib (−x)
         box(3.4, 2.8, 2.8, dark, -13, 1.9, 0, slew); // counterweight
-        const flag = box(1.7, 1.0, 0.06, matt(0x4ade80, { roughness: 0.7, side: THREE.DoubleSide, emissive: 0x2f9e57, emissiveIntensity: 0.35 }), 1.0, 7.7, 0, slew); // jib flag
-        const trolley = new THREE.Group(); trolley.position.set(26, JIBY, 0); slew.add(trolley);
-        const cable = box(0.14, 1, 0.14, dark, 0, -0.5, 0, trolley); // unit cable, scaled in aimAt
-        const block = box(1.0, 1.0, 1.0, dark, 0, -1, 0, trolley); // hook block
+        const flag = box(1.7, 1.0, 0.06, matt(0x4ade80, { roughness: 0.7, side: THREE.DoubleSide, emissive: 0x2f9e57, emissiveIntensity: 0.35 }), 1.0, 7.7, 0, slew);
+        const trolley = new THREE.Group(); trolley.position.set(20, JIBY, 0); slew.add(trolley); // rides forward/back along the jib
+        const cable = box(0.14, 1, 0.14, dark, 0, -0.5, 0, trolley); // unit cable, scaled to the hook drop
+        const hookBlk = box(0.9, 0.9, 0.9, dark, 0, -1, 0, trolley); // hook block
+        const load = box(2.2, 1.0, 2.2, matt(0x8a93a3, { roughness: 0.8 }), 0, -2, 0, trolley); // the block being lifted
 
-        // Aim the crane at the current work front (tx,ty,tz — a pure function of
-        // the scrubber time t) with gentle sway/flutter (elapsed). Both are pure
-        // functions of time → the animation can never drift, jitter or break.
-        function aimAt(tx, ty, tz, e) {
-          const dx = tx - crane.position.x, dz = tz - crane.position.z;
-          const dist = Math.hypot(dx, dz) || 1;
-          slew.rotation.y = Math.atan2(-dz, dx) + Math.sin(e * 0.45) * 0.02; // point at the front + idle sway
-          trolley.position.x = Math.max(10, Math.min(40, dist)); // trolley rides out along the jib
-          const L = Math.max(6, Math.min(22, JIBW - (ty + 4))); // cable lowers toward the active level
-          cable.scale.y = L; cable.position.y = -L / 2; block.position.y = -L;
-          const swing = Math.sin(e * 0.8) * 0.3; block.position.x = swing; cable.position.x = swing * 0.5; // load swing
-          flag.rotation.y = Math.sin(e * 3.0) * 0.5; // flutter
+        const lerp = (a, b, u) => a + (b - a) * u;
+        const ease = (u) => (u < 0.5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2);
+        // Climb with the build (mast height = current top + clearance, from t) and
+        // run a pick→carry→place→return cycle (trolley forward/back + hook up/down,
+        // from elapsed). Pure functions of time → can't drift or break.
+        function craneUpdate(topY, e) {
+          const craneH = Math.max(13, Math.min(60, topY + 9));
+          mast.scale.y = craneH; mast.position.y = craneH / 2; slew.position.y = craneH; // climb
+          slew.rotation.y = BASE + Math.sin(e * 0.22) * 0.035; // tiny idle sway
+          const jibW = craneH + JIBY, D_SUP = 13, D_PLC = 34;
+          const grabL = jibW - 1.8, placeL = Math.max(3.5, jibW - (topY + 2));
+          const p = (e % 9) / 9; let d, L, carry;
+          if (p < 0.12) { d = D_SUP; L = lerp(5, grabL, ease(p / 0.12)); carry = false; }                     // lower to grab
+          else if (p < 0.2) { d = D_SUP; L = lerp(grabL, 5, ease((p - 0.12) / 0.08)); carry = true; }          // hoist the block
+          else if (p < 0.45) { d = lerp(D_SUP, D_PLC, ease((p - 0.2) / 0.25)); L = 5; carry = true; }          // carry out over the building
+          else if (p < 0.57) { d = D_PLC; L = lerp(5, placeL, ease((p - 0.45) / 0.12)); carry = true; }        // lower onto the top
+          else if (p < 0.65) { d = D_PLC; L = lerp(placeL, 5, ease((p - 0.57) / 0.08)); carry = false; }       // release + raise
+          else if (p < 0.9) { d = lerp(D_PLC, D_SUP, ease((p - 0.65) / 0.25)); L = 5; carry = false; }         // return empty
+          else { d = D_SUP; L = 5; carry = false; }
+          trolley.position.x = d;
+          cable.scale.y = L; cable.position.y = -L / 2; hookBlk.position.y = -L;
+          load.position.y = -L - 1.0; load.visible = carry;
+          const sw = carry ? Math.sin(e * 2.3) * 0.12 : 0; hookBlk.position.x = sw; load.position.x = sw;
+          flag.rotation.y = Math.sin(e * 3.0) * 0.5;
         }
-        aimAt(0, 46, 0, 0); // sensible static pose
-        return { aimAt };
+        craneUpdate(24, 0); // sensible static pose
+        return { craneUpdate };
       }
 
       const $ = (id) => document.getElementById(id);
@@ -714,7 +727,7 @@
         // ---- go ----
         setT(MAX);
         addEventListener("resize", () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); if (composer) composer.setSize(innerWidth, innerHeight); });
-        (function render() { requestAnimationFrame(render); controls.update(); site.aimAt(craneTarget.x, craneTarget.y, craneTarget.z, clock.getElapsedTime()); if (composer) composer.render(); else renderer.render(scene, camera); })();
+        (function render() { requestAnimationFrame(render); controls.update(); site.craneUpdate(craneTarget.y, clock.getElapsedTime()); if (composer) composer.render(); else renderer.render(scene, camera); })();
       }
     </script>
   </body>

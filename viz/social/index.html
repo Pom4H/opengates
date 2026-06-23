@@ -73,29 +73,43 @@
         box(7.5, 1, 2.6, concrete, 0, 1.5, -28); box(3, 2.1, 2.6, dark, 2.6, 1.7, -28); box(5, 1.3, 2.1, matt(0x6b7280), -0.8, 2.6, -28);
 
         const crane = new THREE.Group(); crane.position.set(-15, 0, -16); scene.add(crane);
-        const MAST_H = 57, JIBY = 2.7, JIBW = MAST_H + JIBY;
-        box(1.6, MAST_H, 1.6, steel, 0, MAST_H / 2, 0, crane);
-        const slew = new THREE.Group(); slew.position.y = MAST_H; crane.add(slew);
+        const JIBY = 2.7, BASE = -0.82;
+        const mast = box(1.6, 1, 1.6, steel, 0, 0.5, 0, crane);
+        const slew = new THREE.Group(); crane.add(slew);
         box(2.0, 2.0, 2.0, steel, 0, 1.0, 0, slew);
         box(0.5, 5, 0.5, steel, 0, 4.6, 0, slew);
         box(42, 1.0, 1.1, steel, 21, JIBY, 0, slew);
         box(14, 1.0, 1.1, steel, -7, JIBY, 0, slew);
         box(3.4, 2.8, 2.8, dark, -13, 1.9, 0, slew);
         const flag = box(1.7, 1.0, 0.06, matt(0x4ade80, { roughness: 0.7, side: THREE.DoubleSide, emissive: 0x2f9e57, emissiveIntensity: 0.35 }), 1.0, 7.7, 0, slew);
-        const trolley = new THREE.Group(); trolley.position.set(26, JIBY, 0); slew.add(trolley);
+        const trolley = new THREE.Group(); trolley.position.set(20, JIBY, 0); slew.add(trolley);
         const cable = box(0.14, 1, 0.14, dark, 0, -0.5, 0, trolley);
-        const block = box(1.0, 1.0, 1.0, dark, 0, -1, 0, trolley);
-        function aimAt(tx, ty, tz, e) {
-          const dx = tx - crane.position.x, dz = tz - crane.position.z; const dist = Math.hypot(dx, dz) || 1;
-          slew.rotation.y = Math.atan2(-dz, dx) + Math.sin(e * 0.45) * 0.02;
-          trolley.position.x = Math.max(10, Math.min(40, dist));
-          const L = Math.max(6, Math.min(22, JIBW - (ty + 4)));
-          cable.scale.y = L; cable.position.y = -L / 2; block.position.y = -L;
-          const swing = Math.sin(e * 0.8) * 0.3; block.position.x = swing; cable.position.x = swing * 0.5;
+        const hookBlk = box(0.9, 0.9, 0.9, dark, 0, -1, 0, trolley);
+        const load = box(2.2, 1.0, 2.2, matt(0x8a93a3, { roughness: 0.8 }), 0, -2, 0, trolley);
+        const lerp = (a, b, u) => a + (b - a) * u;
+        const ease = (u) => (u < 0.5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2);
+        function craneUpdate(topY, e) {
+          const craneH = Math.max(13, Math.min(60, topY + 9));
+          mast.scale.y = craneH; mast.position.y = craneH / 2; slew.position.y = craneH;
+          slew.rotation.y = BASE + Math.sin(e * 0.22) * 0.035;
+          const jibW = craneH + JIBY, D_SUP = 13, D_PLC = 34;
+          const grabL = jibW - 1.8, placeL = Math.max(3.5, jibW - (topY + 2));
+          const p = (e % 9) / 9; let d, L, carry;
+          if (p < 0.12) { d = D_SUP; L = lerp(5, grabL, ease(p / 0.12)); carry = false; }
+          else if (p < 0.2) { d = D_SUP; L = lerp(grabL, 5, ease((p - 0.12) / 0.08)); carry = true; }
+          else if (p < 0.45) { d = lerp(D_SUP, D_PLC, ease((p - 0.2) / 0.25)); L = 5; carry = true; }
+          else if (p < 0.57) { d = D_PLC; L = lerp(5, placeL, ease((p - 0.45) / 0.12)); carry = true; }
+          else if (p < 0.65) { d = D_PLC; L = lerp(placeL, 5, ease((p - 0.57) / 0.08)); carry = false; }
+          else if (p < 0.9) { d = lerp(D_PLC, D_SUP, ease((p - 0.65) / 0.25)); L = 5; carry = false; }
+          else { d = D_SUP; L = 5; carry = false; }
+          trolley.position.x = d;
+          cable.scale.y = L; cable.position.y = -L / 2; hookBlk.position.y = -L;
+          load.position.y = -L - 1.0; load.visible = carry;
+          const sw = carry ? Math.sin(e * 2.3) * 0.12 : 0; hookBlk.position.x = sw; load.position.x = sw;
           flag.rotation.y = Math.sin(e * 3.0) * 0.5;
         }
-        aimAt(0, 52, 0, 0); // static pose: jib over the building
-        return { aimAt };
+        craneUpdate(49, 4.45); // static pose: lowering a block onto the top
+        return { craneUpdate };
       }
 
       const W = 1280, H = 640, BG = 0x070b12;
