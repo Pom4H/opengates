@@ -215,24 +215,37 @@
       };
 
       // Drive the crane from the build's current top (topY) and how far the build
-      // has progressed (place01) — both PURE FUNCTIONS of the scrubber time t (via
-      // the construction primitive). The crane rides just above the current top so
-      // it always keeps pace with the newest blocks, with a placing dip + gentle
-      // trolley shuttle that advance with the build (so they freeze on pause). Only
-      // the flag/sway use elapsed e (cosmetic).
+      // has progressed (place01) — both PURE FUNCTIONS of the scrubber time t. The
+      // crane runs N delivery cycles synced to the build: lower the trolley to the
+      // ground QUEUE, grab the front block, carry it out + up, set it on the current
+      // top, return. The queue marches toward the pickup as blocks are consumed.
+      // Everything is a function of place01 (so it freezes on pause); only the flag
+      // uses elapsed e.
       function runCrane(rig, topY, place01, e) {
-        const { mast, slew, trolley, cable, hookBlk, load, flag, BASE, JIBY } = rig;
-        const craneH = Math.max(13, Math.min(60, topY + 9));
+        const { mast, slew, trolley, cable, hookBlk, load, flag, BASE, JIBY, queueBlocks, SP, Q, dSup, dPlace, N } = rig;
+        const lerp = (a, b, t) => a + (b - a) * t;
+        const ease = (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
+        const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+        const craneH = clamp(topY + 9, 13, 60);
         mast.scale.y = craneH; mast.position.y = craneH / 2; slew.position.y = craneH; // climb with the build
-        slew.rotation.y = BASE + Math.sin(e * 0.2) * 0.025; // cosmetic micro-sway
+        slew.rotation.y = BASE + Math.sin(e * 0.18) * 0.02; // cosmetic micro-sway
         const jibW = craneH + JIBY;
-        const ph = place01 * Math.PI * 2 * 28; // ~28 placing cycles across the whole build
-        trolley.position.x = 30 + Math.sin(ph * 0.5) * 3.5; // gentle shuttle over the building top
-        const baseL = Math.max(3, jibW - (topY + 2.6)); // hook hangs just above the CURRENT top
-        const L = baseL + (Math.sin(ph) * 0.5 + 0.5) * 2.4; // small placing dip
+        const groundL = jibW - 1.4; // cable to the ground queue
+        const carryL = clamp(jibW - (topY + 4), 3, jibW); // hook just above the top while carrying
+        const placeL = clamp(jibW - (topY + 1.6), 3, jibW); // set onto the top
+        const dt = place01 * N, cyc = dt - Math.floor(dt); // delivery cycle, synced to the build
+        let tx, L, loadVis;
+        if (cyc < 0.16) { tx = dSup; L = lerp(carryL, groundL, ease(cyc / 0.16)); loadVis = false; }            // lower to the queue
+        else if (cyc < 0.26) { tx = dSup; L = lerp(groundL, carryL, ease((cyc - 0.16) / 0.1)); loadVis = true; } // grab + hoist
+        else if (cyc < 0.6) { tx = lerp(dSup, dPlace, ease((cyc - 0.26) / 0.34)); L = carryL; loadVis = true; }  // carry to the building
+        else if (cyc < 0.76) { tx = dPlace; L = lerp(carryL, placeL, ease((cyc - 0.6) / 0.16)); loadVis = true; }// lower onto the top
+        else if (cyc < 0.86) { tx = dPlace; L = placeL; loadVis = false; }                                       // release
+        else { tx = lerp(dPlace, dSup, ease((cyc - 0.86) / 0.14)); L = carryL; loadVis = false; }                // return empty
+        trolley.position.x = tx;
         cable.scale.y = L; cable.position.y = -L / 2; hookBlk.position.y = -L;
-        load.position.y = -L - 1.0; load.visible = true; // a block riding at the top, being set
-        const sw = Math.sin(e * 1.8) * 0.08; hookBlk.position.x = sw; load.position.x = sw;
+        load.position.y = -L - 1.0; load.visible = loadVis;
+        // march the ground queue toward the pickup; hide the one at the very front (on the hook)
+        if (queueBlocks) { const span = Q * SP; for (let i = 0; i < Q; i++) { const x = (((i * SP - dt * SP) % span) + span) % span; queueBlocks[i].position.x = x; queueBlocks[i].visible = x > SP * 0.55; } }
         flag.rotation.y = Math.sin(e * 3.0) * 0.5;
       }
 
@@ -300,7 +313,16 @@
         const cable = box(0.14, 1, 0.14, dark, 0, -0.5, 0, trolley); // unit cable, scaled to the hook drop
         const hookBlk = box(0.9, 0.9, 0.9, dark, 0, -1, 0, trolley); // hook block
         const load = box(2.2, 1.0, 2.2, matt(0x8a93a3, { roughness: 0.8 }), 0, -2, 0, trolley); // the block being lifted
-        const rig = { mast, slew, trolley, cable, hookBlk, load, flag, BASE, JIBY };
+        // ground queue: a marching line of blocks the crane lifts from
+        const Q = 12, SP = 2.8, dSup = 11, dPlace = 33;
+        const jd = [Math.cos(BASE), 0, -Math.sin(BASE)]; // jib world direction
+        const queue = new THREE.Group();
+        queue.position.set(crane.position.x + dSup * jd[0], 0.7, crane.position.z + dSup * jd[2]);
+        queue.rotation.y = BASE + Math.PI; // local +x runs back along the jib, away from the building
+        scene.add(queue);
+        const queueBlocks = [];
+        for (let i = 0; i < Q; i++) queueBlocks.push(box(2.3, 1.2, 2.3, matt(0x8a93a3, { roughness: 0.85 }), i * SP, 0, 0, queue));
+        const rig = { mast, slew, trolley, cable, hookBlk, load, flag, BASE, JIBY, queue, queueBlocks, SP, Q, dSup, dPlace, N: 26 };
         runCrane(rig, 24, 0.5, 0); // sensible static pose
         return { rig };
       }
@@ -730,10 +752,13 @@
 
         // ---- go ----
         setT(MAX);
+        // one render step, used by both the rAF loop and the ?capture hook (so
+        // recording works even when the tab is backgrounded and rAF is paused)
+        function frame() { controls.update(); const cs = craneState(T); runCrane(site.rig, cs.topY, cs.place01, clock.getElapsedTime()); if (composer) composer.render(); else renderer.render(scene, camera); }
         // capture hook (?capture): drive the timeline precisely to record media
-        if (_q.has("capture")) window.__viz = { setT, fToT, camera, controls, range: { MIN, MAX } };
+        if (_q.has("capture")) window.__viz = { setT, fToT, frame, camera, controls, range: { MIN, MAX } };
         addEventListener("resize", () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); if (composer) composer.setSize(innerWidth, innerHeight); });
-        (function render() { requestAnimationFrame(render); controls.update(); const cs = craneState(T); runCrane(site.rig, cs.topY, cs.place01, clock.getElapsedTime()); if (composer) composer.render(); else renderer.render(scene, camera); })();
+        (function loop() { requestAnimationFrame(loop); frame(); })();
       }
     </script>
   </body>
