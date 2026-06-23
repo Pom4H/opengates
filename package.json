@@ -10,7 +10,7 @@
     "serve": "node server.ts",
     "mcp": "node packages/engine/src/mcp/server.ts",
     "token": "node packages/engine/src/token.ts",
-    "test": "node --test packages/engine/test/*.test.ts",
+    "test": "node --test packages/engine/test/*.test.ts packages/sim/test/*.test.ts",
     "conformance": "node conformance/run.mjs",
     "conformance:update": "node conformance/run.mjs --update",
     "demo:dispute": "node packages/engine/src/cli.ts examples/construction/gate.json examples/construction/scenario.dispute.json",
@@ -21,6 +21,7 @@
     "viz:attachments": "node packages/engine/src/zone-cli.ts --gate examples/construction/systems/gate.json --gate examples/facilities/gate.json examples/construction/systems/structure.accept.json examples/construction/systems/envelope.accept.json examples/construction/systems/mep.review.json examples/construction/systems/fitout.submitted.json examples/facilities/scenario.accept.json --model viz/model/building.json --json viz/model/attachments.json",
     "demo:flows": "node packages/engine/src/flow-cli.ts --gate examples/operations/flow.gate.json --gate examples/construction/systems/gate.json examples/operations/deliver-rebar.accept.json examples/operations/rent-crane.accept.json examples/operations/transport-crew.accept.json examples/operations/consume-rebar.json examples/operations/consume-crane.json examples/operations/consume-crew.json examples/construction/systems/structure.accept.json --model viz/model/graph.json",
     "viz:flows": "node packages/engine/src/flow-cli.ts --gate examples/operations/flow.gate.json --gate examples/construction/systems/gate.json examples/operations/deliver-rebar.accept.json examples/operations/rent-crane.accept.json examples/operations/transport-crew.accept.json examples/operations/consume-rebar.json examples/operations/consume-crane.json examples/operations/consume-crew.json examples/construction/systems/structure.accept.json --model viz/model/graph.json --flows viz/model/flows.json --ledger viz/model/ledger.json",
+    "demo:sim": "node examples/construction/sim/build-sim.ts",
     "eval": "node eval/replay.mjs examples/construction/gate.json examples/construction/dataset.sample.jsonl",
     "review:example": "node examples/reviewer/poll.mjs"
   }

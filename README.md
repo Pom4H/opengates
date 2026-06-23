@@ -185,6 +185,7 @@ Conveniences built **on** the Acceptance Act, not part of it:
 | **Cases** | the most expensive disputed fact, by industry | [`examples/`](examples/) |
 | **AR design** | field-captured (LiDAR) evidence, foundational architecture | [`docs/architecture/`](docs/architecture/spatial-evidence-and-ar.md) |
 | **Flow design** | resources (materials, people, rented machines) → capital works, across domains | [`docs/architecture/`](docs/architecture/resource-flow-and-domains.md) |
+| **Simulation** | close-to-reality, replayable, resource-constrained runs folded through the unchanged engine | [`docs/architecture/`](docs/architecture/realistic-simulation.md) |
 
 **The standard — what makes it trustworthy (normative):**
 
