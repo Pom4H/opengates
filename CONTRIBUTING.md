@@ -44,11 +44,11 @@ Prose-only contributions are welcome. Someone else can turn them into a
 
 - The normative spec is [`SPEC.md`](SPEC.md); machine-readable schemas are in
   [`spec/schema/`](spec/schema/).
-- The reference engine is in [`engine/`](engine/). It is dependency-free and
+- The reference engine is in [`packages/engine/`](packages/engine/). It is dependency-free and
   runs on Node ≥ 22.18 (TypeScript via type stripping — no build step).
 
 ```bash
-cd engine
+cd packages/engine
 npm test          # run the suite
 npm run demo:accept
 ```
@@ -58,7 +58,7 @@ npm run demo:accept
 Keep the engine **erasable TypeScript**: no `enum`, no `namespace`, no
 decorators, no parameter properties. It must keep running under Node's built-in
 type stripping with no build step. The whole repo is **dependency-free** (Node
-built-ins only) — including the [`engine/src/mcp/`](engine/src/mcp/) server, which
+built-ins only) — including the [`packages/engine/src/mcp/`](packages/engine/src/mcp/) server, which
 speaks its own JSON-RPC over stdio instead of pulling in an SDK. Keep it that way.
 
 ### Change these four in lockstep
@@ -67,7 +67,7 @@ When you add or change a check rule, consequence effect, event type, event
 identity, or how accepted-quantity money is computed, update all four:
 
 ```text
-engine/src/types.ts   →   spec/schema/   →   SPEC.md   →   a test
+packages/engine/src/types.ts   →   spec/schema/   →   SPEC.md   →   a test
 ```
 
 Two invariants make the lockstep load-bearing:
@@ -76,7 +76,7 @@ Two invariants make the lockstep load-bearing:
   `normalizeLog(caseId, events)` assigns `seq = i + 1` and
   `id = ${caseId}#${seq}`. `fold` dedups by `id` and requires
   `seq === state.seq + 1`. If you touch event shape, the schema, the spec, and
-  [`engine/test/fold.test.ts`](engine/test/fold.test.ts) must agree.
+  [`packages/engine/test/fold.test.ts`](packages/engine/test/fold.test.ts) must agree.
 - **Accepted-quantity money.** Money is paid on the **accepted** quantity, not
   the claimed one: `decision.acceptedValues` → the surveyed reference → the
   claim, in that order of precedence. The breakdown is computed in integer minor
@@ -86,7 +86,7 @@ Two invariants make the lockstep load-bearing:
 
 Keep `fold` pure — it reads no `Date.now()`, `Math.random()`, or environment.
 `autodecide(gate, state, now)` takes `now` explicitly; there is no wall-clock
-default. Property tests in [`engine/test/fold.test.ts`](engine/test/fold.test.ts)
+default. Property tests in [`packages/engine/test/fold.test.ts`](packages/engine/test/fold.test.ts)
 cover dedup, ordering, and idempotence.
 
 ## Conventions

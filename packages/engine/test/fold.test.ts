@@ -18,10 +18,10 @@ const here = fileURLToPath(new URL(".", import.meta.url));
 const read = (rel: string) => JSON.parse(readFileSync(here + rel, "utf8"));
 const events = (rel: string): GateEvent[] => loadScenario(read(rel)).events;
 
-const gate: GateDefinition = loadGate(read("../../examples/construction/gate.json"));
-const accept = () => events("../../examples/construction/scenario.accept.json");
-const dispute = () => events("../../examples/construction/scenario.dispute.json");
-const remarks = () => events("../../examples/construction/scenario.remarks.json");
+const gate: GateDefinition = loadGate(read("../../../examples/construction/gate.json"));
+const accept = () => events("../../../examples/construction/scenario.accept.json");
+const dispute = () => events("../../../examples/construction/scenario.dispute.json");
+const remarks = () => events("../../../examples/construction/scenario.remarks.json");
 
 const money = (s: { consequences: FiredEffect[] }) =>
   s.consequences.find((c) => c.effect === "money")?.payload as Record<string, number> | undefined;

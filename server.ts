@@ -15,9 +15,9 @@
 //      and issuer and feed the /.well-known/oauth-protected-resource document.
 
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
-import { createHandler, type HandlerAuth } from "./engine/src/http.ts";
-import { createReviewQueue } from "./engine/src/queue/queue.ts";
-import { createFileStore } from "./engine/src/queue/store.ts";
+import { createHandler, type HandlerAuth } from "./packages/engine/src/http.ts";
+import { createReviewQueue } from "./packages/engine/src/queue/queue.ts";
+import { createFileStore } from "./packages/engine/src/queue/store.ts";
 
 const PORT = Number(process.env.PORT ?? 3000);
 const QUEUE_FILE = process.env.QUEUE_FILE ?? "./data/queue.json";

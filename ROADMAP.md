@@ -1,14 +1,18 @@
 # Roadmap
 
-Things that are **not built yet** — kept out of the [README](README.md) ladder so
-it only advertises what runs. Each item is a direction, not a promise; no dates.
+Directions for the **non-normative** side of Open Gates — the reference
+implementation, its runtime tooling, and products built on the standard. None of
+this is part of the spec; the standard is [`SPEC.md`](SPEC.md) +
+[`conformance/`](conformance/). Each item is a direction, not a promise; no dates.
 
-**Shipping today:** the deterministic [`fold`](engine/src/fold.ts) engine, the
-[review queue](engine/src/queue/) (fencing leases, SLA, delegation trail),
-[OAuth 2.1 auth](engine/src/auth.ts), the [MCP server](engine/src/mcp/), real
-[standards mappings](STANDARDS.md), and two worked gates —
-[construction](examples/construction/) and [logistics](examples/logistics/).
-Everything below is beyond that line.
+**Shipping today** — the deterministic [`fold`](packages/engine/src/fold.ts), plus,
+as **runtime tooling that is not part of the standard**, a
+[review queue](packages/engine/src/queue/) (fencing leases, SLA, delegation trail),
+[OAuth 2.1 auth](packages/engine/src/auth.ts), and an
+[MCP server](packages/engine/src/mcp/). On the normative side: real
+[standards mappings](STANDARDS.md), a [conformance suite](conformance/), and two
+worked gates — [construction](examples/construction/) and
+[logistics](examples/logistics/). Everything below is beyond that line.
 
 ## More worked verticals
 
@@ -30,8 +34,10 @@ A thin product around the construction gate: КС-2 intake, обмер capture, 
 КС-3 certificate out of the accepted quantities, retention tracking across a
 defects-liability period. The gate is the engine; this is the surface.
 
-## A hosted service
+## A product (hosted service)
 
-A managed deployment of the queue + MCP surface with real OAuth (JWKS, not the
-bundled HS256 verifier), per-tenant isolation, and a durable event store beyond
-the file snapshot — for teams that want the gate without self-hosting.
+**A product, not the standard** — a fork's job, listed here only so the boundary
+is explicit. A managed deployment of the reference impl's queue + MCP surface:
+real OAuth (JWKS, not the bundled HS256 verifier), per-tenant isolation, and a
+durable event store beyond the file snapshot — for teams that want the gate
+without self-hosting. The standard itself stays runtime-agnostic.

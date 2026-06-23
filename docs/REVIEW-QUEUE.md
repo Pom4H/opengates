@@ -1,6 +1,6 @@
 # Deployment & the review queue
 
-The engine is a pure function. [`fold(gate, events) → GateState`](../engine/src/fold.ts) reads no clock, no randomness, no environment; it dedups events by `id`, requires `seq === state.seq + 1`, and replays to the same state every time. That property decides the deployment shape: there is almost nothing to operate. Pick one of two paths.
+The engine is a pure function. [`fold(gate, events) → GateState`](../packages/engine/src/fold.ts) reads no clock, no randomness, no environment; it dedups events by `id`, requires `seq === state.seq + 1`, and replays to the same state every time. That property decides the deployment shape: there is almost nothing to operate. Pick one of two paths.
 
 ## Two paths
 
@@ -25,7 +25,7 @@ The stateless path is enough to verify claims, run checks, and autodecide. You o
 
 ## The queue lifecycle
 
-[`createReviewQueue({ store, leaseSeconds, autoDecide, webhook, now, notifier })`](../engine/src/queue/queue.ts) is the whole API. A case moves through five steps; the per-case event log inside each item is the record.
+[`createReviewQueue({ store, leaseSeconds, autoDecide, webhook, now, notifier })`](../packages/engine/src/queue/queue.ts) is the whole API. A case moves through five steps; the per-case event log inside each item is the record.
 
 ```
 enqueue (push)  ->  assign / route  ->  lease (pull, fenced)  ->  decide  ->  release
@@ -126,7 +126,7 @@ The `fence` is monotonic: each new lease increments it, so a resurrected holder 
 
 ## Idempotent decide
 
-Pass an idempotency key (HTTP: the `Idempotency-Key` header; in-process: `decide(id, { idempotencyKey })`). A retried decide with the **same key** returns the first result and **never double-fires** effects. Effects are keyed independently: each `effectId = sha256(decisionEventId + ':' + ruleId)` sliced to 16 hex, delivered exactly-once through the [outbox](../engine/src/effects.ts) (`createOutbox` / `pending` / `deliver`). Retry freely.
+Pass an idempotency key (HTTP: the `Idempotency-Key` header; in-process: `decide(id, { idempotencyKey })`). A retried decide with the **same key** returns the first result and **never double-fires** effects. Effects are keyed independently: each `effectId = sha256(decisionEventId + ':' + ruleId)` sliced to 16 hex, delivered exactly-once through the [outbox](../packages/engine/src/effects.ts) (`createOutbox` / `pending` / `deliver`). Retry freely.
 
 ## Notifications are at-most-once
 
@@ -138,7 +138,7 @@ curl -s 'localhost:3000/queue?status=pending&inbox=survey-desk'
 
 ## Persistence
 
-[`createFileStore(path)`](../engine/src/queue/store.ts) writes the snapshot **atomically** (temp file + rename), so a crash mid-write never leaves a torn queue. `createMemoryStore()` is the in-process variant for tests. In Docker, `QUEUE_FILE` lives on the `queue-data` volume.
+[`createFileStore(path)`](../packages/engine/src/queue/store.ts) writes the snapshot **atomically** (temp file + rename), so a crash mid-write never leaves a torn queue. `createMemoryStore()` is the in-process variant for tests. In Docker, `QUEUE_FILE` lives on the `queue-data` volume.
 
 ## Embedding the gate
 

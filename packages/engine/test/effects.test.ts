@@ -16,8 +16,8 @@ import {
 
 const here = fileURLToPath(new URL(".", import.meta.url));
 const read = (rel: string) => JSON.parse(readFileSync(here + rel, "utf8"));
-const gate: GateDefinition = loadGate(read("../../examples/construction/gate.json"));
-const accept = () => loadScenario(read("../../examples/construction/scenario.accept.json")).events;
+const gate: GateDefinition = loadGate(read("../../../examples/construction/gate.json"));
+const accept = () => loadScenario(read("../../../examples/construction/scenario.accept.json")).events;
 
 test("effectId is stable across replays of the same decision", () => {
   const a = fold(gate, accept()).consequences.map((c) => c.effectId).sort();

@@ -10,8 +10,8 @@ import { createMemoryStore } from "../src/queue/store.ts";
 
 const here = fileURLToPath(new URL(".", import.meta.url));
 const read = (rel: string) => JSON.parse(readFileSync(here + rel, "utf8"));
-const gate = read("../../examples/construction/gate.json");
-const accept = read("../../examples/construction/scenario.accept.json");
+const gate = read("../../../examples/construction/gate.json");
+const accept = read("../../../examples/construction/scenario.accept.json");
 const pending = accept.events.slice(0, -1);
 
 const SECRET = "test-secret";

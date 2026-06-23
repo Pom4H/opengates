@@ -1,0 +1,62 @@
+{
+  "checks": [
+    {
+      "id": "billable-quantity",
+      "outcome": "pass",
+      "rule": "field_range",
+      "severity": "blocking"
+    },
+    {
+      "id": "claim-matches-survey",
+      "outcome": "fail",
+      "rule": "cross_check",
+      "severity": "blocking"
+    },
+    {
+      "id": "executive-docs-present",
+      "outcome": "pass",
+      "rule": "required_evidence",
+      "severity": "blocking"
+    }
+  ],
+  "checksPassed": false,
+  "consequences": [
+    {
+      "dataset": "construction.work_acceptance",
+      "effect": "dataset_label"
+    }
+  ],
+  "cycleDays": 2.25,
+  "datasetLabel": {
+    "claim_type": "work_volume_completed",
+    "dataset": "construction.work_acceptance",
+    "decided_by_role": "technical_supervisor",
+    "features": {
+      "accepted": {},
+      "checks": {
+        "billable-quantity": "pass",
+        "claim-matches-survey": "fail",
+        "executive-docs-present": "pass"
+      },
+      "claimed": {
+        "period": "2026-05",
+        "quantity": 120,
+        "work_item": "Foundation concrete C25/30, axes 1–6"
+      },
+      "evidence_kinds": [
+        "executive_survey",
+        "concrete_strength_protocol",
+        "works_log",
+        "aosr_ref"
+      ]
+    },
+    "label": "returned_for_rework"
+  },
+  "decision": {
+    "acceptedValues": null,
+    "outcome": "returned_for_rework",
+    "role": "technical_supervisor"
+  },
+  "responsibility": null,
+  "status": "returned_for_rework"
+}

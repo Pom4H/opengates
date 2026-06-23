@@ -6,16 +6,16 @@ Two tiers. **Load-bearing** mappings are exercised by the reference engine and t
 
 ## Load-bearing
 
-These standards describe how the engine already behaves. Each row maps a standard onto concrete fields and symbols in [`engine/src`](engine/src) and the construction example.
+These standards describe how the engine already behaves. Each row maps a standard onto concrete fields and symbols in [`packages/engine/src`](packages/engine/src) and the construction example.
 
 | Standard (identifier) | What it governs | Field-level mapping in Open Gates |
 | --- | --- | --- |
 | **W3C PROV-O** ([w3.org/TR/prov-o](https://www.w3.org/TR/prov-o/)) | Provenance of an accepted fact | `claim.submitted` → `prov:Entity`; each `evidence.attached` is `prov:used` by the survey `prov:Activity`; surveyor and reviewer → `prov:Agent`; `decision.recorded` → a `prov:Activity` that is `prov:wasAssociatedWith` the reviewer; the event log (`GateState.log`) → a `prov:Bundle`. Serialization below. |
-| **OMG DMN 1.4** (2022) | The check logic | `gate.checks` is a decision table. Each check is a rule row (input: claim vs. reference; output: pass/fail). `checksPassed` is the table's aggregated hit. Tolerance + uncertainty are the input expressions. See [`engine/src/checks.ts`](engine/src/checks.ts). |
+| **OMG DMN 1.4** (2022) | The check logic | `gate.checks` is a decision table. Each check is a rule row (input: claim vs. reference; output: pass/fail). `checksPassed` is the table's aggregated hit. Tolerance + uncertainty are the input expressions. See [`packages/engine/src/checks.ts`](packages/engine/src/checks.ts). |
 | **JCGM 100:2008 (GUM)** | Measurement uncertainty | Expanded uncertainty `U = k·u`. Construction: `U = 4 m³` at `k = 2` (~95%). The survey's `U` is evidence, carried into the check, not invented by the gate. |
 | **JCGM 200:2012 (VIM §2.16)** | Error against a reference | The check computes error as `|claim − reference|` against the **trusted reference** (the independent survey), not against the claim. Construction: `|120 − 117| = 3 m³ = 2.56%` of the 117 m³ reference. |
 | **ISO/IEC 17025:2017 §7.8.6** | The decision rule | The accept/dispute boundary is a stated decision rule: accept when error ≤ tolerance **and** within `U`. `3 m³` is within the `5%` tolerance and within `U = 4 m³` → accept the surveyed `117`, not the claimed `120`. `20 m³` (dispute) is beyond both → return for rework. |
-| **ANSI/EIA-748 (EVM)** | Earned value | Money is paid on the **accepted** quantity: `accepted_qty × rate = BCWP`. Construction: `117 × €85 = €9,945` gross BCWP — never `120 × €85`. The accepted quantity flows from `decision.acceptedValues` → surveyed reference → claim. See [`engine/src/consequences.ts`](engine/src/consequences.ts). |
+| **ANSI/EIA-748 (EVM)** | Earned value | Money is paid on the **accepted** quantity: `accepted_qty × rate = BCWP`. Construction: `117 × €85 = €9,945` gross BCWP — never `120 × €85`. The accepted quantity flows from `decision.acceptedValues` → surveyed reference → claim. See [`packages/engine/src/consequences.ts`](packages/engine/src/consequences.ts). |
 
 The numbers are recomputable from one accepted line:
 

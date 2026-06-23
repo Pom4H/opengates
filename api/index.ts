@@ -6,7 +6,7 @@
 // the stateful review queue lives in the Docker/long-running server, so queue
 // routes here answer 501. vercel.json rewrites every path to this function.
 
-import { createHandler } from "../engine/src/http.ts";
+import { createHandler } from "../packages/engine/src/http.ts";
 
 const handle = createHandler(); // no queue on serverless
 

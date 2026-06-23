@@ -51,7 +51,7 @@ The trusted value the claim is measured against — the survey reading, the cata
 
 ## cross_check
 
-A check that compares the claim to the reference and to its measurement uncertainty. The core construction cross-check: `|claim − reference|` against both a percentage `tolerance` and the expanded uncertainty `U`. `|120 − 117| = 3 m³ = 2.56%` of the reference — inside the 5% tolerance **and** inside `U = 4 m³` → accept 117. The dispute case: `|120 − 100| = 20 m³ = 20%`, far outside both → return for rework, €0 certified. Defined in [`engine/src/checks.ts`](engine/src/checks.ts).
+A check that compares the claim to the reference and to its measurement uncertainty. The core construction cross-check: `|claim − reference|` against both a percentage `tolerance` and the expanded uncertainty `U`. `|120 − 117| = 3 m³ = 2.56%` of the reference — inside the 5% tolerance **and** inside `U = 4 m³` → accept 117. The dispute case: `|120 − 100| = 20 m³ = 20%`, far outside both → return for rework, €0 certified. Defined in [`packages/engine/src/checks.ts`](packages/engine/src/checks.ts).
 
 ## tolerance
 
@@ -63,11 +63,11 @@ The measurement's stated doubt, per JCGM 100:2008 (GUM): `U = k · u`, where `u`
 
 ## check
 
-A single rule in the gate's decision table (OMG DMN 1.4, 2022): a named, deterministic test producing pass/fail. Checks live in `checks[]`; `checksPassed` is true only when every blocking check passes. Some checks block a positive outcome (a delivery `date_window` outside its bounds; a failed cross-check); the engine refuses to let a decision certify money over a failed blocking check. See [`engine/src/checks.ts`](engine/src/checks.ts).
+A single rule in the gate's decision table (OMG DMN 1.4, 2022): a named, deterministic test producing pass/fail. Checks live in `checks[]`; `checksPassed` is true only when every blocking check passes. Some checks block a positive outcome (a delivery `date_window` outside its bounds; a failed cross-check); the engine refuses to let a decision certify money over a failed blocking check. See [`packages/engine/src/checks.ts`](packages/engine/src/checks.ts).
 
 ## reviewer (authority)
 
-The agent permitted to decide this gate, identified by a **proven** role — never a self-asserted one. The role comes from the verified token's scope (`authorizedRole`, [`engine/src/auth.ts`](engine/src/auth.ts)), or from the MCP caller's Principal — not from the request body. On `decision.recorded` it is `reviewerRole`; in PROV-O the reviewer is the `prov:Agent` the decision activity `prov:wasAssociatedWith`. No proven authority, no decision: the gate refuses.
+The agent permitted to decide this gate, identified by a **proven** role — never a self-asserted one. The role comes from the verified token's scope (`authorizedRole`, [`packages/engine/src/auth.ts`](packages/engine/src/auth.ts)), or from the MCP caller's Principal — not from the request body. On `decision.recorded` it is `reviewerRole`; in PROV-O the reviewer is the `prov:Agent` the decision activity `prov:wasAssociatedWith`. No proven authority, no decision: the gate refuses.
 
 ## decision
 
@@ -79,15 +79,15 @@ Who owns the decided fact and any open obligations it carries — the durable an
 
 ## consequence
 
-An effect that fires because of the decision: certify net, post earned value, notify, escalate. Held on the state as `consequences: FiredEffect[]` and produced by [`engine/src/consequences.ts`](engine/src/consequences.ts) / `fireConsequences(...)`. Money certified on the accepted quantity is the load-bearing consequence; accepted_qty × rate is BCWP under ANSI/EIA-748 (EVM). Consequences are computed from the decided state, not invented per request.
+An effect that fires because of the decision: certify net, post earned value, notify, escalate. Held on the state as `consequences: FiredEffect[]` and produced by [`packages/engine/src/consequences.ts`](packages/engine/src/consequences.ts) / `fireConsequences(...)`. Money certified on the accepted quantity is the load-bearing consequence; accepted_qty × rate is BCWP under ANSI/EIA-748 (EVM). Consequences are computed from the decided state, not invented per request.
 
 ## effectId
 
-The exactly-once key for a consequence: `sha256(decisionEventId + ':' + ruleId)` sliced to 16 hex. Two replays of the same decision produce the same `effectId`, so the outbox in [`engine/src/effects.ts`](engine/src/effects.ts) — `createOutbox`, `pending`, `deliver` — delivers each effect at most once and any downstream `pay()` keyed on `effectId` is idempotent. This is where "fires exactly once" is real rather than aspirational.
+The exactly-once key for a consequence: `sha256(decisionEventId + ':' + ruleId)` sliced to 16 hex. Two replays of the same decision produce the same `effectId`, so the outbox in [`packages/engine/src/effects.ts`](packages/engine/src/effects.ts) — `createOutbox`, `pending`, `deliver` — delivers each effect at most once and any downstream `pay()` keyed on `effectId` is idempotent. This is where "fires exactly once" is real rather than aspirational.
 
 ## fold
 
-The pure function at the center: `fold(gate, events) → GateState`. Deterministic and idempotent — it dedups events by `id`, requires `seq === state.seq + 1`, and reads no `Date.now()`, `Math.random()`, or environment. The same events always fold to the same state, on any machine, forever; that is why replay is replay of **data**, not of code. Property-tested in [`engine/test/fold.test.ts`](engine/test/fold.test.ts). Defined in [`engine/src/fold.ts`](engine/src/fold.ts). Never wrap `fold` in an orchestrator step — it must stay pure so every replayer reproduces it identically.
+The pure function at the center: `fold(gate, events) → GateState`. Deterministic and idempotent — it dedups events by `id`, requires `seq === state.seq + 1`, and reads no `Date.now()`, `Math.random()`, or environment. The same events always fold to the same state, on any machine, forever; that is why replay is replay of **data**, not of code. Property-tested in [`packages/engine/test/fold.test.ts`](packages/engine/test/fold.test.ts). Defined in [`packages/engine/src/fold.ts`](packages/engine/src/fold.ts). Never wrap `fold` in an orchestrator step — it must stay pure so every replayer reproduces it identically.
 
 ## event
 
@@ -111,7 +111,7 @@ The gate's rule for deciding without a human: `autoAcceptWhen`. The construction
 
 ## lease & fencing token
 
-A lease is the right to decide a case, held by one reviewer at a time. Each lease carries a monotonic `{ token, fence }`. Deciding a leased case requires the lease token (else `409 'case is leased; a lease token is required'`); a token that was valid before a re-lease is rejected (`409 'stale lease'`), so a resurrected old holder is fenced out and cannot double-decide. Leases and fencing live in [`engine/src/queue/queue.ts`](engine/src/queue/queue.ts) (`createReviewQueue`).
+A lease is the right to decide a case, held by one reviewer at a time. Each lease carries a monotonic `{ token, fence }`. Deciding a leased case requires the lease token (else `409 'case is leased; a lease token is required'`); a token that was valid before a re-lease is rejected (`409 'stale lease'`), so a resurrected old holder is fenced out and cannot double-decide. Leases and fencing live in [`packages/engine/src/queue/queue.ts`](packages/engine/src/queue/queue.ts) (`createReviewQueue`).
 
 ## SLA breach / escalation
 

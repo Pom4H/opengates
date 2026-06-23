@@ -12,7 +12,7 @@
 //   node eval/replay.mjs <gate.json> <dataset.jsonl>
 
 import { readFileSync } from "node:fs";
-import { autodecide, fold, loadGate, normalizeLog } from "../engine/src/index.ts";
+import { autodecide, fold, loadGate, normalizeLog } from "../packages/engine/src/index.ts";
 
 const [gatePath, dsPath] = process.argv.slice(2);
 if (!gatePath || !dsPath) {

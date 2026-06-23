@@ -5,10 +5,10 @@
 // natively — no curl, no hand-built lease tokens. It is a thin wrapper over a
 // running queue (server.ts / the Docker container) reached over HTTP.
 //
-//   OPEN_GATES_URL=http://localhost:3000 node engine/src/mcp/server.ts
+//   OPEN_GATES_URL=http://localhost:3000 node packages/engine/src/mcp/server.ts
 //
 // Register it with Claude Code (see docs/MCP.md):
-//   claude mcp add open-gates -- node /abs/path/engine/src/mcp/server.ts
+//   claude mcp add open-gates -- node /abs/path/packages/engine/src/mcp/server.ts
 //
 // Env: OPEN_GATES_URL (http://localhost:3000),
 //      OPEN_GATES_TOKEN (optional bearer token if the deployment requires auth).

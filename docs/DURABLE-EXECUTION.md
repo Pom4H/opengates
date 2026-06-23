@@ -13,11 +13,11 @@ Durable-execution engines — Temporal, Inngest, Restate, DBOS, Vercel Workflows
 | Fan-out / parallelism | yes | no |
 | At-least-once step execution | yes | no |
 | I/O: measure, fetch evidence, `pay()` | yes (inside a step) | no |
-| The acceptance contract (claim → checks → decision → effects) | no | yes — [`types.ts`](../engine/src/types.ts) |
-| Invariants: role-gating, blocking checks must gate a positive outcome | no | yes — [`fold.ts`](../engine/src/fold.ts) |
+| The acceptance contract (claim → checks → decision → effects) | no | yes — [`types.ts`](../packages/engine/src/types.ts) |
+| Invariants: role-gating, blocking checks must gate a positive outcome | no | yes — [`fold.ts`](../packages/engine/src/fold.ts) |
 | Deterministic replay of the decision from its event log | no | yes — `fold(gate, events)` |
 | Audit trail + dataset label | no | yes — `GateState.log`, `datasetLabel` |
-| Exactly-once effect identity | shared: you deliver; OG assigns the key | `effectId` — [`effects.ts`](../engine/src/effects.ts) |
+| Exactly-once effect identity | shared: you deliver; OG assigns the key | `effectId` — [`effects.ts`](../packages/engine/src/effects.ts) |
 
 The seam is clean: the orchestrator owns *when and how often* work runs; Open Gates owns *what counts as accepted*.
 
@@ -79,4 +79,4 @@ Restate, Temporal, and DBOS map the same way: their step/activity/transaction pr
 - **At-least-once meets exactly-once at `effectId`.** Because steps can re-run, `deliver()` skips any `effectId` already in the outbox, and `pay()` must be idempotent on it. The orchestrator guarantees the effect step *eventually* runs; the `effectId` guarantees the money moves *once*. On the canonical line that is `117 × €85` paid one time, never `120`, never twice.
 - **One job each.** Notifications out of the queue are at-most-once, best-effort — the queue (and this log) is the source of truth; poll to reconcile. Durability of *delivery* is the orchestrator's job. Correctness of *the decision* is ours.
 
-See also: [`effects.ts`](../engine/src/effects.ts) (outbox, exactly-once), [`fold.ts`](../engine/src/fold.ts) (the pure reducer), and SPEC [§3](../SPEC.md#3-state-lifecycle-and-the-determinism-contract) / [§6.1](../SPEC.md#61-money-normative).
+See also: [`effects.ts`](../packages/engine/src/effects.ts) (outbox, exactly-once), [`fold.ts`](../packages/engine/src/fold.ts) (the pure reducer), and SPEC [§3](../SPEC.md#3-state-lifecycle-and-the-determinism-contract) / [§6.1](../SPEC.md#61-money-normative).

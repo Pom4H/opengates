@@ -100,7 +100,7 @@ Worked: `€12 / (0.01 × 0.10) = €12,000` **gross**. That is the point where 
 "policy": { "autoAcceptWhen": { "checksPass": true, "maxAmount": 2000 } }
 ```
 
-`autodecide(gate, state, now)` returns `accepted` by `system:auto` only when every blocking check passes **and** `net_certified ≤ maxAmount`. `now` is a required argument (the triggering event's time), never the wall clock — so the auto-decision replays identically. See [`engine/src/index.ts`](../engine/src/index.ts).
+`autodecide(gate, state, now)` returns `accepted` by `system:auto` only when every blocking check passes **and** `net_certified ≤ maxAmount`. `now` is a required argument (the triggering event's time), never the wall clock — so the auto-decision replays identically. See [`packages/engine/src/index.ts`](../packages/engine/src/index.ts).
 
 ---
 
