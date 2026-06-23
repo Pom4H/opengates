@@ -1,0 +1,26 @@
+{
+  "gate": "operations.resource-flow",
+  "events": [
+    {
+      "type": "claim.submitted",
+      "at": "2026-05-01T07:30:00Z",
+      "actor": "carrier:steelhaul",
+      "claim": { "type": "resource_flow", "values": { "flowKind": "deliver", "resource": "MAT-rebar", "qty": 24, "unit": "t", "from": "SUP-rebar", "to": "MAT-rebar" } }
+    },
+    {
+      "type": "evidence.attached",
+      "at": "2026-05-01T09:10:00Z",
+      "actor": "weighbridge:gate-2",
+      "evidence": { "kind": "reference_count", "values": { "qty": 23.8, "unit": "t" }, "ref": "weighbridge/2026-05-01-rebar.pdf" }
+    },
+    {
+      "type": "decision.recorded",
+      "at": "2026-05-01T09:30:00Z",
+      "actor": "storeman:petrov",
+      "reviewerRole": "goods_in",
+      "outcome": "accepted",
+      "acceptedValues": { "qty": 23.8 },
+      "note": "Rebar received; weighbridge 23.8 t within tolerance. Stock available for the A1-F03 frame."
+    }
+  ]
+}

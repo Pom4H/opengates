@@ -1,0 +1,11 @@
+{
+  "gate": "operations.resource-flow",
+  "events": [
+    {
+      "type": "claim.submitted",
+      "at": "2026-05-04T16:05:00Z",
+      "actor": "foreman:sidorov",
+      "claim": { "type": "resource_flow", "values": { "flowKind": "consume", "resource": "EQ-crane-1", "qty": 8, "unit": "machine-h", "from": "EQ-crane-1", "to": "SYS-A1-F03-structure" } }
+    }
+  ]
+}

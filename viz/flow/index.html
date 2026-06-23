@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Open Gates — resource flow</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font: 13px/1.5 system-ui, sans-serif; color: #e5e9f0;
+    background: #11161f; display: flex; height: 100vh; overflow: hidden;
+  }
+  #stage { flex: 1; position: relative; }
+  svg { width: 100%; height: 100%; display: block; }
+  .node rect { rx: 6; stroke: #11161f; stroke-width: 1.5; cursor: pointer; }
+  .node text { fill: #0b0f16; font-weight: 600; pointer-events: none; }
+  .node .sub { fill: #1f2733; font-weight: 500; font-size: 10px; }
+  .edge { fill: none; cursor: pointer; opacity: 0.85; }
+  .edge:hover { opacity: 1; }
+  .edge.sel { opacity: 1; }
+  .elabel { fill: #aab4c5; font-size: 10px; pointer-events: none; }
+  aside {
+    width: 320px; background: #161d28; border-left: 1px solid #232c3a;
+    padding: 18px 18px 24px; overflow-y: auto;
+  }
+  h1 { font-size: 15px; margin: 0 0 2px; }
+  .muted { color: #8b97a8; font-size: 12px; }
+  h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: #8b97a8; margin: 20px 0 8px; }
+  .row { display: flex; justify-content: space-between; gap: 10px; padding: 3px 0; border-bottom: 1px solid #1d2531; }
+  .row b { font-weight: 600; }
+  .pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; color: #0b0f16; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 12px; margin-top: 6px; }
+  .legend span { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: #aab4c5; }
+  .dot { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+  .bar { height: 7px; border-radius: 4px; background: #232c3a; overflow: hidden; margin-top: 4px; }
+  .bar > i { display: block; height: 100%; background: #34d399; }
+  code { background: #0d1219; padding: 1px 5px; border-radius: 4px; font-size: 11px; }
+</style>
+</head>
+<body>
+  <div id="stage"><svg id="svg"></svg></div>
+  <aside>
+    <h1>Resource flow</h1>
+    <div class="muted" id="model-name">loading…</div>
+    <div class="legend" id="legend"></div>
+    <div id="panel"><h2>Selection</h2><div class="muted">Click an edge (a flow) or a resource node.</div></div>
+  </aside>
+<script type="module">
+// A flow view over the same accepted facts the engine folds. Every edge is one
+// Acceptance Act: colour = its case's status, never hand-set. Reads the two
+// projection files written by `npm run viz:flows`.
+const STATUS = {
+  accepted: "#34d399", accepted_with_exceptions: "#a3e635",
+  under_review: "#f5a524", submitted: "#f5a524",
+  rejected: "#f87171", returned_for_rework: "#f87171", draft: "#64748b",
+};
+const KINDCOLOR = {
+  actor: "#7dd3fc", capital_work: "#cbd5e1", zone: "#22d3ee", account: "#f472b6",
+  "resource:material": "#fbbf24", "resource:equipment": "#c084fc", "resource:labor": "#4ade80", resource: "#fbbf24",
+};
+const nodeColor = (n) => KINDCOLOR[n.kind === "resource" ? `resource:${n.resourceKind || ""}` : n.kind] || "#94a3b8";
+
+const SVGNS = "http://www.w3.org/2000/svg";
+const el = (t, a = {}) => { const e = document.createElementNS(SVGNS, t); for (const k in a) e.setAttribute(k, a[k]); return e; };
+
+const [graph, ledger] = await Promise.all([
+  fetch("../model/flows.json").then((r) => r.json()),
+  fetch("../model/ledger.json").then((r) => r.json()).catch(() => ({})),
+]);
+document.getElementById("model-name").textContent = graph.name || `${graph.nodes.length} anchors · ${graph.edges.length} flows`;
+
+// --- columns by longest-path depth from the sources ----------------------
+const byId = new Map(graph.nodes.map((n) => [n.id, n]));
+const depth = new Map(graph.nodes.map((n) => [n.id, 0]));
+for (let pass = 0; pass < graph.nodes.length; pass++) {
+  let moved = false;
+  for (const e of graph.edges) {
+    const d = depth.get(e.from) + 1;
+    if (d > depth.get(e.to)) { depth.set(e.to, d); moved = true; }
+  }
+  if (!moved) break;
+}
+const cols = new Map();
+for (const [id, d] of depth) (cols.get(d) || cols.set(d, []).get(d)).push(id);
+
+const W = Math.max(880, (cols.size) * 230), colGap = W / (cols.size + 1);
+const NW = 150, NH = 46, vGap = 78;
+const pos = new Map();
+let maxRows = 0;
+for (const [d, ids] of [...cols].sort((a, b) => a[0] - b[0])) {
+  maxRows = Math.max(maxRows, ids.length);
+  ids.forEach((id, i) => pos.set(id, { x: (d + 1) * colGap - NW / 2, _row: i, _col: d }));
+}
+const H = Math.max(420, maxRows * (NH + vGap) + 40);
+for (const [d, ids] of cols) {
+  const colH = ids.length * (NH + vGap) - vGap;
+  ids.forEach((id, i) => { pos.get(id).y = (H - colH) / 2 + i * (NH + vGap); });
+}
+
+const svg = document.getElementById("svg");
+svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+
+// --- edges (widths scaled by qty within each kind) -----------------------
+const maxQ = Math.max(1, ...graph.edges.map((e) => e.qty || 0));
+const edgeEls = [];
+for (const e of graph.edges) {
+  const a = pos.get(e.from), b = pos.get(e.to);
+  if (!a || !b) continue;
+  const x1 = a.x + NW, y1 = a.y + NH / 2, x2 = b.x, y2 = b.y + NH / 2;
+  const mx = (x1 + x2) / 2;
+  const path = el("path", {
+    class: "edge", d: `M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`,
+    stroke: STATUS[e.status] || "#64748b",
+    "stroke-width": 2 + 7 * Math.sqrt((e.qty || 0) / maxQ),
+  });
+  path.addEventListener("click", () => selectEdge(e, path));
+  svg.appendChild(path);
+  const lbl = el("text", { class: "elabel", x: mx, y: (y1 + y2) / 2 - 5, "text-anchor": "middle" });
+  lbl.textContent = e.qty != null ? `${e.kind} ${e.qty}${e.unit ? " " + e.unit : ""}` : e.kind;
+  svg.appendChild(lbl);
+  edgeEls.push(path);
+}
+
+// --- nodes ----------------------------------------------------------------
+for (const n of graph.nodes) {
+  const p = pos.get(n.id); if (!p) continue;
+  const g = el("g", { class: "node" });
+  const rect = el("rect", { x: p.x, y: p.y, width: NW, height: NH, fill: nodeColor(n) });
+  g.appendChild(rect);
+  const t = el("text", { x: p.x + 10, y: p.y + 19 }); t.textContent = n.label || n.id; g.appendChild(t);
+  const s = el("text", { class: "sub", x: p.x + 10, y: p.y + 35 });
+  s.textContent = n.resourceKind ? `${n.kind} · ${n.resourceKind}` : n.kind; g.appendChild(s);
+  if (n.kind === "resource") rect.addEventListener("click", () => selectResource(n));
+  svg.appendChild(g);
+}
+
+// --- legend ---------------------------------------------------------------
+const legend = document.getElementById("legend");
+for (const [k, c] of Object.entries({ accepted: STATUS.accepted, pending: STATUS.under_review, rejected: STATUS.rejected }))
+  legend.insertAdjacentHTML("beforeend", `<span><i class="dot" style="background:${c}"></i>${k}</span>`);
+
+// --- selection panels -----------------------------------------------------
+const panel = document.getElementById("panel");
+const row = (k, v) => `<div class="row"><span class="muted">${k}</span><b>${v}</b></div>`;
+function selectEdge(e, path) {
+  edgeEls.forEach((p) => p.classList.remove("sel")); path.classList.add("sel");
+  const c = STATUS[e.status] || "#64748b";
+  panel.innerHTML = `<h2>Flow — one Acceptance Act</h2>
+    ${row("kind", e.kind)}
+    ${row("from → to", `${e.from} → ${e.to}`)}
+    ${e.resource ? row("resource", e.resource) : ""}
+    ${e.qty != null ? row("claimed", `${e.qty} ${e.unit || ""}`) : ""}
+    ${e.acceptedQty != null ? row("accepted", `${e.acceptedQty} ${e.unit || ""}`) : ""}
+    <div class="row"><span class="muted">status</span><span class="pill" style="background:${c}">${e.status}</span></div>
+    ${e.amount ? row("certified", `€${e.amount} ${e.currency || ""}`) : ""}
+    ${row("gate", `<code>${e.gateId}</code>`)}
+    <p class="muted">The edge's colour is derived from this case's acceptance — not set by hand.</p>`;
+}
+function selectResource(n) {
+  const l = ledger[n.id];
+  edgeEls.forEach((p) => p.classList.remove("sel"));
+  if (!l) { panel.innerHTML = `<h2>${n.label || n.id}</h2><div class="muted">No ledger line.</div>`; return; }
+  const pct = l.in ? Math.max(0, Math.min(1, l.remaining / l.in)) : 0;
+  panel.innerHTML = `<h2>Resource ledger — mass balance</h2>
+    ${row("resource", n.label || n.id)}
+    ${row("accepted in", `${l.in} ${l.unit || ""}`)}
+    ${row("consumed out", `${l.out} ${l.unit || ""}`)}
+    ${row("remaining", `${l.remaining} ${l.unit || ""}`)}
+    <div class="bar"><i style="width:${pct * 100}%"></i></div>
+    <p class="muted">Only the <b>accepted</b> inflow counts as available — stock on reality, not the claim.</p>`;
+}
+</script>
+</body>
+</html>

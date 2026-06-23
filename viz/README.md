@@ -83,6 +83,25 @@ python3 -m http.server 8099      # from the repo root
 # open http://localhost:8099/viz/viewer/
 ```
 
+## Resource flow — the "out of what" view
+
+The spatial view shows *what is built*; the **flow view** ([`viz/flow/`](flow/))
+shows the resources it was built from — materials, people and rented machines
+flowing in, each edge a gate, drawn down into the zone's systems. It reads two
+projection files written from accepted facts (the flow siblings of
+`attachments.json`):
+
+```bash
+npm run viz:flows      # writes viz/model/flows.json + ledger.json
+python3 -m http.server 8099    # then open /viz/flow/
+```
+
+The graph (`flowGraph`), the per-resource mass balance (`resourceLedger`) and the
+cross-case lint (`lintFlows`) live in
+[`packages/engine/src/flows.ts`](../packages/engine/src/flows.ts); the worked
+cross-domain path is [`examples/operations/`](../examples/operations). Design:
+[`docs/architecture/resource-flow-and-domains.md`](../docs/architecture/resource-flow-and-domains.md).
+
 ## Animation
 
 The construction-progress GIF/MP4 is rendered with Remotion + react-three-fiber

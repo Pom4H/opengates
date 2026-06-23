@@ -1,13 +1,16 @@
 # Resource flow & multi-domain visualization — foundational architecture
 
-> Status: **design draft (v0).** Forward-looking. Nothing here is built yet; it
-> sets the contracts so a richer construction picture (materials, people,
-> rented machines → capital structures) and *other domains* (logistics,
-> finance) all sit on one engine without re-architecting. Read
-> [`SPEC.md`](../../SPEC.md) §7.5 (zones as anchors),
-> [`packages/engine/src/zones.ts`](../../packages/engine/src/zones.ts), and
-> [`viz/README.md`](../../viz/README.md) first. Companion draft:
-> [`spatial-evidence-and-ar.md`](spatial-evidence-and-ar.md).
+> Status: **v0 — foundation built.** The ontology (L1), the projections (L3)
+> and a flow view (L4) ship today; logistics/finance packs (L2) and the live
+> substrate (L5) are still design. What is built:
+> [`packages/engine/src/flows.ts`](../../packages/engine/src/flows.ts) (anchors,
+> gate-backed flows, `flowGraph` / `resourceLedger` / `lintFlows`),
+> [`examples/operations/`](../../examples/operations) (a cross-domain worked
+> path), and [`viz/flow/`](../../viz/flow) (a dependency-free flow view).
+> Run `npm run demo:flows`. Read [`SPEC.md`](../../SPEC.md) §7.5 (zones as
+> anchors), [`packages/engine/src/zones.ts`](../../packages/engine/src/zones.ts)
+> (the module this generalizes), and [`viz/README.md`](../../viz/README.md)
+> first. Companion draft: [`spatial-evidence-and-ar.md`](spatial-evidence-and-ar.md).
 
 ## 1. The problem this solves
 
@@ -219,13 +222,18 @@ work and document anchored there, exactly as today.
 
 ## 7. Phased plan
 
-1. **Ontology (L1).** Land `Anchor`/`Flow` types and `graph.json` overlay; port
-   `zone` to be `kind:"zone"`. No behaviour change.
-2. **Projections (L3).** `resourceLedger` + `flowGraph` from accepted flows;
-   conservation/double-booking lints beside `lintZones`.
-3. **Flow view (L4).** A Sankey reading `flows.json` — the "out of what" picture,
-   each edge a gate.
-4. **Logistics & finance packs (L2).** A `logistics.rental` gate (machine-hours vs
-   telematics) and a `finance.payment` gate; wire `deliver`/`rent`/`pay`.
-5. **Live substrate (L5).** Stream node/edge updates into the Visualizer graph as
-   gates accept.
+1. **Ontology (L1).** ✅ `Anchor`/`Flow` types + a `graph.json` overlay
+   ([`flows.ts`](../../packages/engine/src/flows.ts),
+   [`viz/model/graph.json`](../../viz/model/graph.json)). Additive; zones unchanged.
+2. **Projections (L3).** ✅ `flowGraph` + `resourceLedger` + `lintFlows`
+   (`negative_stock`, `unknown_anchor`) beside `lintZones`, with tests.
+3. **Flow view (L4).** ✅ A dependency-free node-link view reading
+   `flows.json`/`ledger.json` ([`viz/flow/`](../../viz/flow)). *Next: a true Sankey
+   with quantity-proportional ribbons.*
+4. **Logistics & finance packs (L2).** ⬜ Today the worked path uses one generic
+   `operations.resource-flow` gate. Specialize it: a `logistics.rental` gate
+   (machine-hours vs telematics), a `finance.payment` gate emitting `pay` flows,
+   and equipment double-booking (overlapping rentals of one unit) as a lint once
+   flows carry time intervals.
+5. **Live substrate (L5).** ⬜ Stream node/edge updates into the Visualizer graph
+   as gates accept.

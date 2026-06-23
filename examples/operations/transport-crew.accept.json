@@ -1,0 +1,26 @@
+{
+  "gate": "operations.resource-flow",
+  "events": [
+    {
+      "type": "claim.submitted",
+      "at": "2026-05-04T06:30:00Z",
+      "actor": "driver:transit-7",
+      "claim": { "type": "resource_flow", "values": { "flowKind": "deliver", "resource": "CREW-concrete", "qty": 64, "unit": "man-h", "from": "DEPOT-labor", "to": "CREW-concrete" } }
+    },
+    {
+      "type": "evidence.attached",
+      "at": "2026-05-04T07:15:00Z",
+      "actor": "foreman:sidorov",
+      "evidence": { "kind": "reference_count", "values": { "qty": 64, "unit": "man-h" }, "ref": "manifest/2026-05-04-concrete-crew.pdf" }
+    },
+    {
+      "type": "decision.recorded",
+      "at": "2026-05-04T07:20:00Z",
+      "actor": "foreman:sidorov",
+      "reviewerRole": "goods_in",
+      "outcome": "accepted",
+      "acceptedValues": { "qty": 64 },
+      "note": "8-strong concrete crew on site for the day (8 × 8 h = 64 man-h)."
+    }
+  ]
+}
