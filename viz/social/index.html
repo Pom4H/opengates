@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Open Gates — social card</title>
+    <style>
+      html, body { margin: 0; height: 100%; background: #070b12; overflow: hidden; }
+      /* The composed 1280×640 card fills the page so a screenshot captures it 1:1. */
+      #card { position: absolute; top: 0; left: 0; width: 100vw; height: auto; }
+      #gl { position: absolute; left: -99999px; top: 0; } /* offscreen WebGL source */
+    </style>
+  </head>
+  <body>
+    <canvas id="card" width="1280" height="640"></canvas>
+    <div id="gl"></div>
+
+    <script type="importmap">
+      { "imports": { "three": "/viz/viewer/vendor/three/three.module.js" } }
+    </script>
+    <script type="module">
+      import * as THREE from "three";
+
+      const W = 1280, H = 640, BG = 0x070b12;
+      const hexNum = (h) => parseInt(h.slice(1), 16);
+      const FONT = '-apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Arial, sans-serif';
+      // wave fraction through the build (0..1); pick a mid-build for a colourful hero
+      const params = new URLSearchParams(location.search);
+      const F = params.has("p") ? Number(params.get("p")) : 0.58;
+
+      async function getJSON(p) { const r = await fetch(p, { cache: "no-store" }); if (!r.ok) throw new Error(p); return r.json(); }
+
+      const [model, ledger] = await Promise.all([
+        getJSON("/viz/model/building.json"),
+        getJSON("/viz/model/e2e/ledger.json").catch(() => null),
+      ]);
+
+      // ---- render the building hero into an offscreen WebGL canvas ----
+      const P = model.palette, SYS = model.systems;
+      const SYSCOL = SYS.map((s) => hexNum(s.color)), NOT = hexNum(P.not_started), GLAZE = hexNum(P.glazing);
+      const ramp = model.build.ramp, MINA = model.build.minArrival, MAXA = model.build.maxArrival;
+      const p = MINA + F * (MAXA - MINA);
+      const doneAt = (z) => SYS.reduce((n, s) => n + (p >= z.arrival + s.lag + ramp ? 1 : 0), 0);
+
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(BG);
+      scene.fog = new THREE.Fog(BG, 95, 230);
+      const camera = new THREE.PerspectiveCamera(44, W / H, 0.1, 2000);
+      camera.position.set(46, 18, 61);
+      camera.lookAt(-12, 18, 1);
+      const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+      renderer.setSize(W, H); renderer.setPixelRatio(2);
+      document.getElementById("gl").appendChild(renderer.domElement);
+      scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+      const key = new THREE.DirectionalLight(0xffffff, 1.55); key.position.set(44, 74, 36); scene.add(key);
+      const fill = new THREE.DirectionalLight(0x88aaff, 0.45); fill.position.set(-34, 24, -26); scene.add(fill);
+      const ground = new THREE.Mesh(new THREE.PlaneGeometry(420, 420), new THREE.MeshStandardMaterial({ color: 0x0a121d, roughness: 1 }));
+      ground.rotation.x = -Math.PI / 2; ground.position.y = -9.3; scene.add(ground);
+
+      const size = (b) => [b.max[0] - b.min[0], b.max[1] - b.min[1], b.max[2] - b.min[2]];
+      const center = (b) => [(b.min[0] + b.max[0]) / 2, (b.min[1] + b.max[1]) / 2, (b.min[2] + b.max[2]) / 2];
+      const SCOPECOL = { excavation: hexNum(P.excavation), foundation: hexNum(P.foundation_mat), roof: hexNum(P.roof) };
+      const colourFor = (n) => (n <= 0 ? NOT : SYSCOL[Math.min(SYSCOL.length, n) - 1]);
+
+      for (const z of model.zones) {
+        if (z.level === "marker") continue;
+        const s = size(z.structure), c = center(z.structure);
+        if (s[0] <= 0 || s[1] <= 0 || s[2] <= 0) continue;
+        let col, op = 1, built = true;
+        if (z.scope === "bay") { const n = doneAt(z); built = n > 0 || z.level === "basement" && p >= z.arrival; col = colourFor(n); op = n === 0 ? 0.22 : 1; }
+        else if (z.level === "excavation") { col = SCOPECOL.excavation; op = 0.18; built = p >= z.arrival; }
+        else if (z.level === "foundation") { col = SCOPECOL.foundation; built = p >= z.arrival; }
+        else if (z.level === "roof") { col = SCOPECOL.roof; built = p >= z.arrival; }
+        if (!built) continue;
+        const mesh = new THREE.Mesh(new THREE.BoxGeometry(s[0], s[1], s[2]),
+          new THREE.MeshStandardMaterial({ color: col, roughness: z.level === "excavation" ? 1 : 0.8, metalness: 0.05, transparent: true, opacity: op, depthWrite: z.level !== "excavation" }));
+        mesh.position.set(c[0], c[1], c[2]); scene.add(mesh);
+        if (z.scope === "bay" && doneAt(z) >= 2) for (const g of z.glazing || []) {
+          const gs = size(g.box), gc = center(g.box);
+          const gm = new THREE.Mesh(new THREE.BoxGeometry(gs[0], gs[1], gs[2]),
+            new THREE.MeshStandardMaterial({ color: GLAZE, transparent: true, opacity: 0.8, roughness: 0.08, metalness: 0.7, emissive: GLAZE, emissiveIntensity: 0.5 }));
+          gm.position.set(gc[0], gc[1], gc[2]); scene.add(gm);
+        }
+      }
+
+      // render a few frames so AA settles, then compose
+      for (let i = 0; i < 4; i++) renderer.render(scene, camera);
+      compose(renderer.domElement);
+
+      // ---- compose the 1280×640 card (3D + scrim + text) ----
+      function compose(gl) {
+        const cv = document.getElementById("card"), ctx = cv.getContext("2d");
+        ctx.drawImage(gl, 0, 0, W, H);
+
+        // left scrim for legibility
+        let g = ctx.createLinearGradient(0, 0, W * 0.72, 0);
+        g.addColorStop(0, "rgba(7,11,18,0.97)"); g.addColorStop(0.45, "rgba(7,11,18,0.86)"); g.addColorStop(1, "rgba(7,11,18,0)");
+        ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+        g = ctx.createLinearGradient(0, H, 0, H - 150);
+        g.addColorStop(0, "rgba(7,11,18,0.85)"); g.addColorStop(1, "rgba(7,11,18,0)");
+        ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+
+        const X = 70;
+        ctx.textBaseline = "alphabetic";
+        // eyebrow
+        ctx.fillStyle = "#4ade80"; ctx.font = `700 21px ${FONT}`; ctx.letterSpacing = "7px";
+        ctx.fillText("OPEN GATES", X, 118); ctx.letterSpacing = "0px";
+        // headline
+        ctx.fillStyle = "#eaf1f8"; ctx.font = `800 62px ${FONT}`;
+        ctx.fillText("See and control", X, 210);
+        ctx.fillText("your operations.", X, 282);
+        // subtitle
+        ctx.fillStyle = "#a6b6c9"; ctx.font = `400 23px ${FONT}`;
+        ctx.fillText("Every gate is an Acceptance Act —", X, 336);
+        ctx.fillStyle = "#7e8ea3";
+        ctx.fillText("a claim becomes a payable fact, on a live 3D map.", X, 368);
+
+        // stat chips
+        const M = ledger ? (ledger.contractValue / 1e6).toFixed(1) : "4.0";
+        let cx = X, cy = 414;
+        cx = chip(ctx, cx, cy, "390 zones", "#22d3ee");
+        cx = chip(ctx, cx + 12, cy, "1,560 acceptance acts", "#34d399");
+        cx = chip(ctx, cx + 12, cy, `€${M}M certified`, "#34d399");
+
+        // system legend
+        const leg = [["structure", SYS[0].color], ["envelope", SYS[1].color], ["MEP", SYS[2].color], ["fit-out", SYS[3].color]];
+        let lx = X, ly = 470;
+        ctx.font = `600 16px ${FONT}`;
+        for (const [name, col] of leg) {
+          ctx.fillStyle = col; roundRect(ctx, lx, ly - 11, 13, 13, 3); ctx.fill();
+          ctx.fillStyle = "#9fb0c4"; ctx.fillText(name, lx + 20, ly + 1);
+          lx += 20 + ctx.measureText(name).width + 22;
+        }
+
+        // footer
+        ctx.fillStyle = "#6b7c93"; ctx.font = `500 18px ${FONT}`;
+        ctx.fillText("A whole construction — design → котлован → frame → fit-out → payments — folded through one unchanged engine.", X, H - 64);
+        ctx.fillStyle = "#4ade80"; ctx.font = `700 18px ${FONT}`;
+        ctx.fillText("github.com/Pom4H/opengates", X, H - 34);
+
+        window.__card = cv.toDataURL("image/png");
+        window.__ready = true;
+      }
+
+      function roundRect(ctx, x, y, w, h, r) {
+        ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r);
+        ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+      }
+      function chip(ctx, x, y, label, dot) {
+        ctx.font = `600 19px ${FONT}`;
+        const tw = ctx.measureText(label).width, w = tw + 46, h = 36;
+        ctx.fillStyle = "rgba(14,22,34,0.85)"; roundRect(ctx, x, y - h + 7, w, h, 10); ctx.fill();
+        ctx.strokeStyle = "#1e2d40"; ctx.lineWidth = 1; roundRect(ctx, x, y - h + 7, w, h, 10); ctx.stroke();
+        ctx.fillStyle = dot; ctx.beginPath(); ctx.arc(x + 18, y - h + 7 + h / 2, 5, 0, 7); ctx.fill();
+        ctx.fillStyle = "#dbe6f2"; ctx.fillText(label, x + 32, y);
+        return x + w;
+      }
+    </script>
+  </body>
+</html>
