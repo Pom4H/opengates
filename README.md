@@ -144,7 +144,7 @@ cd engine
 npm run demo:dispute    # claim 120 vs survey 100 -> returned, €0, stage locked
 npm run demo:accept     # survey 117±4 -> accept 117, €9,447.75 net certified
 npm run demo:remarks    # accepted_with_exceptions, retention held against a punch list
-npm test                # 47 tests incl. determinism + idempotency + fencing + SLA + OAuth
+npm test                # 61 tests incl. determinism + idempotency + fencing + SLA + OAuth + MCP
 ```
 
 From the repo root, `npm run eval` scores the automation policy against a labelled

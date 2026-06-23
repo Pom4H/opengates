@@ -8,7 +8,8 @@
   "engines": { "node": ">=22.18" },
   "scripts": {
     "serve": "node server.ts",
-    "mcp": "node mcp/server.ts",
+    "mcp": "node engine/src/mcp/server.ts",
+    "token": "node engine/src/token.ts",
     "test": "node --test engine/test/*.test.ts",
     "demo:dispute": "node engine/src/cli.ts examples/construction/gate.json examples/construction/scenario.dispute.json",
     "demo:accept": "node engine/src/cli.ts examples/construction/gate.json examples/construction/scenario.accept.json",

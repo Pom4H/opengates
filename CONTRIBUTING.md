@@ -56,10 +56,10 @@ npm run demo:accept
 ### Erasable TypeScript
 
 Keep the engine **erasable TypeScript**: no `enum`, no `namespace`, no
-decorators, no parameter properties. The engine must keep running under Node's
-built-in type stripping with no build step. The only dependencies in the repo
-(`@modelcontextprotocol/sdk` and `zod`) live under [`mcp/`](mcp/) and are never
-imported from `engine/src`.
+decorators, no parameter properties. It must keep running under Node's built-in
+type stripping with no build step. The whole repo is **dependency-free** (Node
+built-ins only) — including the [`engine/src/mcp/`](engine/src/mcp/) server, which
+speaks its own JSON-RPC over stdio instead of pulling in an SDK. Keep it that way.
 
 ### Change these four in lockstep
 

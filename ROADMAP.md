@@ -5,7 +5,7 @@ it only advertises what runs. Each item is a direction, not a promise; no dates.
 
 **Shipping today:** the deterministic [`fold`](engine/src/fold.ts) engine, the
 [review queue](engine/src/queue/) (fencing leases, SLA, delegation trail),
-[OAuth 2.1 auth](engine/src/auth.ts), the [MCP server](mcp/), real
+[OAuth 2.1 auth](engine/src/auth.ts), the [MCP server](engine/src/mcp/), real
 [standards mappings](STANDARDS.md), and two worked gates —
 [construction](examples/construction/) and [logistics](examples/logistics/).
 Everything below is beyond that line.

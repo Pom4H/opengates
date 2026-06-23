@@ -16,7 +16,7 @@ try {
 const entry = {
   at: new Date().toISOString(),
   tool: input.tool_name,
-  caseId: input.tool_input?.caseId,
+  caseId: input.tool_input?.id,
   outcome: input.tool_input?.outcome,
   note: input.tool_input?.note,
 };

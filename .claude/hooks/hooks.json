@@ -2,13 +2,13 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "og_record_decision",
+        "matcher": "open_gates_decide",
         "hooks": [{ "type": "command", "command": "node .claude/hooks/check-gate.mjs" }]
       }
     ],
     "PostToolUse": [
       {
-        "matcher": "og_record_decision",
+        "matcher": "open_gates_decide",
         "hooks": [{ "type": "command", "command": "node .claude/hooks/audit-append.mjs" }]
       }
     ]
