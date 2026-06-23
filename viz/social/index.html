@@ -20,6 +20,17 @@
     </script>
     <script type="module">
       import * as THREE from "three";
+      import { EffectComposer } from "/viz/viewer/vendor/three/addons/postprocessing/EffectComposer.js";
+      import { RenderPass } from "/viz/viewer/vendor/three/addons/postprocessing/RenderPass.js";
+      import { UnrealBloomPass } from "/viz/viewer/vendor/three/addons/postprocessing/UnrealBloomPass.js";
+      import { OutputPass } from "/viz/viewer/vendor/three/addons/postprocessing/OutputPass.js";
+
+      const gradientTexture = (top, bot) => {
+        const c = document.createElement("canvas"); c.width = 4; c.height = 256;
+        const x = c.getContext("2d"); const g = x.createLinearGradient(0, 0, 0, 256);
+        g.addColorStop(0, top); g.addColorStop(1, bot); x.fillStyle = g; x.fillRect(0, 0, 4, 256);
+        const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+      };
 
       const W = 1280, H = 640, BG = 0x070b12;
       const hexNum = (h) => parseInt(h.slice(1), 16);
@@ -43,19 +54,25 @@
       const doneAt = (z) => SYS.reduce((n, s) => n + (p >= z.arrival + s.lag + ramp ? 1 : 0), 0);
 
       const scene = new THREE.Scene();
-      scene.background = new THREE.Color(BG);
-      scene.fog = new THREE.Fog(BG, 95, 230);
+      scene.background = gradientTexture("#13294a", "#05080e");
+      scene.fog = new THREE.Fog(0x05080e, 90, 240);
       const camera = new THREE.PerspectiveCamera(44, W / H, 0.1, 2000);
       camera.position.set(46, 18, 61);
       camera.lookAt(-12, 18, 1);
       const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
       renderer.setSize(W, H); renderer.setPixelRatio(2);
+      renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.22;
+      renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       document.getElementById("gl").appendChild(renderer.domElement);
-      scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-      const key = new THREE.DirectionalLight(0xffffff, 1.55); key.position.set(44, 74, 36); scene.add(key);
-      const fill = new THREE.DirectionalLight(0x88aaff, 0.45); fill.position.set(-34, 24, -26); scene.add(fill);
-      const ground = new THREE.Mesh(new THREE.PlaneGeometry(420, 420), new THREE.MeshStandardMaterial({ color: 0x0a121d, roughness: 1 }));
-      ground.rotation.x = -Math.PI / 2; ground.position.y = -9.3; scene.add(ground);
+      scene.add(new THREE.HemisphereLight(0x9fbce8, 0x141b28, 1.05));
+      const key = new THREE.DirectionalLight(0xfff2e2, 2.1); key.position.set(44, 86, 40);
+      key.castShadow = true; key.shadow.mapSize.set(2048, 2048);
+      { const sc = key.shadow.camera; sc.near = 20; sc.far = 260; sc.left = -70; sc.right = 70; sc.top = 90; sc.bottom = -40; key.shadow.bias = -0.0004; key.shadow.normalBias = 0.7; }
+      scene.add(key);
+      const rim = new THREE.DirectionalLight(0x6fa8ff, 0.85); rim.position.set(-44, 34, -52); scene.add(rim);
+      const fill = new THREE.DirectionalLight(0xaec6ff, 0.25); fill.position.set(-22, 16, 34); scene.add(fill);
+      const ground = new THREE.Mesh(new THREE.PlaneGeometry(460, 460), new THREE.MeshStandardMaterial({ color: 0x080e16, roughness: 1 }));
+      ground.rotation.x = -Math.PI / 2; ground.position.y = -9.3; ground.receiveShadow = true; scene.add(ground);
 
       const size = (b) => [b.max[0] - b.min[0], b.max[1] - b.min[1], b.max[2] - b.min[2]];
       const center = (b) => [(b.min[0] + b.max[0]) / 2, (b.min[1] + b.max[1]) / 2, (b.min[2] + b.max[2]) / 2];
@@ -72,19 +89,26 @@
         else if (z.level === "foundation") { col = SCOPECOL.foundation; built = p >= z.arrival; }
         else if (z.level === "roof") { col = SCOPECOL.roof; built = p >= z.arrival; }
         if (!built) continue;
-        const mesh = new THREE.Mesh(new THREE.BoxGeometry(s[0], s[1], s[2]),
-          new THREE.MeshStandardMaterial({ color: col, roughness: z.level === "excavation" ? 1 : 0.8, metalness: 0.05, transparent: true, opacity: op, depthWrite: z.level !== "excavation" }));
-        mesh.position.set(c[0], c[1], c[2]); scene.add(mesh);
+        const excav = z.level === "excavation";
+        const mat = new THREE.MeshStandardMaterial({ color: col, roughness: excav ? 1 : 0.68, metalness: excav ? 0 : 0.12, transparent: true, opacity: op, depthWrite: !excav });
+        if (z.scope === "bay" && doneAt(z) >= 4) { mat.emissive.setHex(col); mat.emissiveIntensity = 0.42; }  // accepted floors glow
+        else if (z.level === "roof") { mat.emissive.setHex(col); mat.emissiveIntensity = 0.12; }
+        const mesh = new THREE.Mesh(new THREE.BoxGeometry(s[0], s[1], s[2]), mat);
+        mesh.position.set(c[0], c[1], c[2]); mesh.castShadow = !excav; mesh.receiveShadow = !excav; scene.add(mesh);
         if (z.scope === "bay" && doneAt(z) >= 2) for (const g of z.glazing || []) {
           const gs = size(g.box), gc = center(g.box);
           const gm = new THREE.Mesh(new THREE.BoxGeometry(gs[0], gs[1], gs[2]),
-            new THREE.MeshStandardMaterial({ color: GLAZE, transparent: true, opacity: 0.8, roughness: 0.08, metalness: 0.7, emissive: GLAZE, emissiveIntensity: 0.5 }));
+            new THREE.MeshStandardMaterial({ color: GLAZE, transparent: true, opacity: 0.72, roughness: 0.04, metalness: 0.9, emissive: GLAZE, emissiveIntensity: 0.85 }));
           gm.position.set(gc[0], gc[1], gc[2]); scene.add(gm);
         }
       }
 
-      // render a few frames so AA settles, then compose
-      for (let i = 0; i < 4; i++) renderer.render(scene, camera);
+      // bloom so the glazing + accepted floors glow, then compose the card
+      const composer = new EffectComposer(renderer);
+      composer.addPass(new RenderPass(scene, camera));
+      composer.addPass(new UnrealBloomPass(new THREE.Vector2(W, H), 0.55, 0.55, 0.72));
+      composer.addPass(new OutputPass());
+      for (let i = 0; i < 3; i++) composer.render();
       compose(renderer.domElement);
 
       // ---- compose the 1280×640 card (3D + scrim + text) ----

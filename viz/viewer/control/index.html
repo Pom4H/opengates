@@ -201,6 +201,18 @@
     <script type="module">
       import * as THREE from "three";
       import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+      import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+      import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+      import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
+      import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
+
+      // a soft vertical gradient, used as the scene backdrop (nicer than a flat colour)
+      const gradientTexture = (top, bot) => {
+        const c = document.createElement("canvas"); c.width = 4; c.height = 256;
+        const x = c.getContext("2d"); const g = x.createLinearGradient(0, 0, 0, 256);
+        g.addColorStop(0, top); g.addColorStop(1, bot); x.fillStyle = g; x.fillRect(0, 0, 4, 256);
+        const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+      };
 
       const $ = (id) => document.getElementById(id);
       const fmt = (n) => "€" + (Math.abs(n) < 0.5 ? 0 : Math.round(n)).toLocaleString("ru-RU");
@@ -240,23 +252,46 @@
 
         // ---- three scene ----
         const app = $("app");
+        // shadows + bloom on desktop by default; ?hq / ?lq force it on/off
+        const _q = new URLSearchParams(location.search);
+        const HIQ = _q.has("hq") ? true : _q.has("lq") ? false : !matchMedia("(max-width: 920px)").matches;
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x070b12);
-        scene.fog = new THREE.Fog(0x070b12, 130, 280);
+        scene.background = gradientTexture("#112742", "#05080e");
+        scene.fog = new THREE.Fog(0x05080e, 120, 300);
         const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 2000);
         camera.position.set(58, 46, 86);
         const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
         renderer.setSize(innerWidth, innerHeight); renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+        renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.24;
+        if (HIQ) { renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; }
         app.appendChild(renderer.domElement);
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.target.set(0, 16, 0); controls.enableDamping = true;
-        scene.add(new THREE.AmbientLight(0xffffff, 0.62));
-        const key = new THREE.DirectionalLight(0xffffff, 1.45); key.position.set(40, 70, 35); scene.add(key);
-        const fill = new THREE.DirectionalLight(0x88aaff, 0.4); fill.position.set(-35, 26, -28); scene.add(fill);
-        const ground = new THREE.Mesh(new THREE.PlaneGeometry(420, 420), new THREE.MeshStandardMaterial({ color: 0x0a121d, roughness: 1 }));
-        ground.rotation.x = -Math.PI / 2; ground.position.y = -9.25; scene.add(ground);
-        const grade = new THREE.Mesh(new THREE.PlaneGeometry(120, 90), new THREE.MeshStandardMaterial({ color: 0x121a26, roughness: 1, transparent: true, opacity: 0.5 }));
-        grade.rotation.x = -Math.PI / 2; grade.position.y = -0.05; scene.add(grade);
+        // layered lighting: sky/ground hemisphere + warm key (casts shadows) + cool rim + soft fill
+        scene.add(new THREE.HemisphereLight(0x9fbce8, 0x141b28, 1.12));
+        const key = new THREE.DirectionalLight(0xfff2e2, 2.0); key.position.set(48, 92, 42);
+        if (HIQ) {
+          key.castShadow = true; key.shadow.mapSize.set(2048, 2048);
+          const sc = key.shadow.camera; sc.near = 20; sc.far = 300; sc.left = -78; sc.right = 78; sc.top = 98; sc.bottom = -42;
+          key.shadow.bias = -0.0004; key.shadow.normalBias = 0.7;
+        }
+        scene.add(key);
+        const rim = new THREE.DirectionalLight(0x6fa8ff, 0.8); rim.position.set(-46, 36, -54); scene.add(rim);
+        const fillL = new THREE.DirectionalLight(0xaec6ff, 0.22); fillL.position.set(-22, 16, 34); scene.add(fillL);
+        const ground = new THREE.Mesh(new THREE.PlaneGeometry(460, 460), new THREE.MeshStandardMaterial({ color: 0x080e16, roughness: 1, metalness: 0 }));
+        ground.rotation.x = -Math.PI / 2; ground.position.y = -9.3; ground.receiveShadow = HIQ; scene.add(ground);
+        const grid = new THREE.GridHelper(280, 56, 0x1b2942, 0x0f1827);
+        grid.position.y = -9.24; grid.material.transparent = true; grid.material.opacity = 0.22; scene.add(grid);
+        const grade = new THREE.Mesh(new THREE.PlaneGeometry(160, 120), new THREE.MeshStandardMaterial({ color: 0x0e1726, roughness: 1, transparent: true, opacity: 0.55 }));
+        grade.rotation.x = -Math.PI / 2; grade.position.y = -0.06; grade.receiveShadow = HIQ; scene.add(grade);
+        // post-processing: subtle bloom so the glazing and accepted zones glow
+        let composer = null;
+        if (HIQ) {
+          composer = new EffectComposer(renderer);
+          composer.addPass(new RenderPass(scene, camera));
+          composer.addPass(new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.5, 0.55, 0.72));
+          composer.addPass(new OutputPass());
+        }
 
         const size = (b) => [b.max[0] - b.min[0], b.max[1] - b.min[1], b.max[2] - b.min[2]];
         const center = (b) => [(b.min[0] + b.max[0]) / 2, (b.min[1] + b.max[1]) / 2, (b.min[2] + b.max[2]) / 2];
@@ -270,17 +305,18 @@
           if (s[0] <= 0 || s[1] <= 0 || s[2] <= 0) continue;
           const excav = z.level === "excavation";
           const mat = new THREE.MeshStandardMaterial({
-            color: NOT, roughness: excav ? 1 : 0.82, metalness: 0.05,
+            color: NOT, roughness: excav ? 1 : 0.7, metalness: excav ? 0 : 0.12,
             transparent: true, opacity: 1, depthWrite: !excav,
           });
           const mesh = new THREE.Mesh(new THREE.BoxGeometry(s[0], s[1], s[2]), mat);
           mesh.position.set(c[0], c[1], c[2]); mesh.userData.zone = z;
+          mesh.castShadow = !excav; mesh.receiveShadow = !excav;
           scene.add(mesh);
           const glass = [];
           for (const g of z.glazing || []) {
             const gs = size(g.box), gc = center(g.box);
             const gm = new THREE.Mesh(new THREE.BoxGeometry(gs[0], gs[1], gs[2]),
-              new THREE.MeshStandardMaterial({ color: GLAZE, transparent: true, opacity: 0.78, roughness: 0.08, metalness: 0.7, emissive: GLAZE, emissiveIntensity: 0.45 }));
+              new THREE.MeshStandardMaterial({ color: GLAZE, transparent: true, opacity: 0.72, roughness: 0.04, metalness: 0.9, emissive: GLAZE, emissiveIntensity: 0.85 }));
             gm.position.set(gc[0], gc[1], gc[2]); gm.visible = false; scene.add(gm); glass.push(gm);
           }
           Z[z.id] = { zone: z, mesh, glass, level: z.level };
@@ -367,8 +403,15 @@
           o.mesh.visible = built;
           if (isSel) { col = SEL; op = 1; }
           o.mesh.material.color.setHex(col); o.mesh.material.opacity = op;
-          o.mesh.material.emissive.setHex(isSel ? SEL : (lensGlow(id, z.scope === "bay" ? evAt(id, T) : null) ? col : 0x000000));
-          o.mesh.material.emissiveIntensity = isSel ? 0.4 : (o.mesh.material.emissive.getHex() ? 0.22 : 0);
+          // emissive glow: selected (cyan), accepted bays (their colour → blooms), or lens highlight
+          let emHex = 0x000000, emI = 0;
+          if (isSel) { emHex = SEL; emI = 0.55; }
+          else if (z.scope === "bay") {
+            const st2 = evAt(id, T);
+            if (st2 && st2.systemsDone >= 4) { emHex = col; emI = 0.4; }
+            else if (lensGlow(id, st2)) { emHex = col; emI = 0.32; }
+          } else if (z.level === "roof" && built) { emHex = col; emI = 0.12; }
+          o.mesh.material.emissive.setHex(emHex); o.mesh.material.emissiveIntensity = emI;
         }
         function blend(a, b, t) { const ar = (a >> 16) & 255, ag = (a >> 8) & 255, ab = a & 255, br = (b >> 16) & 255, bg = (b >> 8) & 255, bb = b & 255;
           return ((ar + (br - ar) * t) << 16 | (ag + (bg - ag) * t) << 8 | (ab + (bb - ab) * t)) & 0xffffff; }
@@ -578,8 +621,8 @@
 
         // ---- go ----
         setT(MAX);
-        addEventListener("resize", () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
-        (function render() { requestAnimationFrame(render); controls.update(); renderer.render(scene, camera); })();
+        addEventListener("resize", () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); if (composer) composer.setSize(innerWidth, innerHeight); });
+        (function render() { requestAnimationFrame(render); controls.update(); if (composer) composer.render(); else renderer.render(scene, camera); })();
       }
     </script>
   </body>
