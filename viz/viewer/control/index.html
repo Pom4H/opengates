@@ -214,6 +214,30 @@
         const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
       };
 
+      // A graded construction site: a flat earth apron at grade with an opening for
+      // the excavation pit, a concrete edge, a ground-floor slab the tower stands
+      // on, and a road + driveway — so the building plants into the ground and
+      // casts its shadow, instead of floating.
+      function buildSite(scene, shadows) {
+        const SITE_X = 76, SITE_Z = 58, PIT_X = 22, PIT_Z = 16, FX = 18.3, FZ = 12.3;
+        const matt = (color) => new THREE.MeshStandardMaterial({ color, roughness: 1, metalness: 0 });
+        const flat = (w, d, color, y) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), matt(color)); m.rotation.x = -Math.PI / 2; m.position.y = y; m.receiveShadow = shadows; scene.add(m); return m; };
+        const ring = (color, y, ox, oz, ix, iz) => {
+          const s = new THREE.Shape(); s.moveTo(-ox, -oz); s.lineTo(ox, -oz); s.lineTo(ox, oz); s.lineTo(-ox, oz); s.closePath();
+          const h = new THREE.Path(); h.moveTo(-ix, -iz); h.lineTo(-ix, iz); h.lineTo(ix, iz); h.lineTo(ix, -iz); h.closePath(); s.holes.push(h);
+          const m = new THREE.Mesh(new THREE.ShapeGeometry(s), matt(color)); m.rotation.x = -Math.PI / 2; m.position.y = y; m.receiveShadow = shadows; scene.add(m); return m;
+        };
+        flat(580, 580, 0x070b11, -9.3); // deep ground = pit bottom
+        const grid = new THREE.GridHelper(330, 66, 0x1b2942, 0x0f1827); grid.position.y = -9.24; grid.material.transparent = true; grid.material.opacity = 0.18; scene.add(grid);
+        ring(0x232720, 0, SITE_X, SITE_Z, PIT_X, PIT_Z); // grade apron (earth) with the pit opening
+        ring(0x33373d, 0.012, PIT_X + 2.4, PIT_Z + 2.4, PIT_X, PIT_Z); // concrete edge framing the pit
+        const slab = new THREE.Mesh(new THREE.BoxGeometry(2 * FX, 0.5, 2 * FZ), matt(0x2a2f36)); // ground-floor slab the tower stands on
+        slab.position.set(0, -0.1, 0); slab.castShadow = shadows; slab.receiveShadow = shadows; scene.add(slab);
+        flat(2 * SITE_X, 9, 0x121419, 0.03).position.set(0, 0.03, -38); // road
+        flat(11, 22, 0x121419, 0.03).position.set(0, 0.03, -28); // driveway up to the site
+        for (let x = -SITE_X + 6; x < SITE_X; x += 11) { const d = new THREE.Mesh(new THREE.PlaneGeometry(4.5, 0.45), matt(0xb7c0cb)); d.rotation.x = -Math.PI / 2; d.position.set(x, 0.05, -38); scene.add(d); } // centre line
+      }
+
       const $ = (id) => document.getElementById(id);
       const fmt = (n) => "€" + (Math.abs(n) < 0.5 ? 0 : Math.round(n)).toLocaleString("ru-RU");
       const fmtK = (n) => (Math.abs(n) < 0.5 ? "€0" : Math.abs(n) >= 1e6 ? "€" + (n / 1e6).toFixed(2) + "M" : Math.abs(n) >= 1e3 ? "€" + (n / 1e3).toFixed(0) + "k" : fmt(n));
@@ -278,12 +302,7 @@
         scene.add(key);
         const rim = new THREE.DirectionalLight(0x6fa8ff, 0.8); rim.position.set(-46, 36, -54); scene.add(rim);
         const fillL = new THREE.DirectionalLight(0xaec6ff, 0.22); fillL.position.set(-22, 16, 34); scene.add(fillL);
-        const ground = new THREE.Mesh(new THREE.PlaneGeometry(460, 460), new THREE.MeshStandardMaterial({ color: 0x080e16, roughness: 1, metalness: 0 }));
-        ground.rotation.x = -Math.PI / 2; ground.position.y = -9.3; ground.receiveShadow = HIQ; scene.add(ground);
-        const grid = new THREE.GridHelper(280, 56, 0x1b2942, 0x0f1827);
-        grid.position.y = -9.24; grid.material.transparent = true; grid.material.opacity = 0.22; scene.add(grid);
-        const grade = new THREE.Mesh(new THREE.PlaneGeometry(160, 120), new THREE.MeshStandardMaterial({ color: 0x0e1726, roughness: 1, transparent: true, opacity: 0.55 }));
-        grade.rotation.x = -Math.PI / 2; grade.position.y = -0.06; grade.receiveShadow = HIQ; scene.add(grade);
+        buildSite(scene, HIQ);
         // post-processing: subtle bloom so the glazing and accepted zones glow
         let composer = null;
         if (HIQ) {
