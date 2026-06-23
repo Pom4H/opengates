@@ -188,7 +188,8 @@
     <div id="err" class="card">
       <b>Failed to load the model.</b>
       <p class="hint">Open over HTTP, not <code>file://</code>. From the repo root: <code>python3 -m http.server 8099</code>, then
-        <code>/viz/viewer/control/</code>. Before that: <code>node viz/model/generate.ts &amp;&amp; node examples/construction/e2e/drive.ts</code>.</p>
+        <code>/viz/viewer/control/</code>. Before that: <code>node viz/model/generate.ts &amp;&amp; node examples/construction/e2e/drive.ts</code>.
+        For the close-to-reality run: <code>node examples/construction/e2e/simulate.ts</code>, then open <code>/viz/viewer/control/?src=sim</code>.</p>
     </div>
 
     <!-- Absolute paths from the repo root (serve with `python3 -m http.server`
@@ -336,16 +337,23 @@
 
       async function getJSON(p) { const r = await fetch(p, { cache: "no-store" }); if (!r.ok) throw new Error(p); return r.json(); }
 
+      // Data source: ?src=sim loads the DES-driven, close-to-reality run
+      // (viz/model/e2e-sim/, from examples/construction/e2e/simulate.ts); default
+      // is the scripted e2e. Both have identical shape, so the cockpit is agnostic.
+      const SRC = new URLSearchParams(location.search).get("src") === "sim" ? "e2e-sim" : "e2e";
+      const BASE = "/viz/model/" + SRC + "/";
+
       Promise.all([
         getJSON("/viz/model/building.json"),
-        getJSON("/viz/model/e2e/timeline.json"),
-        getJSON("/viz/model/e2e/attachments.json"),
-        getJSON("/viz/model/e2e/ledger.json"),
-        getJSON("/viz/model/e2e/certificate.json"),
-        getJSON("/viz/model/e2e/roles.json"),
+        getJSON(BASE + "timeline.json"),
+        getJSON(BASE + "attachments.json"),
+        getJSON(BASE + "ledger.json"),
+        getJSON(BASE + "certificate.json"),
+        getJSON(BASE + "roles.json"),
+        SRC === "e2e-sim" ? getJSON(BASE + "ensemble.json").catch(() => null) : Promise.resolve(null),
       ]).then(main).catch((e) => { console.error(e); $("err").style.display = "block"; });
 
-      function main([model, timeline, attach, ledger, cert, meta]) {
+      function main([model, timeline, attach, ledger, cert, meta, ensemble]) {
         // ---- palette / lifecycle ----
         const P = model.palette;
         const SYS = model.systems.map((s) => hexNum(s.color));
@@ -356,8 +364,13 @@
         const STATUS_COL = { accepted: "#34d399", accepted_with_exceptions: "#34d399", under_review: "#f5a524", submitted: "#f5a524", returned_for_rework: "#f87171", rejected: "#f87171" };
 
         // ---- object header ----
-        $("objname").textContent = meta.object.name;
+        $("objname").textContent = meta.object.name + (ensemble ? "  · SIMULATED" : "");
         $("objsub").textContent = `excavation pit −9 m → raft → ${model.grid.basements} underground → ${model.grid.floors} above-ground → roof · ${Object.keys(attach).length} zones`;
+        if (ensemble) {
+          // Close-to-reality run: show the schedule distribution over many seeded
+          // worlds. Money is anchored to accepted reality; the schedule is not.
+          $("objsub").textContent += ` · finish day P10/P50/P90 ${ensemble.finishDayP10}/${ensemble.finishDayP50}/${ensemble.finishDayP90} vs plan ${ensemble.plannedFinishDay} (${ensemble.runs} seeds, ${ensemble.avgDisputes} avg disputes)`;
+        }
 
         // ---- legend ----
         const legend = [["excavation", P.excavation], ["raft", P.foundation_mat], ["1·frame", model.systems[0].color], ["2·façade", model.systems[1].color], ["3·MEP", model.systems[2].color], ["4·fit-out (accepted)", model.systems[3].color], ["roof", P.roof], ["not started", P.not_started]];

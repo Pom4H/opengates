@@ -1,0 +1,203 @@
+{
+  "currency": "EUR",
+  "contractValue": 4030332,
+  "designFee": 480000,
+  "advance": {
+    "issued": 604550,
+    "issuedAt": "2026-02-02T12:00:00Z",
+    "recovered": 604549.83,
+    "outstanding": 0.17
+  },
+  "retention": {
+    "held": 201516.88,
+    "released": 201516.88,
+    "reserve": 0,
+    "tranche1": 100758.44,
+    "tranche2": 100758.44,
+    "tranche1At": "2027-08-01T12:00:00Z",
+    "tranche2At": "2029-07-17T12:00:00Z"
+  },
+  "periods": [
+    {
+      "periodLabel": "2026-04",
+      "ks3Id": "KS-3 2026-04",
+      "lines": 1,
+      "gross": 279936,
+      "certifiedNet": 265939.2,
+      "retentionThisPeriod": 13996.8,
+      "advanceRecovery": 41990.4,
+      "vatMemo": 53187.84,
+      "netPayment": 223948.8,
+      "paymentDueAt": "2026-05-23T12:00:00Z"
+    },
+    {
+      "periodLabel": "2026-05",
+      "ks3Id": "KS-3 2026-05",
+      "lines": 1,
+      "gross": 88128,
+      "certifiedNet": 83721.6,
+      "retentionThisPeriod": 4406.4,
+      "advanceRecovery": 13219.2,
+      "vatMemo": 16744.32,
+      "netPayment": 70502.4,
+      "paymentDueAt": "2026-06-22T12:00:00Z"
+    },
+    {
+      "periodLabel": "2026-06",
+      "ks3Id": "KS-3 2026-06",
+      "lines": 62,
+      "gross": 123821,
+      "certifiedNet": 117629.95,
+      "retentionThisPeriod": 6191.05,
+      "advanceRecovery": 18573.15,
+      "vatMemo": 23525.99,
+      "netPayment": 99056.8,
+      "paymentDueAt": "2026-07-30T12:00:00Z"
+    },
+    {
+      "periodLabel": "2026-07",
+      "ks3Id": "KS-3 2026-07",
+      "lines": 120,
+      "gross": 270081.5,
+      "certifiedNet": 256577.42,
+      "retentionThisPeriod": 13504.08,
+      "advanceRecovery": 40512.23,
+      "vatMemo": 51315.48,
+      "netPayment": 216065.19,
+      "paymentDueAt": "2026-08-30T12:00:00Z"
+    },
+    {
+      "periodLabel": "2026-08",
+      "ks3Id": "KS-3 2026-08",
+      "lines": 119,
+      "gross": 275639,
+      "certifiedNet": 261857.03,
+      "retentionThisPeriod": 13781.97,
+      "advanceRecovery": 41345.85,
+      "vatMemo": 52371.39,
+      "netPayment": 220511.18,
+      "paymentDueAt": "2026-09-30T12:00:00Z"
+    },
+    {
+      "periodLabel": "2026-09",
+      "ks3Id": "KS-3 2026-09",
+      "lines": 123,
+      "gross": 283703.5,
+      "certifiedNet": 269518.3,
+      "retentionThisPeriod": 14185.2,
+      "advanceRecovery": 42555.53,
+      "vatMemo": 53903.64,
+      "netPayment": 226962.77,
+      "paymentDueAt": "2026-10-30T12:00:00Z"
+    },
+    {
+      "periodLabel": "2026-10",
+      "ks3Id": "KS-3 2026-10",
+      "lines": 140,
+      "gross": 337022,
+      "certifiedNet": 320170.86,
+      "retentionThisPeriod": 16851.14,
+      "advanceRecovery": 50553.3,
+      "vatMemo": 64034.14,
+      "netPayment": 269617.56,
+      "paymentDueAt": "2026-11-30T12:00:00Z"
+    },
+    {
+      "periodLabel": "2026-11",
+      "ks3Id": "KS-3 2026-11",
+      "lines": 134,
+      "gross": 318882,
+      "certifiedNet": 302937.88,
+      "retentionThisPeriod": 15944.12,
+      "advanceRecovery": 47832.3,
+      "vatMemo": 60587.56,
+      "netPayment": 255105.58,
+      "paymentDueAt": "2026-12-30T12:00:00Z"
+    },
+    {
+      "periodLabel": "2026-12",
+      "ks3Id": "KS-3 2026-12",
+      "lines": 141,
+      "gross": 335682.5,
+      "certifiedNet": 318898.35,
+      "retentionThisPeriod": 16784.15,
+      "advanceRecovery": 50352.38,
+      "vatMemo": 63779.65,
+      "netPayment": 268545.97,
+      "paymentDueAt": "2027-01-30T12:00:00Z"
+    },
+    {
+      "periodLabel": "2027-01",
+      "ks3Id": "KS-3 2027-01",
+      "lines": 121,
+      "gross": 288296.5,
+      "certifiedNet": 273881.65,
+      "retentionThisPeriod": 14414.85,
+      "advanceRecovery": 43244.48,
+      "vatMemo": 54776.31,
+      "netPayment": 230637.17,
+      "paymentDueAt": "2027-03-02T12:00:00Z"
+    },
+    {
+      "periodLabel": "2027-02",
+      "ks3Id": "KS-3 2027-02",
+      "lines": 143,
+      "gross": 343529,
+      "certifiedNet": 326352.52,
+      "retentionThisPeriod": 17176.48,
+      "advanceRecovery": 51529.35,
+      "vatMemo": 65270.48,
+      "netPayment": 274823.17,
+      "paymentDueAt": "2027-03-30T12:00:00Z"
+    },
+    {
+      "periodLabel": "2027-03",
+      "ks3Id": "KS-3 2027-03",
+      "lines": 154,
+      "gross": 362718.5,
+      "certifiedNet": 344582.54,
+      "retentionThisPeriod": 18135.96,
+      "advanceRecovery": 54407.78,
+      "vatMemo": 68916.48,
+      "netPayment": 290174.76,
+      "paymentDueAt": "2027-04-30T12:00:00Z"
+    },
+    {
+      "periodLabel": "2027-04",
+      "ks3Id": "KS-3 2027-04",
+      "lines": 132,
+      "gross": 341928.5,
+      "certifiedNet": 324832.04,
+      "retentionThisPeriod": 17096.46,
+      "advanceRecovery": 51289.28,
+      "vatMemo": 64966.38,
+      "netPayment": 273542.76,
+      "paymentDueAt": "2027-05-30T12:00:00Z"
+    },
+    {
+      "periodLabel": "2027-05",
+      "ks3Id": "KS-3 2027-05",
+      "lines": 103,
+      "gross": 276407,
+      "certifiedNet": 262586.63,
+      "retentionThisPeriod": 13820.37,
+      "advanceRecovery": 41461.05,
+      "vatMemo": 52517.31,
+      "netPayment": 221125.58,
+      "paymentDueAt": "2027-06-30T12:00:00Z"
+    },
+    {
+      "periodLabel": "2027-06",
+      "ks3Id": "KS-3 2027-06",
+      "lines": 44,
+      "gross": 104557,
+      "certifiedNet": 99329.15,
+      "retentionThisPeriod": 5227.85,
+      "advanceRecovery": 15683.55,
+      "vatMemo": 19865.83,
+      "netPayment": 83645.6,
+      "paymentDueAt": "2027-07-26T12:00:00Z"
+    }
+  ],
+  "simulated": true
+}

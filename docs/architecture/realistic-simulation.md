@@ -3,8 +3,11 @@
 > Status: **v0 — foundation built.** The deterministic-randomness primitive, the
 > resource-constrained DES kernel and a worked stochastic build all ship today:
 > [`packages/sim/`](../../packages/sim) (`Rng`, `Sim`, `Resource`),
-> [`examples/construction/sim/build-sim.ts`](../../examples/construction/sim/build-sim.ts).
-> Run `npm run demo:sim`. This complements the **idealized** e2e
+> [`examples/construction/sim/build-sim.ts`](../../examples/construction/sim/build-sim.ts),
+> and the full DES-driven e2e
+> [`examples/construction/e2e/simulate.ts`](../../examples/construction/e2e/simulate.ts)
+> (rendered at `/viz/viewer/control/?src=sim`).
+> Run `npm run demo:sim` / `npm run sim:e2e`. This complements the **idealized** e2e
 > ([`examples/construction/e2e/`](../../examples/construction/e2e)) and reuses the
 > resource layer ([`resource-flow-and-domains.md`](resource-flow-and-domains.md)).
 > The acceptance engine ([`packages/engine`](../../packages/engine)) is **not
@@ -154,9 +157,14 @@ Open Gates owns.
    folded through the unchanged engine; Monte-Carlo ensemble.
 3. **Reality profile (L1).** ⬜ Externalize `PROFILE` to a `reality.json` with a
    `variance:0` baseline that reproduces `drive.ts` exactly (a regression anchor).
-4. **Scale to the full e2e.** ⬜ Drive all ~1 560 cases from the DES instead of the
-   fixed `daysPerBuildUnit` table, emitting the existing four viewer files so the
-   control surface shows a *simulated* (not scripted) project.
+4. **Scale to the full e2e.** ✅ [`simulate.ts`](../../examples/construction/e2e/simulate.ts)
+   drives all ~1 560 cases from the DES (finite crews per system, emergent
+   schedule) instead of the fixed `daysPerBuildUnit` table, folds them through the
+   **unchanged** gates, and emits the same five viewer files into
+   `viz/model/e2e-sim/` plus `ensemble.json`. The control surface renders it at
+   `/viz/viewer/control/?src=sim` with the P10/P50/P90 finish vs. the plan. Run
+   `npm run sim:e2e`. Result for seed 1: 1 560 cases, finish day P10/P50/P90 ≈
+   443/476/499 vs. a variance-free plan of 325 — money unchanged (€3.83 M earned).
 5. **Calendar & weather (L1).** ⬜ Non-working days and seasonal pour constraints.
 6. **Disruptions (L1).** ⬜ Equipment breakdown (Poisson) and supply shortage as
    first-class events that re-contend resources.

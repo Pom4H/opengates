@@ -38,6 +38,27 @@ It is **deterministic** — no `Date.now()`, no `Math.random()`; every date come
 from a zone's build-order arrival, every "friction" case is seeded off a hash of
 the case id. Same inputs ⇒ byte-identical output, forever (verified by rerun).
 
+## Close-to-reality variant — `simulate.ts`
+
+`drive.ts` runs an **idealized** fixed schedule. [`simulate.ts`](simulate.ts)
+drives the **same** project from a resource-constrained discrete-event simulation
+([`packages/sim`](../../../packages/sim)): the per-bay sweep competes for finite
+crews per system, durations vary (lognormal), and a seeded fraction of pours fail
+QC → real `returned_for_rework` slips. The schedule **emerges**; every case still
+folds through the **unchanged** gates and money is computed exactly as before.
+
+```bash
+node examples/construction/e2e/simulate.ts   # → viz/model/e2e-sim/*.json + ensemble.json
+#    then open http://localhost:8099/viz/viewer/control/?src=sim
+```
+
+Same shape as `drive.ts`'s output, so the cockpit is agnostic — `?src=sim` swaps
+the data source and shows the **P10/P50/P90 finish over an ensemble of seeds**
+against the variance-free plan (seed 1: ≈ 443/476/499 days vs. plan 325). The
+earned value is unchanged (€3.83 M) — schedule is uncertain, money is anchored to
+accepted reality. Replayable (same seed ⇒ byte-identical); design:
+[`docs/architecture/realistic-simulation.md`](../../../docs/architecture/realistic-simulation.md).
+
 ## The lifecycle — 12 phases, each a real Acceptance Act
 
 Every phase folds through the existing engine using only the existing primitives

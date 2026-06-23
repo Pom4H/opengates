@@ -22,6 +22,7 @@
     "demo:flows": "node packages/engine/src/flow-cli.ts --gate examples/operations/flow.gate.json --gate examples/construction/systems/gate.json examples/operations/deliver-rebar.accept.json examples/operations/rent-crane.accept.json examples/operations/transport-crew.accept.json examples/operations/consume-rebar.json examples/operations/consume-crane.json examples/operations/consume-crew.json examples/construction/systems/structure.accept.json --model viz/model/graph.json",
     "viz:flows": "node packages/engine/src/flow-cli.ts --gate examples/operations/flow.gate.json --gate examples/construction/systems/gate.json examples/operations/deliver-rebar.accept.json examples/operations/rent-crane.accept.json examples/operations/transport-crew.accept.json examples/operations/consume-rebar.json examples/operations/consume-crane.json examples/operations/consume-crew.json examples/construction/systems/structure.accept.json --model viz/model/graph.json --flows viz/model/flows.json --ledger viz/model/ledger.json",
     "demo:sim": "node examples/construction/sim/build-sim.ts",
+    "sim:e2e": "node examples/construction/e2e/simulate.ts",
     "eval": "node eval/replay.mjs examples/construction/gate.json examples/construction/dataset.sample.jsonl",
     "review:example": "node examples/reviewer/poll.mjs"
   }
