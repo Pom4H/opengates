@@ -34,7 +34,7 @@ is within both the 5% tolerance and U, so supervision **accepts 117 m³ — not 
 claimed 120.**
 
 ```bash
-npm run demo:accept        # from the engine/ folder
+npm run demo:accept        # from the repo root
 ```
 
 | | € |

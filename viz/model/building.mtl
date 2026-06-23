@@ -1,0 +1,33 @@
+# Open Gates building materials
+newmtl not_started
+Kd 0.165 0.192 0.239
+d 1.0
+
+newmtl structure
+Kd 0.541 0.576 0.639
+d 1.0
+
+newmtl envelope
+Kd 0.498 0.831 1.000
+d 1.0
+
+newmtl mep
+Kd 0.961 0.647 0.141
+d 1.0
+
+newmtl fitout
+Kd 0.204 0.827 0.600
+d 1.0
+
+newmtl glazing
+Kd 0.498 0.831 1.000
+d 0.45
+
+newmtl base
+Kd 0.125 0.157 0.200
+d 1.0
+
+newmtl selected
+Kd 0.133 0.827 0.933
+d 1.0
+

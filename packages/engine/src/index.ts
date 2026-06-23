@@ -16,6 +16,8 @@ export { fireConsequences, computeAmount } from "./consequences.ts";
 export { fold, apply, initialState } from "./fold.ts";
 export { createOutbox, pending, deliver } from "./effects.ts";
 export { labelOf, collectLabels, toJsonl } from "./dataset.ts";
+export { zoneOf, indexByZone, attachmentsByZone, lintZones, knownZoneIds } from "./zones.ts";
+export type { ZoneWork, ZoneDocument, ZoneAttachments, SpatialModel, ZoneIssue } from "./zones.ts";
 
 /** Parse a plain object into a GateDefinition (typing only; no validation). */
 export function loadGate(obj: unknown): GateDefinition {

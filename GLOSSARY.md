@@ -116,3 +116,15 @@ A lease is the right to decide a case, held by one reviewer at a time. Each leas
 ## SLA breach / escalation
 
 The queue's time discipline. A gate's `sla = { reviewWithinHours, priority, escalateToInbox }` sets `dueAt = enqueuedAt + reviewWithinHours` at enqueue. `reap()` flips any overdue, still-undecided case to **breached** and appends an immutable `{kind:'escalate', by:'system:sla'}` assignment routing it to the escalation inbox. Lease order then puts breached cases first, then by priority, then soonest `dueAt`, then FIFO. The logistics gate runs a 24h SLA at `high` priority escalating to `goods-in-escalation`. Notifications about all this are at-most-once and best-effort — the queue is the source of truth; poll to reconcile.
+
+## zone
+
+A place in a 3D model of the operation that a claim is **anchored** to — e.g. one block of a building (*section × row × floor*, id like `A1-F03`). A claim field of kind `zone`, its format validated by a `field_pattern` check. A zone is an *anchor*: many works (cases) and documents (evidence) accrue to it over time, so it becomes the place you inspect to see everything that happened there. Non-normative (an engine may ignore zones and still conform). See [`viz/`](viz/README.md) and SPEC §7.5.
+
+## indexByZone / lintZones
+
+The inversion of the claim→zone link. `indexByZone(states)` returns, per zone, its `works` (status + accepted money), `documents` (evidence refs), and an acceptance `rollup` — the exact shape the 3D selector reads from `viz/model/attachments.json`. `lintZones(states, model)` flags what a single in-case check can't see: `unknown_zone` (a zone absent from the model) and `duplicate_acceptance` (the same zone + system accepted twice). In [`packages/engine/src/zones.ts`](packages/engine/src/zones.ts).
+
+## operations layer
+
+What Open Gates is in one frame: a way to **see and control the operations of a business**, one accepted fact at a time. The operational map (and any product) is built **on** the Acceptance Act standard — not a replacement for an ERP, a workflow engine, or a BPM tool, but the verifiable acceptance boundary underneath them.

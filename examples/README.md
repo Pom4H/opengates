@@ -1,6 +1,7 @@
 # Examples — gates by industry
 
-> Level 2 of the [ladder](../README.md#whats-in-this-repository).
+> The case catalog of [Open Gates](../README.md): the most expensive disputed
+> fact in each industry, modelled as a gate.
 
 Each gate is a place where a claim becomes an accepted fact with consequences.
 Two are fully worked — a machine-readable `gate.json` plus runnable scenarios and
@@ -16,6 +17,10 @@ someone turns them into a gate.
 
 Construction also carries a second gate — [hidden-works (АОСР)](construction/hidden-works/) —
 whose value is a *temporal* lock: the act must be signed before the work is covered.
+
+And [`construction/systems/`](construction/systems/) accepts four parallel systems
+(structure → envelope → MEP → fit-out) on one **zone** — the worked example behind
+the 3D operational map (`npm run demo:zone`; [`viz/`](../viz/README.md)).
 
 ## The shape of a gate
 

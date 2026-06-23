@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Open Gates — zone selector</title>
+    <style>
+      :root {
+        --bg: #070b12;
+        --panel: #0e1622cc;
+        --border: #1e2d40;
+        --text: #e6edf6;
+        --dim: #7e8ea3;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif; }
+      #app { position: fixed; inset: 0; }
+      .card {
+        position: absolute; background: var(--panel); border: 1px solid var(--border);
+        border-radius: 14px; padding: 16px 18px; backdrop-filter: blur(8px);
+      }
+      #title { top: 18px; left: 18px; max-width: 360px; }
+      #title h1 { margin: 0; font-size: 16px; letter-spacing: 4px; color: #4ade80; }
+      #title p { margin: 6px 0 0; font-size: 13px; color: var(--dim); line-height: 1.5; }
+      #legend { bottom: 18px; left: 18px; font-size: 13px; }
+      #legend .row { display: flex; align-items: center; gap: 10px; margin: 6px 0; }
+      #legend .sw { width: 14px; height: 14px; border-radius: 4px; }
+      #selpanel { top: 18px; right: 18px; width: 250px; font-family: ui-monospace, monospace; }
+      #selpanel h2 { margin: 0 0 8px; font-size: 13px; letter-spacing: 2px; color: var(--dim); }
+      #selpanel .zid { font-size: 26px; font-weight: 700; }
+      #selpanel .meta { font-size: 13px; color: var(--dim); margin-top: 4px; }
+      #selpanel .status { margin-top: 12px; font-size: 15px; }
+      #sel-attach { margin-top: 12px; font-size: 12px; }
+      #sel-attach .grp { color: var(--dim); letter-spacing: 1px; margin: 8px 0 4px; }
+      #sel-attach .item { display: flex; gap: 8px; padding: 2px 0; }
+      #sel-attach .badge { font-size: 10px; padding: 1px 6px; border-radius: 5px; border: 1px solid var(--border); white-space: nowrap; }
+      #sel-attach a { color: #7fd4ff; text-decoration: none; word-break: break-all; }
+      #selpanel button {
+        margin-top: 12px; width: 100%; padding: 9px; border-radius: 8px; cursor: pointer;
+        background: #16243a; color: var(--text); border: 1px solid var(--border); font-size: 13px;
+      }
+      #selpanel button:hover { border-color: #2f4a6b; }
+      .hint { font-size: 12px; color: var(--dim); margin-top: 10px; }
+      #err { top: 50%; left: 50%; transform: translate(-50%, -50%); max-width: 480px; display: none; }
+      code { color: #7fd4ff; }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+
+    <div id="title" class="card">
+      <h1>OPEN&nbsp;GATES · ZONES</h1>
+      <p>
+        Each <b>zone</b> is one block (section × row × floor) — the spatial unit
+        a claim is accepted against. Colour shows how many of the four
+        <b>parallel systems</b> are done. Click a zone to select it, click again
+        to advance it a system. Drag to orbit, scroll to zoom.
+      </p>
+    </div>
+
+    <div id="legend" class="card">
+      <div class="row"><span class="sw" style="background:#2a313d"></span> not built</div>
+      <div class="row"><span class="sw" style="background:#8a93a3"></span> 1 · structure</div>
+      <div class="row"><span class="sw" style="background:#7fd4ff"></span> 2 · envelope (façade)</div>
+      <div class="row"><span class="sw" style="background:#f5a524"></span> 3 · MEP</div>
+      <div class="row"><span class="sw" style="background:#34d399"></span> 4 · fit-out (accepted)</div>
+      <div class="row"><span class="sw" style="background:#22d3ee"></span> selected</div>
+    </div>
+
+    <div id="selpanel" class="card" style="display:none">
+      <h2>SELECTED ZONE</h2>
+      <div class="zid" id="sel-id">—</div>
+      <div class="meta" id="sel-meta"></div>
+      <div class="status">systems: <b id="sel-status"></b></div>
+      <div id="sel-attach"></div>
+      <button id="cycle">advance system →</button>
+      <div class="hint">Each system's acceptance is a separate Open Gates decision on this zone.</div>
+    </div>
+
+    <div id="err" class="card">
+      <b>Could not load the model.</b>
+      <p class="hint">
+        Open this over HTTP, not <code>file://</code>. From the repo root run
+        <code>python3 -m http.server</code> and visit
+        <code>/viz/viewer/</code>.
+      </p>
+    </div>
+
+    <!-- three.js is vendored locally (viz/viewer/vendor) so the viewer works
+         offline, with no CDN dependency. -->
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "./vendor/three/three.module.js",
+          "three/addons/": "./vendor/three/addons/"
+        }
+      }
+    </script>
+
+    <script type="module">
+      import * as THREE from "three";
+      import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+      const NOT_STARTED = 0x2a313d;
+      const GLAZING = 0x7fd4ff;
+      const SELECTED = 0x22d3ee;
+      const hexNum = (h) => parseInt(h.slice(1), 16);
+      // System colours come from the model (structure → envelope → MEP → fit-out).
+      // colourFor(n): n=0 not built, n=1..4 = that many systems done.
+      let SYS = []; // filled from model.systems
+      const colourFor = (n) => (n <= 0 ? NOT_STARTED : SYS[Math.min(SYS.length, n) - 1]);
+
+      const center = (b) => [
+        (b.min[0] + b.max[0]) / 2,
+        (b.min[1] + b.max[1]) / 2,
+        (b.min[2] + b.max[2]) / 2,
+      ];
+      const size = (b) => [
+        b.max[0] - b.min[0],
+        b.max[1] - b.min[1],
+        b.max[2] - b.min[2],
+      ];
+
+      async function loadModel() {
+        const res = await fetch("../model/building.json", { cache: "no-store" });
+        if (!res.ok) throw new Error("fetch failed");
+        return res.json();
+      }
+
+      // Optional: works/documents attached to zones (engine output). Absent is fine.
+      async function loadAttachments() {
+        try {
+          const res = await fetch("../model/attachments.json", { cache: "no-store" });
+          return res.ok ? await res.json() : {};
+        } catch {
+          return {};
+        }
+      }
+
+      function main(model, attachments) {
+        const app = document.getElementById("app");
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x070b12);
+        scene.fog = new THREE.Fog(0x070b12, 80, 160);
+
+        const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 1000);
+        camera.position.set(34, 26, 46);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+        renderer.setSize(innerWidth, innerHeight);
+        renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+        app.appendChild(renderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.target.set(0, 13, 0);
+        controls.enableDamping = true;
+
+        scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+        const key = new THREE.DirectionalLight(0xffffff, 1.4);
+        key.position.set(30, 50, 25);
+        scene.add(key);
+        const fill = new THREE.DirectionalLight(0x88aaff, 0.4);
+        fill.position.set(-25, 20, -20);
+        scene.add(fill);
+
+        const ground = new THREE.Mesh(
+          new THREE.PlaneGeometry(200, 200),
+          new THREE.MeshStandardMaterial({ color: 0x0a121d, roughness: 1 }),
+        );
+        ground.rotation.x = -Math.PI / 2;
+        ground.position.y = -0.71;
+        scene.add(ground);
+
+        // base / podium
+        {
+          const s = size(model.base), c = center(model.base);
+          const m = new THREE.Mesh(
+            new THREE.BoxGeometry(s[0], s[1], s[2]),
+            new THREE.MeshStandardMaterial({ color: 0x202833, roughness: 0.9 }),
+          );
+          m.position.set(c[0], c[1], c[2]);
+          scene.add(m);
+        }
+
+        SYS = model.systems.map((s) => hexNum(s.color));
+        const SYS_NAMES = ["not built", ...model.systems.map((s) => s.name)];
+
+        const selectable = [];
+        const glassByZone = {};
+
+        for (const z of model.zones) {
+          const s = size(z.structure), c = center(z.structure);
+          const mesh = new THREE.Mesh(
+            new THREE.BoxGeometry(s[0], s[1], s[2]),
+            new THREE.MeshStandardMaterial({
+              color: colourFor(z.systemsDone),
+              roughness: 0.8,
+              metalness: 0.05,
+              transparent: true,
+              opacity: z.systemsDone === 0 ? 0.25 : 1,
+            }),
+          );
+          mesh.position.set(c[0], c[1], c[2]);
+          mesh.userData.zone = z;
+          scene.add(mesh);
+          selectable.push(mesh);
+
+          // glazing: one panel per exposed face, shown once the envelope is in
+          const panels = [];
+          for (const g of z.glazing || []) {
+            const gs = size(g.box), gc = center(g.box);
+            const glass = new THREE.Mesh(
+              new THREE.BoxGeometry(gs[0], gs[1], gs[2]),
+              new THREE.MeshStandardMaterial({
+                color: GLAZING, transparent: true, opacity: 0.8,
+                roughness: 0.08, metalness: 0.7, emissive: GLAZING, emissiveIntensity: 0.5,
+              }),
+            );
+            glass.position.set(gc[0], gc[1], gc[2]);
+            glass.visible = z.systemsDone >= 2;
+            scene.add(glass);
+            panels.push(glass);
+          }
+          glassByZone[z.id] = panels;
+        }
+
+        // selection + interaction
+        const raycaster = new THREE.Raycaster();
+        const pointer = new THREE.Vector2();
+        let selected = null;
+        const selId = document.getElementById("sel-id");
+        const selMeta = document.getElementById("sel-meta");
+        const selStatus = document.getElementById("sel-status");
+        const selPanel = document.getElementById("selpanel");
+
+        function paint(mesh) {
+          const z = mesh.userData.zone;
+          const isSel = mesh === selected;
+          mesh.material.color.setHex(isSel ? SELECTED : colourFor(z.systemsDone));
+          mesh.material.opacity = z.systemsDone === 0 && !isSel ? 0.25 : 1;
+          mesh.material.emissive.setHex(isSel ? SELECTED : 0x000000);
+          mesh.material.emissiveIntensity = isSel ? 0.4 : 0;
+          for (const g of glassByZone[z.id]) g.visible = z.systemsDone >= 2;
+        }
+
+        const selAttach = document.getElementById("sel-attach");
+        const STATUS_COL = {
+          accepted: "#34d399", accepted_with_exceptions: "#34d399",
+          under_review: "#f5a524", submitted: "#f5a524",
+          rejected: "#f87171", returned_for_rework: "#f87171",
+        };
+
+        function renderAttachments(z) {
+          const a = attachments[z.id];
+          if (!a) {
+            selAttach.innerHTML =
+              '<div class="grp">NO WORK ATTACHED YET</div>' +
+              '<div class="item" style="color:var(--dim)">Anchor a claim to this zone to attach work & documents.</div>';
+            return;
+          }
+          let html = `<div class="grp">WORK · ${a.rollup.accepted}/${a.rollup.total} accepted</div>`;
+          for (const w of a.works) {
+            const col = STATUS_COL[w.status] || "#7e8ea3";
+            const money = w.amount ? ` · €${w.amount}` : "";
+            html += `<div class="item"><span class="badge" style="color:${col};border-color:${col}55">${w.status}</span><span>${w.title || w.gateId}${money}</span></div>`;
+          }
+          if (a.documents.length) {
+            html += `<div class="grp">DOCUMENTS</div>`;
+            for (const d of a.documents) {
+              html += `<div class="item"><span class="badge">${d.kind}</span><a>${d.ref || "(no ref)"}</a></div>`;
+            }
+          }
+          selAttach.innerHTML = html;
+        }
+
+        function describe(z) {
+          selId.textContent = z.id;
+          selMeta.textContent = `section ${z.col} · row ${z.row} · floor ${z.floor}`;
+          selStatus.textContent = `${z.systemsDone}/4 — ${SYS_NAMES[z.systemsDone]}`;
+          renderAttachments(z);
+        }
+
+        function select(mesh) {
+          const prev = selected;
+          selected = mesh;
+          if (prev) paint(prev);
+          paint(mesh);
+          describe(mesh.userData.zone);
+          selPanel.style.display = "block";
+        }
+
+        function cycle() {
+          if (!selected) return;
+          const z = selected.userData.zone;
+          z.systemsDone = (z.systemsDone + 1) % (SYS.length + 1);
+          describe(z);
+          paint(selected);
+        }
+        document.getElementById("cycle").addEventListener("click", cycle);
+
+        let down = null;
+        renderer.domElement.addEventListener("pointerdown", (e) => {
+          down = { x: e.clientX, y: e.clientY };
+        });
+        renderer.domElement.addEventListener("pointerup", (e) => {
+          if (!down) return;
+          const moved = Math.hypot(e.clientX - down.x, e.clientY - down.y);
+          down = null;
+          if (moved > 5) return; // a drag, not a click
+          pointer.x = (e.clientX / innerWidth) * 2 - 1;
+          pointer.y = -(e.clientY / innerHeight) * 2 + 1;
+          raycaster.setFromCamera(pointer, camera);
+          const hit = raycaster.intersectObjects(selectable, false)[0];
+          if (hit) {
+            if (hit.object === selected) cycle();
+            else select(hit.object);
+          }
+        });
+
+        addEventListener("resize", () => {
+          camera.aspect = innerWidth / innerHeight;
+          camera.updateProjectionMatrix();
+          renderer.setSize(innerWidth, innerHeight);
+        });
+
+        (function loop() {
+          requestAnimationFrame(loop);
+          controls.update();
+          renderer.render(scene, camera);
+        })();
+      }
+
+      Promise.all([loadModel(), loadAttachments()])
+        .then(([model, attachments]) => main(model, attachments))
+        .catch(() => {
+          document.getElementById("err").style.display = "block";
+        });
+    </script>
+  </body>
+</html>

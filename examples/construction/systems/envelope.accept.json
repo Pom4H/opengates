@@ -1,0 +1,31 @@
+{
+  "gate": "construction.zone-system-acceptance",
+  "events": [
+    {
+      "type": "claim.submitted",
+      "at": "2026-05-18T09:00:00Z",
+      "actor": "contractor:fasad-pro",
+      "claim": { "type": "system_work_completed", "values": { "system": "envelope", "work_item": "Curtain wall + glazing", "quantity": 14, "zone": "A1-F03" } }
+    },
+    {
+      "type": "evidence.attached",
+      "at": "2026-05-19T11:00:00Z",
+      "actor": "inspector:envelope-qc",
+      "evidence": { "kind": "inspection", "values": { "quantity": 14 }, "ref": "inspect/A1-F03-envelope.pdf" }
+    },
+    {
+      "type": "evidence.attached",
+      "at": "2026-05-19T11:10:00Z",
+      "actor": "contractor:fasad-pro",
+      "evidence": { "kind": "photo_log", "ref": "photos/A1-F03-envelope/" }
+    },
+    {
+      "type": "decision.recorded",
+      "at": "2026-05-20T15:00:00Z",
+      "actor": "supervisor:ivanov",
+      "reviewerRole": "technical_supervisor",
+      "outcome": "accepted",
+      "note": "Glazing installed and weather-tight. Accepted — MEP rough-in may start."
+    }
+  ]
+}

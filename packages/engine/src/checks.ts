@@ -73,6 +73,15 @@ function evalCheck(
         : { ...base, outcome: "fail", detail: `${c.field}=${v} outside [${c.min ?? "-inf"}, ${c.max ?? "inf"}]` };
     }
 
+    case "field_pattern": {
+      const v = asString(claim?.values?.[c.field]);
+      if (v === undefined)
+        return { ...base, outcome: "skipped", detail: `field "${c.field}" is not present yet` };
+      return new RegExp(c.pattern).test(v)
+        ? { ...base, outcome: "pass", detail: `${c.field}="${v}" matches /${c.pattern}/` }
+        : { ...base, outcome: "fail", detail: `${c.field}="${v}" does not match /${c.pattern}/` };
+    }
+
     case "cross_check":
       return crossCheck(c, base, claim, evidence);
 

@@ -1,0 +1,25 @@
+{
+  "gate": "facilities.fire-safety-acceptance",
+  "events": [
+    {
+      "type": "claim.submitted",
+      "at": "2026-06-21T09:00:00Z",
+      "actor": "facilities:operator",
+      "claim": { "type": "fire_safety_inspection", "values": { "scope": "Detection, egress, suppression", "zone": "A1-F03" } }
+    },
+    {
+      "type": "evidence.attached",
+      "at": "2026-06-21T13:00:00Z",
+      "actor": "inspector:fire-safety",
+      "evidence": { "kind": "inspection_report", "ref": "fire/A1-F03-inspection.pdf" }
+    },
+    {
+      "type": "decision.recorded",
+      "at": "2026-06-22T10:00:00Z",
+      "actor": "officer:petrova",
+      "reviewerRole": "fire_safety_officer",
+      "outcome": "accepted",
+      "note": "Detection, egress and suppression verified in zone A1-F03. Occupancy unlocked."
+    }
+  ]
+}
