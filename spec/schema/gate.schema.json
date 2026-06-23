@@ -17,12 +17,11 @@
     "reviewer": { "$ref": "#/$defs/reviewer" },
     "decisions": { "type": "array", "items": { "$ref": "#/$defs/decisionOutcome" }, "minItems": 1 },
     "consequences": { "type": "array", "items": { "$ref": "#/$defs/consequence" } },
+    "sla": { "$ref": "#/$defs/sla" },
     "policy": { "$ref": "#/$defs/policy" }
   },
   "$defs": {
-    "decisionOutcome": {
-      "enum": ["accepted", "accepted_with_exceptions", "rejected", "returned_for_rework"]
-    },
+    "decisionOutcome": { "enum": ["accepted", "accepted_with_exceptions", "rejected", "returned_for_rework"] },
     "severity": { "enum": ["blocking", "warning"] },
     "claimSchema": {
       "type": "object",
@@ -72,7 +71,7 @@
         "id": { "type": "string" },
         "description": { "type": "string" },
         "severity": { "$ref": "#/$defs/severity" },
-        "rule": { "enum": ["required_evidence", "field_present", "field_range", "cross_check"] }
+        "rule": { "enum": ["required_evidence", "field_present", "field_range", "cross_check", "date_window"] }
       },
       "oneOf": [
         {
@@ -91,11 +90,26 @@
           "properties": {
             "rule": { "const": "cross_check" },
             "claimField": { "type": "string" },
+            "claimUnit": { "type": "string", "description": "Expected unit of the claim field; must match the evidence unit." },
             "evidenceKind": { "type": "string" },
-            "evidenceField": { "type": "string" },
-            "tolerance": { "type": "number", "minimum": 0 }
+            "evidenceField": { "type": "string", "description": "The TRUSTED REFERENCE value. Relative error is normalized by this, per VIM §2.16 — not by the claim." },
+            "evidenceUnitField": { "type": "string", "default": "unit" },
+            "uncertaintyField": { "type": "string", "default": "U", "description": "Evidence field carrying the expanded uncertainty U = k·u (JCGM 100 / GUM). When present, the claim must also be within U of the reference." },
+            "requireUnitMatch": { "type": "boolean", "default": true },
+            "tolerance": { "type": "number", "minimum": 0, "description": "Relative tolerance vs the reference, e.g. 0.05 = 5% of the surveyed value." },
+            "absolute": { "type": "number", "minimum": 0, "description": "Absolute tolerance in the evidence unit; combined with relative as 'whichever is greater'." }
           },
-          "required": ["claimField", "evidenceKind", "evidenceField", "tolerance"]
+          "required": ["claimField", "evidenceKind", "evidenceField"],
+          "anyOf": [{ "required": ["tolerance"] }, { "required": ["absolute"] }]
+        },
+        {
+          "properties": {
+            "rule": { "const": "date_window" },
+            "field": { "type": "string" },
+            "start": { "type": "string", "format": "date-time" },
+            "end": { "type": "string", "format": "date-time" }
+          },
+          "required": ["field"]
         }
       ]
     },
@@ -112,10 +126,17 @@
         {
           "properties": {
             "effect": { "const": "money" },
+            "basis": { "enum": ["accepted_quantity", "fixed"] },
             "currency": { "type": "string" },
-            "quantityField": { "type": "string" },
+            "quantityField": { "type": "string", "description": "Pay unitPrice per accepted unit of this field." },
             "unitPrice": { "type": "number" },
-            "amount": { "type": "number" }
+            "amount": { "type": "number", "description": "Or a fixed amount." },
+            "retentionPct": { "type": "number", "minimum": 0, "maximum": 1, "description": "Guarantee retention withheld from gross (гарантийное удержание)." },
+            "retentionCap": { "type": "number", "minimum": 0, "description": "Cap on cumulative retention (major units)." },
+            "vatRate": { "type": "number", "minimum": 0, "description": "VAT rate, surfaced as a memo line on the net." },
+            "paymentTermsDays": { "type": "integer", "minimum": 0 },
+            "estimateLine": { "type": "string", "description": "Contract/estimate line reference (e.g. ФЕР06-01-001-01)." },
+            "contractRef": { "type": "string" }
           },
           "required": ["currency"]
         },
@@ -133,6 +154,17 @@
         }
       ]
     },
+    "sla": {
+      "type": "object",
+      "required": ["reviewWithinHours"],
+      "additionalProperties": false,
+      "description": "Optional review SLA. dueAt = enqueuedAt + reviewWithinHours; a case past due is escalated and leased first.",
+      "properties": {
+        "reviewWithinHours": { "type": "number", "minimum": 0 },
+        "priority": { "enum": ["low", "normal", "high", "critical"] },
+        "escalateToInbox": { "type": "string" }
+      }
+    },
     "policy": {
       "type": "object",
       "additionalProperties": false,
@@ -143,7 +175,7 @@
           "required": ["checksPass"],
           "properties": {
             "checksPass": { "const": true },
-            "maxAmount": { "type": "number" }
+            "maxAmount": { "type": "number", "description": "Auto-accept only below this net certified value; derived from the review-vs-leakage break-even (see docs/ECONOMICS.md)." }
           }
         }
       }

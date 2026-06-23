@@ -10,49 +10,39 @@
 // entry in the item's append-only `assignments` trail — a delegation, once made,
 // can never be erased, only superseded by a later entry.
 
-import type {
-  DecisionOutcome,
-  GateDefinition,
-  GateEvent,
-  GateState,
-} from "../types.ts";
+import type { GateDefinition, GateEvent, GateState, Outcome } from "../types.ts";
 
-/** Queue-level lifecycle, distinct from the gate's own GateStatus. */
 export type QueueStatus = "pending" | "leased" | "decided";
+export type Priority = "low" | "normal" | "high" | "critical";
 
 export interface Lease {
   /** Opaque token the holder echoes back when deciding/releasing. */
   token: string;
-  /** Who holds the lease (a role or harness id), if given. */
+  /**
+   * Monotonic fencing token (Kleppmann). Increments on every (re)lease, so a
+   * resurrected stale holder is rejected even if its token still looks valid.
+   */
+  fence: number;
   holder?: string;
   /** ISO time at which the lease expires and the item returns to pending. */
   until: string;
 }
 
-/**
- * One immutable entry in a case's delegation trail. Appended whenever the case
- * is routed, reassigned, claimed, released or escalated. Never edited.
- */
 export interface Assignment {
   at: string;
   /** Who performed the delegation (required — a trace must have an author). */
   by: string;
   kind: "route" | "reassign" | "claim" | "release" | "escalate" | "return";
-  /** Destination inbox (for route / reassign / escalate). */
   inbox?: string;
-  /** Destination participant (for claim / direct assignment). */
   assignee?: string;
-  /** Prior inbox/assignee, captured so the trail is self-describing. */
   fromInbox?: string;
   fromAssignee?: string;
   reason?: string;
 }
 
-/** A named destination cases can be routed to. */
 export interface Inbox {
   name: string;
   description?: string;
-  /** Optional rule: cases matching this are auto-routed here on enqueue. */
   match?: { domain?: string; gateId?: string; reviewerRole?: string };
   createdAt: string;
 }
@@ -62,85 +52,74 @@ export interface QueueItem {
   status: QueueStatus;
   gateId: string;
   gate: GateDefinition;
-  /** The append-only case log (claim + evidence + any decision). */
   events: GateEvent[];
-  /** Folded snapshot: status, check results, consequences, dataset label. */
   state: GateState;
-  /** Decision outcomes this gate allows (mirror of gate.decisions). */
-  allowedDecisions: DecisionOutcome[];
-  /** Current inbox, derived from the latest assignment (undefined = unassigned). */
+  allowedDecisions: Outcome[];
   inbox?: string;
-  /** Current participant, derived from the latest assignment. */
   assignee?: string;
-  /** Append-only delegation trail. The authoritative "trace". Never edited. */
   assignments: Assignment[];
   enqueuedAt: string;
   updatedAt: string;
   lease?: Lease;
-  /** Per-item webhook URL fired on enqueue/assign/decide (best-effort push). */
+  /** Highest fence ever issued for this case (fencing-token high-water mark). */
+  maxFence?: number;
+  // --- SLA (set at enqueue when the gate declares one) ---
+  priority?: Priority;
+  /** enqueuedAt + gate.sla.reviewWithinHours. */
+  dueAt?: string;
+  /** First time reap() observed now > dueAt while still undecided. */
+  breachedAt?: string;
   notify?: string;
-  /** Actor of the final decision (a human, a harness, or "system:auto"). */
   decidedBy?: string;
-  /** Human-readable queue audit trail. */
+  /** Idempotency key of the decision that closed this case (dedups retries). */
+  decisionKey?: string;
   history: string[];
 }
 
-/** The persisted snapshot: the queue is one document of items + inboxes. */
 export interface QueueSnapshot {
   items: QueueItem[];
   inboxes: Inbox[];
 }
 
-/** Push a case onto the queue. Accepts events directly or a scenario wrapper. */
 export interface EnqueueInput {
   gate: GateDefinition;
   events?: GateEvent[];
   scenario?: { gate?: string; events: GateEvent[] };
   notify?: string;
-  /** Route the new case straight to this inbox (else routing rules apply). */
   inbox?: string;
-  /** Assign the new case straight to this participant. */
   assignee?: string;
-  /** Who routed it (recorded in the trail; defaults to "system:router"). */
   by?: string;
   reason?: string;
 }
 
-/** Delegate a case to an inbox and/or a participant, leaving a trace. */
 export interface AssignInput {
   inbox?: string;
   assignee?: string;
-  /** Who is delegating. Required — a delegation trace must name its author. */
   by: string;
   reason?: string;
-  /** Override the recorded kind (default inferred: route vs reassign). */
   kind?: Assignment["kind"];
 }
 
-/** Pull the next case to review. All fields optional; absent = no filter. */
 export interface LeaseInput {
-  /** Identifier of the reviewer taking the item (becomes the assignee). */
   holder?: string;
-  /** Only lease items in this inbox. */
   inbox?: string;
-  /** Only lease items assigned to this participant (or unassigned). */
   assignee?: string;
-  /** Only lease items whose gate.reviewer.role matches this. */
   role?: string;
-  /** Only lease items in this gate domain. */
   domain?: string;
-  /** Override the queue's default lease (visibility) duration. */
   leaseSeconds?: number;
 }
 
-/** Record a reviewer's decision on a leased (or pending) item. */
 export interface DecisionInput {
-  outcome: DecisionOutcome;
+  outcome: Outcome;
   reviewerRole: string;
   actor: string;
+  /** Quantities the reviewer accepted (e.g. surveyed 117, not claimed 120). */
+  acceptedValues?: Record<string, string | number | boolean>;
   note?: string;
-  /** The lease token from lease(); required if the item is currently leased. */
+  /** The lease token from lease(); REQUIRED while the case is leased. */
   leaseToken?: string;
+  /** Dedup key: a retried decision with the same key returns the first result. */
+  idempotencyKey?: string;
   /** Override the decision timestamp (tests / replays). */
   at?: string;
 }
@@ -150,6 +129,15 @@ export interface DecideResult {
   state: GateState;
 }
 
+export interface InboxCounts {
+  pending: number;
+  leased: number;
+  decided: number;
+  breached: number;
+  dueSoon: number;
+  total: number;
+}
+
 export interface InboxSummary extends Inbox {
-  counts: { pending: number; leased: number; decided: number; total: number };
+  counts: InboxCounts;
 }

@@ -1,44 +1,38 @@
-# Examples — a catalog of business gates
+# Examples — gates by industry
 
 > Level 2 of the [ladder](../README.md#whats-in-this-repository).
 
-Each directory describes one **gate**: a place where a claim becomes an accepted
-fact with consequences. The goal is a living encyclopedia of operational
-patterns across industries.
+Each gate is a place where a claim becomes an accepted fact with consequences.
+Two are fully worked — a machine-readable `gate.json` plus runnable scenarios and
+tests; the rest live as one-line entries in [`CATALOG.md`](CATALOG.md) until
+someone turns them into a gate.
 
-You don't need to write code to contribute one — prose is enough. See
-[`../CONTRIBUTING.md`](../CONTRIBUTING.md) and the
-[`_template/`](_template/).
+## Worked
 
-## Catalog
+| Domain | Gate | The disputed fact | Settled by |
+|--------|------|-------------------|-----------|
+| [construction](construction/) | work-volume acceptance | contractor claims 120 m³; supervision surveys 117 | reference survey + tolerance + measurement uncertainty |
+| [logistics](logistics/) | delivery acceptance | carrier claims on-time delivery; it arrived a day late | POD + a delivery-window check |
 
-| Domain | Gate | The expensive disputed fact | Status |
-|--------|------|------------------------------|--------|
-| [construction](construction/) | work-volume acceptance | contractor claims a volume; supervision hasn't accepted it | ✅ worked (gate + scenarios + tests) |
-| [logistics](logistics/) | delivery acceptance | driver claims delivery; customer disputes it | 📝 prose stub |
-| [manufacturing](manufacturing/) | batch QC acceptance | a batch is claimed good; QC finds a defect | 📝 prose stub |
-| [retail](retail/) | goods receiving | supplier claims a shipment; the warehouse received less | 📝 prose stub |
-| [agriculture](agriculture/) | field-treatment acceptance | a field was treated; the agronomist isn't sure | 📝 prose stub |
-| [healthcare](healthcare/) | service confirmation | a service was rendered; the insurer won't confirm it | 📝 prose stub |
-| [insurance](insurance/) | claim adjudication | a loss is claimed; the adjuster must confirm it | 📝 prose stub |
-
-`✅ worked` = has a machine-readable `gate.json` and runnable scenarios.
-`📝 prose stub` = the seven questions answered in prose; ready to be turned into
-a `gate.json`.
+Construction also carries a second gate — [hidden-works (АОСР)](construction/hidden-works/) —
+whose value is a *temporal* lock: the act must be signed before the work is covered.
 
 ## The shape of a gate
 
-Every example answers the same seven questions:
+Every example answers the same questions:
 
 ```text
-claim       → what fact is asserted?
-evidence    → what proves it?
-checks      → how is it verified? (especially claim vs. reality)
-reviewer    → which role accepts responsibility?
-decision    → what outcomes are possible?
-consequence → what money / risk / right-to-proceed appears?
-dataset     → what labelled record accumulates?
+claim       what fact is asserted?
+evidence    what backs it? (the trusted reference)
+checks      how is it verified? (claim vs. reference, with tolerance + uncertainty)
+reviewer    which role accepts responsibility?
+decision    what outcomes are possible?
+consequence what money / risk / right-to-proceed appears?
+dataset     what labelled record accumulates?
 ```
 
 Start with [construction](construction/) — it is fully worked, with a gate
-definition, an accepted scenario, a disputed scenario, and tests.
+definition, accept / dispute / remarks scenarios, a hidden-works gate, a labelled
+dataset, and tests. To add a gate, copy [`_template/`](_template/) and see
+[`../CONTRIBUTING.md`](../CONTRIBUTING.md); unworked ideas go in
+[`CATALOG.md`](CATALOG.md).

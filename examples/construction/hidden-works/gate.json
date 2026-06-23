@@ -1,0 +1,30 @@
+{
+  "id": "construction.hidden-works-acceptance",
+  "name": "Acceptance of hidden works (АОСР)",
+  "domain": "construction",
+  "description": "A contractor reports a covering operation (e.g. rebar before concreting). Construction control (стройконтроль) must inspect and sign an Act of Inspection of Hidden Works (АОСР) BEFORE the work is covered — otherwise the covered work must be opened up. The gate's value is the temporal lock: an act signed after covering is worthless, and the event timestamps expose any cover that happened before the act.",
+  "claim": {
+    "type": "hidden_work_ready_for_cover",
+    "fields": [
+      { "name": "work_item", "kind": "string", "required": true },
+      { "name": "axes", "kind": "string", "required": true },
+      { "name": "ready_at", "kind": "date", "required": true }
+    ]
+  },
+  "evidence": [
+    { "kind": "executive_scheme", "required": true, "description": "Исполнительная схема — as-built rebar/geometry scheme." },
+    { "kind": "material_passport", "required": true, "description": "Паспорт/сертификат на арматуру — material certificate for the rebar/concrete." },
+    { "kind": "lab_protocol", "required": false, "description": "Протокол лабораторных испытаний — lab test protocol, if applicable." }
+  ],
+  "checks": [
+    { "id": "scheme-and-passport", "rule": "required_evidence", "kinds": ["executive_scheme", "material_passport"], "severity": "blocking", "description": "The as-built scheme and the material passport are attached." },
+    { "id": "ready-date-stated", "rule": "field_present", "field": "ready_at", "severity": "blocking", "description": "The readiness date must be recorded; the inspection happens before covering and a decision after cover invalidates the act." }
+  ],
+  "reviewer": { "role": "construction_control", "description": "Стройконтроль / технадзор." },
+  "decisions": ["accepted", "returned_for_rework", "rejected"],
+  "consequences": [
+    { "id": "right-to-cover", "effect": "right_to_proceed", "on": ["accepted"], "unlocks": "concrete-pour", "description": "The signed АОСР is the right to cover the work and proceed to the pour." },
+    { "id": "liability", "effect": "risk", "on": ["accepted"], "assignedTo": "construction_control" },
+    { "id": "label", "effect": "dataset_label", "on": ["accepted", "returned_for_rework", "rejected"], "dataset": "construction.hidden_works" }
+  ]
+}

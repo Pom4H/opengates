@@ -1,8 +1,8 @@
 {
   "id": "construction.work-volume-acceptance",
-  "name": "Acceptance of completed work volume",
+  "name": "Acceptance of executed work volume",
   "domain": "construction",
-  "description": "A contractor claims a completed volume of work for a period. Site technical supervision verifies the claim against an independent survey before it becomes payable earned value and the next work package is unlocked.",
+  "description": "A contractor reports a completed work volume for a billing period. Technical supervision (технадзор) cross-checks it against an independent as-built survey and accepts a quantity, which becomes earned value on the КС-3 payment certificate, less guarantee retention.",
   "claim": {
     "type": "work_volume_completed",
     "fields": [
@@ -12,59 +12,46 @@
     ]
   },
   "evidence": [
-    {
-      "kind": "survey_measurement",
-      "required": true,
-      "description": "Independent measurement of the executed volume (m3)."
-    },
-    {
-      "kind": "delivery_notes",
-      "required": false,
-      "description": "Material delivery notes supporting the claimed volume."
-    },
-    {
-      "kind": "photo_log",
-      "required": false,
-      "description": "Geotagged photographs of the executed work."
-    }
+    { "kind": "executive_survey", "required": true, "description": "Обмерная ведомость / executive geodetic survey — the measured executed volume. Drives payment." },
+    { "kind": "concrete_strength_protocol", "required": true, "description": "Протокол испытаний бетона (28 сут.) — 28-day compressive-strength lab report for the grade." },
+    { "kind": "works_log", "required": true, "description": "Общий журнал работ — daily works log." },
+    { "kind": "aosr_ref", "required": true, "description": "Reference to the signed АОСР (hidden-works act) for the rebar/formwork covered by this pour." },
+    { "kind": "delivery_notes", "required": false, "description": "ТТН на бетонную смесь — concrete delivery notes (supply side; proves material arrived, not that work was executed)." }
   ],
   "checks": [
     {
-      "id": "evidence-present",
+      "id": "executive-docs-present",
       "rule": "required_evidence",
-      "kinds": ["survey_measurement"],
+      "kinds": ["executive_survey", "concrete_strength_protocol", "works_log", "aosr_ref"],
       "severity": "blocking",
-      "description": "An independent survey measurement must be attached."
-    },
-    {
-      "id": "quantity-present",
-      "rule": "field_present",
-      "field": "quantity",
-      "severity": "blocking",
-      "description": "The claimed quantity must be stated."
-    },
-    {
-      "id": "quantity-positive",
-      "rule": "field_range",
-      "field": "quantity",
-      "min": 0,
-      "severity": "blocking",
-      "description": "The claimed quantity must be positive."
+      "description": "The executive documentation supervision signs against is complete."
     },
     {
       "id": "claim-matches-survey",
       "rule": "cross_check",
       "claimField": "quantity",
-      "evidenceKind": "survey_measurement",
+      "claimUnit": "m3",
+      "evidenceKind": "executive_survey",
       "evidenceField": "quantity",
+      "uncertaintyField": "U",
+      "requireUnitMatch": true,
       "tolerance": 0.05,
+      "absolute": 2,
       "severity": "blocking",
-      "description": "Claimed volume must be within 5% of the surveyed volume."
+      "description": "Claimed volume must agree with the independent survey within 5% of the surveyed value or 2 m³ (whichever is greater) AND within the survey's expanded uncertainty U (k=2, ~95% per JCGM 100). Error is measured against the survey as the traceable reference (VIM §2.16)."
+    },
+    {
+      "id": "billable-quantity",
+      "rule": "field_range",
+      "field": "quantity",
+      "min": 0,
+      "severity": "blocking",
+      "description": "The claimed quantity is non-negative."
     }
   ],
   "reviewer": {
     "role": "technical_supervisor",
-    "description": "Site technical supervision who accepts responsibility for the acceptance."
+    "description": "Технадзор / customer representative who accepts responsibility for the acceptance."
   },
   "decisions": ["accepted", "accepted_with_exceptions", "rejected", "returned_for_rework"],
   "consequences": [
@@ -72,33 +59,45 @@
       "id": "earned-value",
       "effect": "money",
       "on": ["accepted", "accepted_with_exceptions"],
+      "basis": "accepted_quantity",
       "quantityField": "quantity",
       "unitPrice": 85,
       "currency": "EUR",
-      "description": "Accepted volume becomes payable earned value at the unit rate."
+      "retentionPct": 0.05,
+      "retentionCap": 25000,
+      "vatRate": 0.2,
+      "paymentTermsDays": 30,
+      "estimateLine": "ФЕР06-01-001-01",
+      "contractRef": "BOQ 3.2 'C25/30 foundation concrete' @ EUR 85.00/m³",
+      "description": "КС-3 payment certificate: accepted volume × contract unit rate, less 5% guarantee retention (гарантийное удержание)."
     },
     {
       "id": "unlock-closeout",
       "effect": "right_to_proceed",
       "on": ["accepted"],
       "unlocks": "WP-foundation-closeout",
-      "description": "Acceptance unlocks the next work package."
+      "description": "The foundation closeout package is unlocked."
     },
     {
       "id": "acceptance-liability",
       "effect": "risk",
       "on": ["accepted", "accepted_with_exceptions"],
       "assignedTo": "technical_supervisor",
-      "description": "The supervisor carries liability for the accepted volume."
+      "description": "The accepting supervisor owns the accepted fact."
     },
     {
       "id": "label",
       "effect": "dataset_label",
       "on": ["accepted", "accepted_with_exceptions", "rejected", "returned_for_rework"],
       "dataset": "construction.work_acceptance",
-      "description": "Every decision is appended as a labelled record for future automation."
+      "description": "features → label record for automation."
     }
   ],
+  "sla": {
+    "reviewWithinHours": 48,
+    "priority": "normal",
+    "escalateToInbox": "supervisors-escalation"
+  },
   "policy": {
     "autoAcceptWhen": { "checksPass": true, "maxAmount": 2000 }
   }

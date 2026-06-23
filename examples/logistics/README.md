@@ -1,37 +1,39 @@
 # Logistics — delivery acceptance
 
-> 📝 Prose stub. Ready to be turned into a `gate.json`. See
-> [`../_template/`](../_template/) and [`../../CONTRIBUTING.md`](../../CONTRIBUTING.md).
+> A second worked gate, to show the primitive generalizes past construction.
 
-**The expensive disputed fact:** the driver claims a delivery was made (on time,
-in full); the customer disputes quantity, condition, or timing. Until it's
-accepted, the invoice can't be confirmed and demurrage/penalties are unclear.
+**The expensive disputed fact:** a carrier reports a completed delivery; the
+customer disputes that it arrived on time (or in full). Until the receiver
+accepts, the leg isn't invoiceable and the next one can't be planned against it.
 
-## The seven questions
+## The gate
 
-**Claim** — `delivery_completed`: shipment id, delivered quantity, delivered-at
-timestamp, destination.
+| | |
+|---|---|
+| **Claim** | `delivery_completed`: `shipment_id`, `quantity` (pallets), `delivered_at`. |
+| **Evidence** | `proof_of_delivery` (required), `weighbridge_ticket` (optional). |
+| **Checks** | POD present (blocking); delivered inside the agreed **time window** (blocking `date_window`); pallet count within 2% of the weighbridge scan (warning, advisory). |
+| **Reviewer** | `customer_receiver`. |
+| **Consequence** | money: accepted pallets × €40 invoiceable · unlock `transport-leg-closeout` · liability to the receiver · dataset label. |
+| **SLA** | 24h, `high` priority, escalates to `goods-in-escalation`. |
 
-**Evidence** — proof of delivery (POD) signature, geofence/GPS arrival event,
-photo of unloaded goods, weighbridge ticket.
+Definition: [`gate.json`](gate.json).
 
-**Checks**
-- required evidence: POD present;
-- cross-check: claimed quantity within tolerance of weighbridge/scan count;
-- field range: delivered-at within the agreed delivery window.
+## Scenarios
 
-**Reviewer** — `customer_receiver` (the consignee's goods-in role) accepts
-responsibility for the delivery.
+Fold either against the gate:
 
-**Decision** — accepted / accepted_with_exceptions (short/over delivery noted) /
-rejected / returned_for_rework.
+```bash
+node engine/src/cli.ts examples/logistics/gate.json examples/logistics/scenario.accept.json
+```
 
-**Consequence**
-- money: the delivery becomes invoiceable; penalties/demurrage computed from the
-  window check;
-- right to proceed: POD unlocks payment and closes the transport leg;
-- risk: liability for accepted goods passes to the consignee.
+- **Accept** ([`scenario.accept.json`](scenario.accept.json)) — delivered 12:05,
+  inside the 08:00–18:00 window; weighbridge confirms 26 pallets → accepted,
+  `26 × 40 = €1,040` invoiceable.
+- **Dispute** ([`scenario.dispute.json`](scenario.dispute.json)) — delivered a day
+  late, outside the window → the blocking `date_window` check fails → returned for
+  rework, nothing invoiceable.
 
-**Dataset** — `logistics.delivery_acceptance`: claim + POD + window/quantity
-checks → decision. Trains future auto-acceptance of clean, on-time, in-full
-deliveries.
+The only thing that changed from construction is the gate definition: a
+`date_window` check instead of a survey cross-check, a different rate, a tighter
+SLA. The engine, the fold, the queue and the MCP tools are identical.

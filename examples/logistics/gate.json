@@ -1,0 +1,52 @@
+{
+  "id": "logistics.delivery-acceptance",
+  "name": "Acceptance of a completed delivery",
+  "domain": "logistics",
+  "description": "A carrier reports a completed delivery. The receiving party confirms it arrived inside the agreed window, with quantity within tolerance of the weighbridge count, before it becomes invoiceable and the transport leg closes.",
+  "claim": {
+    "type": "delivery_completed",
+    "fields": [
+      { "name": "shipment_id", "kind": "string", "required": true },
+      { "name": "quantity", "kind": "number", "unit": "pallet", "required": true },
+      { "name": "delivered_at", "kind": "date", "required": true }
+    ]
+  },
+  "evidence": [
+    { "kind": "proof_of_delivery", "required": true, "description": "Signed POD (CMR / delivery note)." },
+    { "kind": "weighbridge_ticket", "required": false, "description": "Scale count at receipt." }
+  ],
+  "checks": [
+    { "id": "pod-present", "rule": "required_evidence", "kinds": ["proof_of_delivery"], "severity": "blocking", "description": "A signed proof of delivery is attached." },
+    {
+      "id": "qty-matches-scan",
+      "rule": "cross_check",
+      "claimField": "quantity",
+      "claimUnit": "pallet",
+      "evidenceKind": "weighbridge_ticket",
+      "evidenceField": "quantity",
+      "tolerance": 0.02,
+      "absolute": 1,
+      "requireUnitMatch": false,
+      "severity": "warning",
+      "description": "Claimed pallet count should be within 2% (or 1 pallet) of the weighbridge count — advisory, not blocking."
+    },
+    {
+      "id": "within-window",
+      "rule": "date_window",
+      "field": "delivered_at",
+      "start": "2026-06-10T08:00:00Z",
+      "end": "2026-06-10T18:00:00Z",
+      "severity": "blocking",
+      "description": "Delivered inside the agreed window."
+    }
+  ],
+  "reviewer": { "role": "customer_receiver", "description": "The receiving party's goods-in role." },
+  "decisions": ["accepted", "accepted_with_exceptions", "rejected", "returned_for_rework"],
+  "consequences": [
+    { "id": "invoiceable", "effect": "money", "on": ["accepted", "accepted_with_exceptions"], "basis": "accepted_quantity", "quantityField": "quantity", "unitPrice": 40, "currency": "EUR", "paymentTermsDays": 14, "description": "Accepted pallets become invoiceable at the agreed rate." },
+    { "id": "close-leg", "effect": "right_to_proceed", "on": ["accepted"], "unlocks": "transport-leg-closeout" },
+    { "id": "liability", "effect": "risk", "on": ["accepted", "accepted_with_exceptions"], "assignedTo": "customer_receiver" },
+    { "id": "label", "effect": "dataset_label", "on": ["accepted", "accepted_with_exceptions", "rejected", "returned_for_rework"], "dataset": "logistics.delivery_acceptance" }
+  ],
+  "sla": { "reviewWithinHours": 24, "priority": "high", "escalateToInbox": "goods-in-escalation" }
+}

@@ -9,10 +9,17 @@ services:
       - "3000:3000"
     environment:
       PORT: "3000"
+      # The append-only queue lives on the mounted volume below.
       QUEUE_FILE: /data/queue.json
       LEASE_SECONDS: "300"
-      # Optional push: notify a harness when a case is enqueued/decided.
+      # Optional push: notify a harness when a case is enqueued/decided
+      # (at-most-once, best-effort — the queue is the source of truth).
       # OPEN_GATES_WEBHOOK: https://your-harness.example/notify
+      # Optional OAuth 2.1: set OG_JWT_SECRET to require a Bearer token on
+      # /queue/:id/decision (scope og:decide:<role> proves the reviewer role).
+      # OG_JWT_SECRET: change-me
+      # OG_RESOURCE_URI: https://gates.example.com
+      # OG_ISSUER: https://auth.example.com
     volumes:
       - queue-data:/data
     restart: unless-stopped

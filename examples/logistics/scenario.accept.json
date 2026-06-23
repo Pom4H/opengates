@@ -1,0 +1,32 @@
+{
+  "gate": "logistics.delivery-acceptance",
+  "events": [
+    {
+      "type": "claim.submitted",
+      "at": "2026-06-10T13:30:00Z",
+      "actor": "carrier:transco",
+      "claim": { "type": "delivery_completed", "values": { "shipment_id": "SHP-5521", "quantity": 26, "delivered_at": "2026-06-10T12:05:00Z" } }
+    },
+    {
+      "type": "evidence.attached",
+      "at": "2026-06-10T13:31:00Z",
+      "actor": "carrier:transco",
+      "evidence": { "kind": "proof_of_delivery", "values": { "signed_by": "warehouse:gate-4" }, "ref": "pod/SHP-5521.pdf" }
+    },
+    {
+      "type": "evidence.attached",
+      "at": "2026-06-10T13:32:00Z",
+      "actor": "warehouse:gate-4",
+      "evidence": { "kind": "weighbridge_ticket", "values": { "quantity": 26 }, "ref": "wb/SHP-5521.pdf" }
+    },
+    {
+      "type": "decision.recorded",
+      "at": "2026-06-10T14:00:00Z",
+      "actor": "receiver:lena",
+      "reviewerRole": "customer_receiver",
+      "outcome": "accepted",
+      "acceptedValues": { "quantity": 26 },
+      "note": "Delivered 12:05, inside the 08:00–18:00 window; weighbridge confirms 26 pallets. Accepted — 26 × 40 = 1 040 € invoiceable."
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "open_gates_decide",
+        "hooks": [{ "type": "command", "command": "node .claude/hooks/check-gate.mjs" }]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "open_gates_decide",
+        "hooks": [{ "type": "command", "command": "node .claude/hooks/audit-append.mjs" }]
+      }
+    ]
+  }
+}

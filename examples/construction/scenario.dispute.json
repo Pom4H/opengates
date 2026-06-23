@@ -7,7 +7,7 @@
       "actor": "contractor:alfa-stroy",
       "claim": {
         "type": "work_volume_completed",
-        "values": { "work_item": "Foundation concrete C25/30", "quantity": 120, "period": "2026-05" }
+        "values": { "work_item": "Foundation concrete C25/30, axes 1–6", "quantity": 120, "period": "2026-05" }
       }
     },
     {
@@ -15,10 +15,28 @@
       "at": "2026-06-02T11:00:00Z",
       "actor": "surveyor:geo-point",
       "evidence": {
-        "kind": "survey_measurement",
-        "values": { "quantity": 100 },
-        "ref": "survey/2026-05-foundation.pdf"
+        "kind": "executive_survey",
+        "values": { "quantity": 100, "unit": "m3", "U": 4.0, "k": 2, "instrument": "Leica TS16", "calibration_ref": "cal/leica-ts16-2026-01.pdf" },
+        "ref": "obmer/2026-05-foundation.pdf"
       }
+    },
+    {
+      "type": "evidence.attached",
+      "at": "2026-06-02T11:05:00Z",
+      "actor": "lab:stroylab",
+      "evidence": { "kind": "concrete_strength_protocol", "values": { "grade": "C25/30", "r28_mpa": 30.8 }, "ref": "lab/strength-2026-05.pdf" }
+    },
+    {
+      "type": "evidence.attached",
+      "at": "2026-06-02T11:06:00Z",
+      "actor": "contractor:alfa-stroy",
+      "evidence": { "kind": "works_log", "ref": "logs/works-2026-05.pdf" }
+    },
+    {
+      "type": "evidence.attached",
+      "at": "2026-06-02T11:07:00Z",
+      "actor": "contractor:alfa-stroy",
+      "evidence": { "kind": "aosr_ref", "values": { "act": "АОСР-2026-05-014" }, "ref": "aosr/2026-05-014.pdf" }
     },
     {
       "type": "decision.recorded",
@@ -26,7 +44,7 @@
       "actor": "supervisor:ivanov",
       "reviewerRole": "technical_supervisor",
       "outcome": "returned_for_rework",
-      "note": "Surveyed 100 m3 vs claimed 120 m3 (16.7% over tolerance). Re-measure and resubmit."
+      "note": "Обмер: claimed 120 m³ vs survey 100 m³; |error|=20 m³ = 20% of reference — an order of magnitude beyond U=4 m³ and far outside the 5% tolerance. Re-measure and resubmit. Nothing certified."
     }
   ]
 }

@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://open-gates.dev/schema/dataset-label.schema.json",
+  "title": "Dataset label",
+  "description": "The features → label record a decided case emits. Accumulated, these are the typed, portable training/eval substrate that lets some decisions become automatable (see eval/replay.mjs and SPEC §8).",
+  "type": "object",
+  "required": ["dataset", "gate", "claim_type", "features", "label", "decided_by_role", "at"],
+  "additionalProperties": false,
+  "properties": {
+    "dataset": { "type": "string", "description": "Logical dataset, e.g. construction.work_acceptance." },
+    "gate": { "type": "string" },
+    "claim_type": { "type": "string" },
+    "features": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "claimed": { "type": "object", "description": "The claimed values." },
+        "accepted": { "type": "object", "description": "The reviewer-accepted values (may differ from claimed)." },
+        "evidence_kinds": { "type": "array", "items": { "type": "string" } },
+        "checks": { "type": "object", "additionalProperties": { "enum": ["pass", "fail", "skipped"] } }
+      }
+    },
+    "label": { "enum": ["accepted", "accepted_with_exceptions", "rejected", "returned_for_rework"] },
+    "decided_by_role": { "type": "string" },
+    "at": { "type": "string", "format": "date-time" }
+  }
+}

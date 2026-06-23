@@ -1,80 +1,111 @@
-// Open Gates — reference engine core types.
+// Core types for the Open Gates engine.
 //
-// These types mirror the JSON Schemas in ../../spec/schema and are written in
-// "erasable" TypeScript (no enums, namespaces or runtime-bearing syntax) so the
-// engine runs directly on Node's built-in type stripping (Node >= 22.18).
-
-// ---------------------------------------------------------------------------
-// Scalars
-// ---------------------------------------------------------------------------
+// These mirror the JSON Schemas in ../../spec/schema/. They are written as
+// erasable TypeScript (no enum / namespace / decorators / parameter properties)
+// so the engine runs under Node's built-in type stripping with no build step.
 
 export type ISODate = string;
-export type Domain = string;
-export type Scalar = number | string | boolean;
-
-/** The outcomes a reviewer may record when accepting responsibility for a claim. */
-export type DecisionOutcome =
-  | "accepted"
-  | "accepted_with_exceptions"
-  | "rejected"
-  | "returned_for_rework";
-
-/** Lifecycle status of a gate case as folded from its event log. */
-export type GateStatus =
-  | "draft"
-  | "submitted"
-  | "under_review"
-  | "accepted"
-  | "accepted_with_exceptions"
-  | "rejected"
-  | "returned_for_rework";
-
-export type CheckOutcome = "pass" | "fail" | "warn" | "skipped";
-export type Severity = "blocking" | "warning";
+export type Scalar = string | number | boolean;
 
 // ---------------------------------------------------------------------------
 // Gate definition — the reusable acceptance pattern
 // ---------------------------------------------------------------------------
 
-export interface GateDefinition {
-  /** Stable identifier, e.g. "construction.work-volume-acceptance". */
-  id: string;
-  name: string;
-  domain: Domain;
-  description?: string;
-  /** What is being asserted. */
-  claim: ClaimSchema;
-  /** Evidence that may/must back the claim. */
-  evidence: EvidenceRequirement[];
-  /** Deterministic verification rules the engine evaluates. */
-  checks: CheckDefinition[];
-  /** The role that accepts responsibility for the decision. */
-  reviewer: ReviewerSpec;
-  /** Decision outcomes this gate allows. */
-  decisions: DecisionOutcome[];
-  /** What each decision releases: money, right to proceed, risk, dataset labels. */
-  consequences: ConsequenceRule[];
-  /** Optional policy describing when a decision may be automated. */
-  policy?: AutomationPolicy;
-}
+export type FieldKind = "number" | "string" | "boolean" | "date";
 
-export interface ClaimSchema {
-  /** Claim type, e.g. "work_volume_completed". */
-  type: string;
-  fields: FieldDef[];
-}
-
-export interface FieldDef {
+export interface ClaimField {
   name: string;
-  kind: "number" | "string" | "boolean" | "date";
+  kind: FieldKind;
   unit?: string;
   required?: boolean;
 }
 
-export interface EvidenceRequirement {
+export interface ClaimSpec {
+  type: string;
+  fields: ClaimField[];
+}
+
+export interface EvidenceSpec {
   kind: string;
-  required: boolean;
+  required?: boolean;
   description?: string;
+}
+
+export type CheckSeverity = "blocking" | "warning";
+
+export interface RequiredEvidenceCheck {
+  id: string;
+  rule: "required_evidence";
+  kinds: string[];
+  severity?: CheckSeverity;
+  description?: string;
+}
+
+export interface FieldPresentCheck {
+  id: string;
+  rule: "field_present";
+  field: string;
+  severity?: CheckSeverity;
+  description?: string;
+}
+
+export interface FieldRangeCheck {
+  id: string;
+  rule: "field_range";
+  field: string;
+  min?: number;
+  max?: number;
+  severity?: CheckSeverity;
+  description?: string;
+}
+
+// Claim vs. reality. The evidence value is the trusted REFERENCE; relative error
+// is normalized by it (VIM §2.16), not by the claim. `absolute` is a floor in the
+// evidence unit; the acceptance limit is whichever of the two is greater. When the
+// evidence carries an expanded uncertainty U (GUM, U = k·u), the claim must also
+// fall inside that band.
+export interface CrossCheck {
+  id: string;
+  rule: "cross_check";
+  claimField: string;
+  claimUnit?: string;
+  evidenceKind: string;
+  evidenceField: string;
+  evidenceUnitField?: string;
+  uncertaintyField?: string;
+  requireUnitMatch?: boolean;
+  tolerance?: number;
+  absolute?: number;
+  severity?: CheckSeverity;
+  description?: string;
+}
+
+export interface DateWindowCheck {
+  id: string;
+  rule: "date_window";
+  field: string;
+  start?: ISODate;
+  end?: ISODate;
+  severity?: CheckSeverity;
+  description?: string;
+}
+
+export type Check =
+  | RequiredEvidenceCheck
+  | FieldPresentCheck
+  | FieldRangeCheck
+  | CrossCheck
+  | DateWindowCheck;
+
+export type CheckRule = Check["rule"];
+export type CheckOutcome = "pass" | "fail" | "skipped";
+
+export interface CheckResult {
+  id: string;
+  rule: CheckRule;
+  outcome: CheckOutcome;
+  severity: CheckSeverity;
+  detail?: string;
 }
 
 export interface ReviewerSpec {
@@ -82,135 +113,136 @@ export interface ReviewerSpec {
   description?: string;
 }
 
-// ---- Checks ---------------------------------------------------------------
+export type Outcome =
+  | "accepted"
+  | "accepted_with_exceptions"
+  | "rejected"
+  | "returned_for_rework";
 
-export interface CheckBase {
+export type MoneyBasis = "accepted_quantity" | "fixed";
+
+export interface MoneyConsequence {
   id: string;
-  description?: string;
-  /** Defaults to "blocking" when omitted. */
-  severity?: Severity;
-}
-
-export interface RequiredEvidenceCheck extends CheckBase {
-  rule: "required_evidence";
-  kinds: string[];
-}
-
-export interface FieldPresentCheck extends CheckBase {
-  rule: "field_present";
-  field: string;
-}
-
-export interface FieldRangeCheck extends CheckBase {
-  rule: "field_range";
-  field: string;
-  min?: number;
-  max?: number;
-}
-
-/** Compares a claim field against a field on a specific kind of evidence. */
-export interface CrossCheck extends CheckBase {
-  rule: "cross_check";
-  claimField: string;
-  evidenceKind: string;
-  evidenceField: string;
-  /** Relative tolerance, e.g. 0.05 = 5%. */
-  tolerance: number;
-}
-
-export type CheckDefinition =
-  | RequiredEvidenceCheck
-  | FieldPresentCheck
-  | FieldRangeCheck
-  | CrossCheck;
-
-// ---- Consequences ---------------------------------------------------------
-
-export interface ConsequenceBase {
-  id: string;
-  /** Decision outcomes that trigger this consequence. */
-  on: DecisionOutcome[];
-  description?: string;
-}
-
-export interface MoneyConsequence extends ConsequenceBase {
   effect: "money";
-  currency: string;
-  /** amount = claim[quantityField] * unitPrice ... */
+  on: Outcome[];
+  basis?: MoneyBasis;
+  // Unit-rate billing: pay `unitPrice` per accepted unit of `quantityField`.
   quantityField?: string;
   unitPrice?: number;
-  /** ... or a fixed amount. */
+  // ...or a fixed amount.
   amount?: number;
+  currency: string;
+  retentionPct?: number;
+  retentionCap?: number;
+  vatRate?: number;
+  paymentTermsDays?: number;
+  estimateLine?: string;
+  contractRef?: string;
+  description?: string;
 }
 
-export interface RightToProceedConsequence extends ConsequenceBase {
+export interface RightToProceedConsequence {
+  id: string;
   effect: "right_to_proceed";
-  /** Identifier of the step/work-package this unlocks. */
+  on: Outcome[];
   unlocks: string;
+  description?: string;
 }
 
-export interface RiskConsequence extends ConsequenceBase {
+export interface RiskConsequence {
+  id: string;
   effect: "risk";
-  /** Role/party that now carries the liability. */
+  on: Outcome[];
   assignedTo: string;
+  description?: string;
 }
 
-export interface DatasetLabelConsequence extends ConsequenceBase {
+export interface DatasetLabelConsequence {
+  id: string;
   effect: "dataset_label";
-  /** Logical dataset the labelled record is appended to. */
+  on: Outcome[];
   dataset: string;
+  description?: string;
 }
 
-export type ConsequenceRule =
+export type Consequence =
   | MoneyConsequence
   | RightToProceedConsequence
   | RiskConsequence
   | DatasetLabelConsequence;
 
+export type EffectKind = Consequence["effect"];
+
+export interface GateSla {
+  reviewWithinHours: number;
+  priority?: "low" | "normal" | "high" | "critical";
+  escalateToInbox?: string;
+}
+
 export interface AutomationPolicy {
-  /** When may this gate auto-accept without a human reviewer? */
   autoAcceptWhen?: {
-    checksPass: true;
-    /** Only auto-accept below this economic value; larger values stay human. */
+    checksPass: boolean;
     maxAmount?: number;
   };
 }
 
-// ---------------------------------------------------------------------------
-// Runtime — instances and events
-// ---------------------------------------------------------------------------
-
-export interface ClaimInstance {
-  type: string;
-  values: Record<string, Scalar>;
+export interface GateDefinition {
+  id: string;
+  name: string;
+  domain: string;
+  description?: string;
+  claim: ClaimSpec;
+  evidence: EvidenceSpec[];
+  checks: Check[];
+  reviewer: ReviewerSpec;
+  decisions: Outcome[];
+  consequences: Consequence[];
+  sla?: GateSla;
+  policy?: AutomationPolicy;
 }
 
-export interface EvidenceInstance {
-  kind: string;
-  values?: Record<string, Scalar>;
-  /** Pointer to the artifact (file, URL, hash, ...). */
-  ref?: string;
-}
+// ---------------------------------------------------------------------------
+// Events — the append-only log a case is made of
+// ---------------------------------------------------------------------------
 
 export interface EventBase {
+  // Stable, unique event id (uuid/ULID for live cases; derived for authored
+  // scenarios). Used to dedup on replay so fold is idempotent under redelivery.
+  id: string;
+  // Monotonic per-case sequence. apply() requires seq === state.seq + 1.
+  seq: number;
   at: ISODate;
   actor: string;
 }
 
+export interface ClaimValue {
+  type: string;
+  values: Record<string, Scalar>;
+}
+
+export interface EvidenceValue {
+  kind: string;
+  values?: Record<string, Scalar>;
+  ref?: string;
+}
+
 export interface ClaimSubmittedEvent extends EventBase {
   type: "claim.submitted";
-  claim: ClaimInstance;
+  claim: ClaimValue;
 }
 
 export interface EvidenceAttachedEvent extends EventBase {
   type: "evidence.attached";
-  evidence: EvidenceInstance;
+  evidence: EvidenceValue;
 }
 
 export interface DecisionRecordedEvent extends EventBase {
   type: "decision.recorded";
   reviewerRole: string;
-  outcome: DecisionOutcome;
+  outcome: Outcome;
+  // The quantities the reviewer actually accepted (e.g. surveyed 117, not
+  // claimed 120). Money is paid on these.
+  acceptedValues?: Record<string, Scalar>;
   note?: string;
 }
 
@@ -219,62 +251,73 @@ export type GateEvent =
   | EvidenceAttachedEvent
   | DecisionRecordedEvent;
 
-// ---------------------------------------------------------------------------
-// Folded state
-// ---------------------------------------------------------------------------
+// An event as authored in a scenario file: id/seq are optional and synthesized
+// deterministically by loadScenario()/normalizeLog().
+export type AuthoredEvent = Omit<GateEvent, "id" | "seq"> & {
+  id?: string;
+  seq?: number;
+};
 
-export interface CheckResult {
-  id: string;
-  rule: string;
-  outcome: CheckOutcome;
-  detail?: string;
+export interface Scenario {
+  gate: string;
+  events: GateEvent[];
 }
 
-export interface ConsequenceEffect {
-  id: string;
-  effect: string;
-  description?: string;
-  amount?: number;
-  currency?: string;
-  unlocks?: string;
-  assignedTo?: string;
-  dataset?: string;
-  label?: Record<string, unknown>;
+// ---------------------------------------------------------------------------
+// Effects and folded state
+// ---------------------------------------------------------------------------
+
+export interface FiredEffect {
+  // Stable dedup key for exactly-once delivery: sha256(decisionEventId:ruleId).
+  effectId: string;
+  ruleId: string;
+  effect: EffectKind;
+  payload: Record<string, unknown>;
 }
 
-export interface DatasetLabel {
+export type Status = "draft" | "submitted" | "under_review" | Outcome;
+
+export interface Decision {
+  outcome: Outcome;
+  by: string;
+  role: string;
+  at: ISODate;
+  acceptedValues?: Record<string, Scalar>;
+  note?: string;
+}
+
+export interface Responsibility {
+  acceptedBy: string;
+  role: string;
+  at: ISODate;
+}
+
+export interface DatasetLabelRecord {
   dataset: string;
   gate: string;
-  claim_type?: string;
+  claim_type: string;
   features: Record<string, unknown>;
-  label: DecisionOutcome;
+  label: Outcome;
   decided_by_role: string;
   at: ISODate;
 }
 
 export interface GateState {
   gateId: string;
-  status: GateStatus;
-  claim?: ClaimInstance;
-  evidence: EvidenceInstance[];
+  status: Status;
+  seq: number;
+  seenIds: string[];
+  claim?: ClaimValue;
+  evidence: EvidenceValue[];
   checks: CheckResult[];
   checksPassed: boolean;
-  decision?: {
-    outcome: DecisionOutcome;
-    by: string;
-    role: string;
-    at: ISODate;
-    note?: string;
-  };
-  /** Set when a positive decision transfers responsibility to the reviewer. */
-  responsibility?: { acceptedBy: string; role: string; at: ISODate };
-  consequences: ConsequenceEffect[];
-  datasetLabel?: DatasetLabel;
+  decision?: Decision;
+  responsibility?: Responsibility;
+  consequences: FiredEffect[];
+  datasetLabel?: DatasetLabelRecord;
+  // Derived from event timestamps (free; powers the FP&A / cycle-time view).
+  submittedAt?: ISODate;
+  decidedAt?: ISODate;
+  cycleDays?: number;
   log: string[];
-}
-
-/** A scenario file: a gate reference plus an ordered event log. */
-export interface Scenario {
-  gate: string;
-  events: GateEvent[];
 }

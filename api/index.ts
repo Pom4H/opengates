@@ -36,8 +36,8 @@ async function run(request: Request): Promise<Response> {
     body,
   });
 
-  if (result.body === null) return new Response(null, { status: result.status });
-  return Response.json(result.body, { status: result.status });
+  if (result.body === null) return new Response(null, { status: result.status, headers: result.headers });
+  return Response.json(result.body, { status: result.status, headers: result.headers });
 }
 
 export function GET(request: Request): Promise<Response> {
