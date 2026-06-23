@@ -184,6 +184,7 @@ Conveniences built **on** the Acceptance Act, not part of it:
 | **E2E** | a whole construction project (design → excavation pit → … → payments) folded through the engine on one shared control surface | [`examples/construction/e2e/`](examples/construction/e2e/) |
 | **Cases** | the most expensive disputed fact, by industry | [`examples/`](examples/) |
 | **AR design** | field-captured (LiDAR) evidence, foundational architecture | [`docs/architecture/`](docs/architecture/spatial-evidence-and-ar.md) |
+| **Flow design** | resources (materials, people, rented machines) → capital works, across domains | [`docs/architecture/`](docs/architecture/resource-flow-and-domains.md) |
 
 **The standard — what makes it trustworthy (normative):**
 
