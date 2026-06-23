@@ -730,6 +730,8 @@
 
         // ---- go ----
         setT(MAX);
+        // capture hook (?capture): drive the timeline precisely to record media
+        if (_q.has("capture")) window.__viz = { setT, fToT, camera, controls, range: { MIN, MAX } };
         addEventListener("resize", () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); if (composer) composer.setSize(innerWidth, innerHeight); });
         (function render() { requestAnimationFrame(render); controls.update(); const cs = craneState(T); runCrane(site.rig, cs.topY, cs.place01, clock.getElapsedTime()); if (composer) composer.render(); else renderer.render(scene, camera); })();
       }

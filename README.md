@@ -14,12 +14,15 @@ replayable step where a claim becomes a payable fact. That rigor is what makes
 the operational picture *trustworthy* rather than just pretty — see
 [Under the hood](#under-the-hood-a-verifiable-acceptance-standard).
 
-![An operation under control — a building project where every zone is coloured by what has been accepted versus what is still claimed and waiting](docs/media/building-progress.gif)
+![A whole construction replayed from the engine's accepted facts — the building rises out of the excavation pit, each zone coloured by how far it has been accepted, the tower crane climbing with the work front](docs/media/building-progress.gif)
 
-*One project as a live operational map. Each block is a **zone**; its colour is
-how far it has been **accepted** — structure, envelope, services, fit-out
-sweeping through in dependency order. Click a zone to see the real work and
-documents behind it. This is the operation, under control.*
+*A real project as a live operational map — the actual control surface
+([`viz/viewer/control/`](viz/viewer/control/)), replaying the facts the engine has
+**accepted**. The building rises out of the excavation pit; each block is a
+**zone**, its colour how far it's been accepted — structure → envelope → MEP →
+fit-out sweeping through in dependency order — and the tower crane tracks the work
+front. Click a zone to see the work and documents behind it. This is the
+operation, under control. Walkthrough: [`examples/construction/e2e/`](examples/construction/e2e/).*
 
 ---
 

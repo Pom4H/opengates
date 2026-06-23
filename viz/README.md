@@ -108,8 +108,12 @@ verdict: [`docs/e2e-feasibility.md`](../docs/e2e-feasibility.md).
 
 ## Animation
 
-The construction-progress GIF/MP4 is rendered with Remotion + react-three-fiber
-from this same model — the four systems sweep the grid diagonally in dependency
-order. See [`remotion/`](../remotion/README.md) and the
-[`building-viz`](../.claude/skills/building-viz/SKILL.md) skill for how an agent
-modifies the model and re-renders it.
+The README hero (`docs/media/building-progress.gif` / `.mp4`) is captured straight
+from the **control surface** above — the whole e2e build replayed from the engine
+timeline (excavation → tower → fit-out), with the tower crane climbing the work
+front. To re-record it: open `/viz/viewer/control/?hq=1&capture=1`, then drive the
+`window.__viz.setT` hook frame-by-frame and assemble with `ffmpeg`.
+
+Remotion + react-three-fiber (`remotion/`) renders an alternate, lighter
+systems-wave clip from the same `building.json`. See [`remotion/`](../remotion/README.md)
+and the [`building-viz`](../.claude/skills/building-viz/SKILL.md) skill.
