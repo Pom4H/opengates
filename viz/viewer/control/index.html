@@ -214,30 +214,25 @@
         const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
       };
 
-      // Drive the crane from a construction step {cur,nxt,u}: u is the progress
-      // from the current floor to the next, a PURE FUNCTION of the scrubber time t
-      // (via the floor-step primitive). The crane climbs to the floor and runs one
-      // pick → carry → place lift per floor, in lockstep with the timeline; it
-      // freezes when t is paused. Only the cosmetic sway/flutter use elapsed e.
-      function runCrane(rig, cur, nxt, u, e) {
+      // Drive the crane from the build's current top (topY) and how far the build
+      // has progressed (place01) — both PURE FUNCTIONS of the scrubber time t (via
+      // the construction primitive). The crane rides just above the current top so
+      // it always keeps pace with the newest blocks, with a placing dip + gentle
+      // trolley shuttle that advance with the build (so they freeze on pause). Only
+      // the flag/sway use elapsed e (cosmetic).
+      function runCrane(rig, topY, place01, e) {
         const { mast, slew, trolley, cable, hookBlk, load, flag, BASE, JIBY } = rig;
-        const lerp = (a, b, t) => a + (b - a) * t;
-        const ease = (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
-        const topY = lerp(cur.y, nxt.y, u);
         const craneH = Math.max(13, Math.min(60, topY + 9));
         mast.scale.y = craneH; mast.position.y = craneH / 2; slew.position.y = craneH; // climb with the build
-        slew.rotation.y = BASE + Math.sin(e * 0.22) * 0.03; // cosmetic micro-sway
-        const jibW = craneH + JIBY, D_SUP = 13, D_PLC = 33;
-        const grabL = jibW - 1.8, placeL = Math.max(3.5, jibW - (nxt.y + 2));
-        let d, L, carry;
-        if (u < 0.35) { d = lerp(D_PLC, D_SUP, ease(u / 0.35)); L = lerp(5, grabL, ease(u / 0.35)); carry = false; } // return to supply + lower to grab
-        else if (u < 0.45) { d = D_SUP; L = lerp(grabL, 5, ease((u - 0.35) / 0.1)); carry = true; } // hoist the block
-        else if (u < 0.78) { d = lerp(D_SUP, D_PLC, ease((u - 0.45) / 0.33)); L = 5; carry = true; } // carry out over the building
-        else { d = D_PLC; L = lerp(5, placeL, ease((u - 0.78) / 0.22)); carry = true; } // lower onto the new floor
-        trolley.position.x = d;
+        slew.rotation.y = BASE + Math.sin(e * 0.2) * 0.025; // cosmetic micro-sway
+        const jibW = craneH + JIBY;
+        const ph = place01 * Math.PI * 2 * 28; // ~28 placing cycles across the whole build
+        trolley.position.x = 30 + Math.sin(ph * 0.5) * 3.5; // gentle shuttle over the building top
+        const baseL = Math.max(3, jibW - (topY + 2.6)); // hook hangs just above the CURRENT top
+        const L = baseL + (Math.sin(ph) * 0.5 + 0.5) * 2.4; // small placing dip
         cable.scale.y = L; cable.position.y = -L / 2; hookBlk.position.y = -L;
-        load.position.y = -L - 1.0; load.visible = carry;
-        const sw = Math.sin(e * 2.0) * (carry ? 0.1 : 0.04); hookBlk.position.x = sw; load.position.x = sw;
+        load.position.y = -L - 1.0; load.visible = true; // a block riding at the top, being set
+        const sw = Math.sin(e * 1.8) * 0.08; hookBlk.position.x = sw; load.position.x = sw;
         flag.rotation.y = Math.sin(e * 3.0) * 0.5;
       }
 
@@ -306,7 +301,7 @@
         const hookBlk = box(0.9, 0.9, 0.9, dark, 0, -1, 0, trolley); // hook block
         const load = box(2.2, 1.0, 2.2, matt(0x8a93a3, { roughness: 0.8 }), 0, -2, 0, trolley); // the block being lifted
         const rig = { mast, slew, trolley, cable, hookBlk, load, flag, BASE, JIBY };
-        runCrane(rig, { y: 24 }, { y: 24 }, 0.85, 0); // sensible static pose
+        runCrane(rig, 24, 0.5, 0); // sensible static pose
         return { rig };
       }
 
@@ -430,27 +425,26 @@
         scopeAt.foundation = firstStage("BLDG-L00");
         scopeAt.roof = firstStage("BLDG-R01");
 
-        // Construction primitive: the build expressed as ordered FLOOR lifts,
-        // derived from the engine's accepted facts (each level's structure-start
-        // time + its level y), one per floor. The crane walks these in lockstep
-        // with the timeline; craneStepAt(t) is a pure lookup, so the crane is
-        // synchronized to t and freezes when t is paused.
+        // Construction primitive: the rising top of the build, derived from the
+        // engine's accepted facts. structAccepts = every bay's structure
+        // acceptance {at,y}; tops[] is the cumulative max top by time. craneState(t)
+        // returns the current top + fraction built — a pure lookup, so the crane
+        // tracks the build exactly (always at the newest blocks) and freezes on pause.
         const structAccepts = [];
         for (const zid in stageByZone) {
           const o = Z[zid]; if (!o || o.zone.scope !== "bay") continue;
           const ev = stageByZone[zid].find((e) => (e.systemsDone || 0) >= 1); if (!ev) continue;
-          structAccepts.push({ at: ev.at, x: center(o.zone.structure)[0], y: o.zone.structure.max[1], z: center(o.zone.structure)[2] });
+          structAccepts.push({ at: ev.at, y: o.zone.structure.max[1] });
         }
-        const floorSteps = (() => {
-          const byFloor = new Map();
-          for (const f of structAccepts) { const k = Math.round(f.y); const c = byFloor.get(k); if (!c || f.at < c.at) byFloor.set(k, f); }
-          return [...byFloor.values()].sort((a, b) => a.at - b.at);
-        })();
-        const craneStepAt = (t) => {
-          if (!floorSteps.length) return { cur: { y: 14 }, nxt: { y: 14 }, u: 0 };
-          let i = 0; for (let k = 0; k < floorSteps.length; k++) { if (floorSteps[k].at <= t) i = k; else break; }
-          const cur = floorSteps[i], nxt = floorSteps[Math.min(i + 1, floorSteps.length - 1)];
-          return { cur, nxt, u: Math.max(0, Math.min(1, (t - cur.at) / Math.max(1, nxt.at - cur.at))) };
+        structAccepts.sort((a, b) => a.at - b.at);
+        let _mx = -1e9;
+        const tops = structAccepts.map((s) => { _mx = Math.max(_mx, s.y); return { at: s.at, top: _mx }; });
+        const nStruct = structAccepts.length || 1;
+        const craneState = (t) => {
+          if (!tops.length) return { topY: 12, place01: 0 };
+          let i = -1; for (let k = 0; k < tops.length; k++) { if (tops[k].at <= t) i = k; else break; }
+          if (i < 0) return { topY: tops[0].top, place01: 0 };
+          return { topY: tops[i].top, place01: (i + 1) / nStruct };
         };
 
         const MIN = ms(timeline.range.minAt), MAX = ms(timeline.range.maxAt);
@@ -737,7 +731,7 @@
         // ---- go ----
         setT(MAX);
         addEventListener("resize", () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); if (composer) composer.setSize(innerWidth, innerHeight); });
-        (function render() { requestAnimationFrame(render); controls.update(); const s = craneStepAt(T); runCrane(site.rig, s.cur, s.nxt, s.u, clock.getElapsedTime()); if (composer) composer.render(); else renderer.render(scene, camera); })();
+        (function render() { requestAnimationFrame(render); controls.update(); const cs = craneState(T); runCrane(site.rig, cs.topY, cs.place01, clock.getElapsedTime()); if (composer) composer.render(); else renderer.render(scene, camera); })();
       }
     </script>
   </body>

@@ -35,25 +35,19 @@
       // Crane driver (same rig as the interactive viewer): climb to the floor +
       // one pick/place lift over progress u. Here it's only used for a static
       // hero pose (the viewer drives u from the build timeline).
-      function runCrane(rig, cur, nxt, u, e) {
+      function runCrane(rig, topY, place01, e) {
         const { mast, slew, trolley, cable, hookBlk, load, flag, BASE, JIBY } = rig;
-        const lerp = (a, b, t) => a + (b - a) * t;
-        const ease = (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
-        const topY = lerp(cur.y, nxt.y, u);
         const craneH = Math.max(13, Math.min(60, topY + 9));
         mast.scale.y = craneH; mast.position.y = craneH / 2; slew.position.y = craneH;
-        slew.rotation.y = BASE + Math.sin(e * 0.22) * 0.03;
-        const jibW = craneH + JIBY, D_SUP = 13, D_PLC = 33;
-        const grabL = jibW - 1.8, placeL = Math.max(3.5, jibW - (nxt.y + 2));
-        let d, L, carry;
-        if (u < 0.35) { d = lerp(D_PLC, D_SUP, ease(u / 0.35)); L = lerp(5, grabL, ease(u / 0.35)); carry = false; }
-        else if (u < 0.45) { d = D_SUP; L = lerp(grabL, 5, ease((u - 0.35) / 0.1)); carry = true; }
-        else if (u < 0.78) { d = lerp(D_SUP, D_PLC, ease((u - 0.45) / 0.33)); L = 5; carry = true; }
-        else { d = D_PLC; L = lerp(5, placeL, ease((u - 0.78) / 0.22)); carry = true; }
-        trolley.position.x = d;
+        slew.rotation.y = BASE + Math.sin(e * 0.2) * 0.025;
+        const jibW = craneH + JIBY;
+        const ph = place01 * Math.PI * 2 * 28;
+        trolley.position.x = 30 + Math.sin(ph * 0.5) * 3.5;
+        const baseL = Math.max(3, jibW - (topY + 2.6));
+        const L = baseL + (Math.sin(ph) * 0.5 + 0.5) * 2.4;
         cable.scale.y = L; cable.position.y = -L / 2; hookBlk.position.y = -L;
-        load.position.y = -L - 1.0; load.visible = carry;
-        const sw = Math.sin(e * 2.0) * (carry ? 0.1 : 0.04); hookBlk.position.x = sw; load.position.x = sw;
+        load.position.y = -L - 1.0; load.visible = true;
+        const sw = Math.sin(e * 1.8) * 0.08; hookBlk.position.x = sw; load.position.x = sw;
         flag.rotation.y = Math.sin(e * 3.0) * 0.5;
       }
 
@@ -111,7 +105,7 @@
         const hookBlk = box(0.9, 0.9, 0.9, dark, 0, -1, 0, trolley);
         const load = box(2.2, 1.0, 2.2, matt(0x8a93a3, { roughness: 0.8 }), 0, -2, 0, trolley);
         const rig = { mast, slew, trolley, cable, hookBlk, load, flag, BASE, JIBY };
-        runCrane(rig, { y: 49 }, { y: 49 }, 0.84, 0); // static hero pose: lowering a block onto the top
+        runCrane(rig, 49, 0.62, 0); // static hero pose: a block riding at the top
         return { rig };
       }
 
