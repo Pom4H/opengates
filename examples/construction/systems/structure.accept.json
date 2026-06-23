@@ -1,0 +1,25 @@
+{
+  "gate": "construction.zone-system-acceptance",
+  "events": [
+    {
+      "type": "claim.submitted",
+      "at": "2026-05-04T09:00:00Z",
+      "actor": "contractor:alfa-stroy",
+      "claim": { "type": "system_work_completed", "values": { "system": "structure", "work_item": "RC frame, slab + columns", "quantity": 14, "zone": "A1-F03" } }
+    },
+    {
+      "type": "evidence.attached",
+      "at": "2026-05-05T11:00:00Z",
+      "actor": "surveyor:geo-point",
+      "evidence": { "kind": "inspection", "values": { "quantity": 14 }, "ref": "inspect/A1-F03-structure.pdf" }
+    },
+    {
+      "type": "decision.recorded",
+      "at": "2026-05-06T15:00:00Z",
+      "actor": "supervisor:ivanov",
+      "reviewerRole": "technical_supervisor",
+      "outcome": "accepted",
+      "note": "Frame in zone A1-F03 inspected and within tolerance. Accepted — envelope may start."
+    }
+  ]
+}

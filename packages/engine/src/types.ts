@@ -11,7 +11,7 @@ export type Scalar = string | number | boolean;
 // Gate definition — the reusable acceptance pattern
 // ---------------------------------------------------------------------------
 
-export type FieldKind = "number" | "string" | "boolean" | "date";
+export type FieldKind = "number" | "string" | "boolean" | "date" | "zone";
 
 export interface ClaimField {
   name: string;
@@ -59,6 +59,18 @@ export interface FieldRangeCheck {
   description?: string;
 }
 
+// A claim field must be a string matching `pattern` (anchored regex, e.g. a
+// zone id "^[A-Z]\\d+-F\\d{2}$"). Format-only — it does not cross-reference a
+// model; that lives in lintZones (spans cases + the spatial model).
+export interface FieldPatternCheck {
+  id: string;
+  rule: "field_pattern";
+  field: string;
+  pattern: string;
+  severity?: CheckSeverity;
+  description?: string;
+}
+
 // Claim vs. reality. The evidence value is the trusted REFERENCE; relative error
 // is normalized by it (VIM §2.16), not by the claim. `absolute` is a floor in the
 // evidence unit; the acceptance limit is whichever of the two is greater. When the
@@ -94,6 +106,7 @@ export type Check =
   | RequiredEvidenceCheck
   | FieldPresentCheck
   | FieldRangeCheck
+  | FieldPatternCheck
   | CrossCheck
   | DateWindowCheck;
 

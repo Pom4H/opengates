@@ -1,0 +1,17 @@
+{
+  "gate": "construction.zone-system-acceptance",
+  "events": [
+    {
+      "type": "claim.submitted",
+      "at": "2026-06-08T09:00:00Z",
+      "actor": "contractor:mep-systems",
+      "claim": { "type": "system_work_completed", "values": { "system": "mep", "work_item": "HVAC + electrical + plumbing rough-in", "quantity": 14, "zone": "A1-F03" } }
+    },
+    {
+      "type": "evidence.attached",
+      "at": "2026-06-09T11:00:00Z",
+      "actor": "inspector:mep-qc",
+      "evidence": { "kind": "inspection", "values": { "quantity": 14 }, "ref": "inspect/A1-F03-mep.pdf" }
+    }
+  ]
+}

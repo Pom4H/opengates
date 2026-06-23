@@ -1,0 +1,42 @@
+{
+  "id": "construction.zone-system-acceptance",
+  "name": "Acceptance of a building system in a zone",
+  "domain": "construction",
+  "description": "Each zone (a block on a floor) is built by several parallel systems — structure, envelope, MEP, fit-out. Each system's completion is its own acceptance, anchored to the zone, and unlocks the system that depends on it.",
+  "claim": {
+    "type": "system_work_completed",
+    "fields": [
+      { "name": "system", "kind": "string", "required": true },
+      { "name": "work_item", "kind": "string", "required": true },
+      { "name": "quantity", "kind": "number", "unit": "m2", "required": true },
+      { "name": "zone", "kind": "zone", "model": "viz/model/building.json", "required": true }
+    ]
+  },
+  "evidence": [
+    { "kind": "inspection", "required": true, "description": "Independent inspection of the completed system in the zone." },
+    { "kind": "photo_log", "required": false, "description": "Geotagged photographs of the work." }
+  ],
+  "checks": [
+    { "id": "evidence-present", "rule": "required_evidence", "kinds": ["inspection"], "severity": "blocking", "description": "An inspection record must be attached." },
+    { "id": "quantity-present", "rule": "field_present", "field": "quantity", "severity": "blocking", "description": "The completed quantity must be stated." },
+    { "id": "zone-format", "rule": "field_pattern", "field": "zone", "pattern": "^[A-Z]\\d+-F\\d{2}$", "severity": "blocking", "description": "The zone must be a valid building zone id (e.g. A1-F03)." },
+    {
+      "id": "claim-matches-inspection",
+      "rule": "cross_check",
+      "claimField": "quantity",
+      "evidenceKind": "inspection",
+      "evidenceField": "quantity",
+      "tolerance": 0.05,
+      "severity": "blocking",
+      "description": "Claimed quantity must be within 5% of the inspected quantity."
+    }
+  ],
+  "reviewer": { "role": "technical_supervisor", "description": "Site technical supervision who accepts the system in the zone." },
+  "decisions": ["accepted", "accepted_with_exceptions", "rejected", "returned_for_rework"],
+  "consequences": [
+    { "id": "earned-value", "effect": "money", "on": ["accepted", "accepted_with_exceptions"], "basis": "accepted_quantity", "quantityField": "quantity", "unitPrice": 60, "currency": "EUR", "description": "Accepted system work becomes payable earned value." },
+    { "id": "unlock-next-system", "effect": "right_to_proceed", "on": ["accepted"], "unlocks": "next-dependent-system", "description": "Acceptance unlocks the system that depends on this one." },
+    { "id": "acceptance-liability", "effect": "risk", "on": ["accepted", "accepted_with_exceptions"], "assignedTo": "technical_supervisor", "description": "The supervisor carries liability for the accepted system." },
+    { "id": "label", "effect": "dataset_label", "on": ["accepted", "accepted_with_exceptions", "rejected", "returned_for_rework"], "dataset": "construction.system_acceptance" }
+  ]
+}

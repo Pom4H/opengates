@@ -1,0 +1,28 @@
+{
+  "name": "open-gates-remotion",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Remotion animation for the Open Gates README.",
+  "type": "module",
+  "scripts": {
+    "render": "remotion render src/index.ts OpenGatesFlow ../docs/media/open-gates-flow.mp4",
+    "render:gif": "remotion render src/index.ts OpenGatesFlow ../docs/media/open-gates-flow.gif --codec=gif --every-nth-frame=2",
+    "build:mp4": "remotion render src/index.ts BuildingProgress ../docs/media/building-progress.mp4",
+    "build:gif": "remotion render src/index.ts BuildingProgress ../docs/media/building-progress.gif --codec=gif --every-nth-frame=2 --width=1000 --height=563",
+    "studio": "remotion studio src/index.ts"
+  },
+  "dependencies": {
+    "@react-three/fiber": "^9.0.0",
+    "@remotion/cli": "4.0.380",
+    "@remotion/three": "^4.0.380",
+    "@types/three": "^0.171.0",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "remotion": "4.0.380",
+    "three": "^0.171.0",
+    "use-sync-external-store": "^1.4.0"
+  },
+  "devDependencies": {
+    "@types/react": "19.0.0"
+  }
+}

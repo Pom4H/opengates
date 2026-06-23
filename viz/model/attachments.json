@@ -1,0 +1,80 @@
+{
+  "A1-F03": {
+    "zone": "A1-F03",
+    "works": [
+      {
+        "gateId": "construction.zone-system-acceptance",
+        "status": "accepted",
+        "outcome": "accepted",
+        "title": "structure",
+        "role": "technical_supervisor",
+        "by": "supervisor:ivanov",
+        "at": "2026-05-06T15:00:00Z",
+        "amount": 840,
+        "currency": "EUR"
+      },
+      {
+        "gateId": "construction.zone-system-acceptance",
+        "status": "accepted",
+        "outcome": "accepted",
+        "title": "envelope",
+        "role": "technical_supervisor",
+        "by": "supervisor:ivanov",
+        "at": "2026-05-20T15:00:00Z",
+        "amount": 840,
+        "currency": "EUR"
+      },
+      {
+        "gateId": "construction.zone-system-acceptance",
+        "status": "under_review",
+        "title": "mep"
+      },
+      {
+        "gateId": "construction.zone-system-acceptance",
+        "status": "under_review",
+        "title": "fit-out"
+      },
+      {
+        "gateId": "facilities.fire-safety-acceptance",
+        "status": "accepted",
+        "outcome": "accepted",
+        "title": "Detection, egress, suppression",
+        "role": "fire_safety_officer",
+        "by": "officer:petrova",
+        "at": "2026-06-22T10:00:00Z"
+      }
+    ],
+    "documents": [
+      {
+        "kind": "inspection",
+        "ref": "inspect/A1-F03-structure.pdf",
+        "gateId": "construction.zone-system-acceptance"
+      },
+      {
+        "kind": "inspection",
+        "ref": "inspect/A1-F03-envelope.pdf",
+        "gateId": "construction.zone-system-acceptance"
+      },
+      {
+        "kind": "photo_log",
+        "ref": "photos/A1-F03-envelope/",
+        "gateId": "construction.zone-system-acceptance"
+      },
+      {
+        "kind": "inspection",
+        "ref": "inspect/A1-F03-mep.pdf",
+        "gateId": "construction.zone-system-acceptance"
+      },
+      {
+        "kind": "inspection_report",
+        "ref": "fire/A1-F03-inspection.pdf",
+        "gateId": "facilities.fire-safety-acceptance"
+      }
+    ],
+    "rollup": {
+      "total": 5,
+      "accepted": 3,
+      "pct": 0.6
+    }
+  }
+}

@@ -1,6 +1,6 @@
 # MCP server — native agent review
 
-> Level 5 of the [ladder](../README.md#whats-in-this-repository). An
+> Part of the non-normative runtime layer of [Open Gates](../README.md). An
 > [MCP](https://modelcontextprotocol.io) wrapper around the review queue, so
 > Claude (or any MCP client) works cases as **tools** — lease → judge → decide —
 > instead of hand-building `curl` calls and lease tokens.

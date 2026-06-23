@@ -1,55 +1,39 @@
 # Open Gates
 
-**An open standard for the Acceptance Act** — the bounded moment a *submitted
-claim* becomes an *accepted, payable fact*: checked against a trusted reference,
-decided by a proven authority, recorded as a replayable event log.
-Not task management — fact acceptance.
+**See and control your operations — one accepted fact at a time.**
+Not task management. Fact acceptance.
 
-> Like OpenAPI, this repository is a **specification plus a conformance suite**,
-> not a runtime. The normative artifacts are [`SPEC.md`](SPEC.md), the
-> [JSON Schemas](spec/schema/), and the [conformance goldens](conformance/). A
-> reference implementation lives in [`packages/engine/`](packages/engine/) — it is
-> **non-normative**; implement the standard in any language and prove it against
-> the same golden files.
+Every operation runs on facts that must be **accepted** before anything moves:
+work gets done, goods arrive, a batch passes QC, a service is delivered. Until
+someone accepts the fact, money is frozen and the next step is blocked. Open
+Gates turns each of those acceptance moments — a **gate** — into something you
+can **see on a live map, verify against a trusted reference, and control**.
+
+Underneath, every gate is an **Acceptance Act**: a typed, event-sourced,
+replayable step where a claim becomes a payable fact. That rigor is what makes
+the operational picture *trustworthy* rather than just pretty — see
+[Under the hood](#under-the-hood-a-verifiable-acceptance-standard).
+
+![An operation under control — a building project where every zone is coloured by what has been accepted versus what is still claimed and waiting](docs/media/building-progress.gif)
+
+*One project as a live operational map. Each block is a **zone**; its colour is
+how far it has been **accepted** — structure, envelope, services, fit-out
+sweeping through in dependency order. Click a zone to see the real work and
+documents behind it. This is the operation, under control.*
 
 ---
 
-## What an Acceptance Act is
+## One gate, up close
 
-```text
-claim ──▶ reference ──▶ checks ──▶ authority decides ──▶ accepted quantity ──▶ effects
-        (the survey)  (tolerance      (proven role)      (not the claimed       (money − retention,
-                       + uncertainty)                     quantity)              unlock, risk, label)
-```
+Zoom into a single cell of that map. A contractor claims **120 m³** of concrete.
+An independent survey — the trusted **reference** — reads **117 m³ ± 4** (k=2).
+The gap is measured against the *survey*, not the claim (`|120−117| = 2.56%`,
+inside both the 5% tolerance and the measurement uncertainty), a site supervisor
+**accepts on the surveyed 117**, and the consequences fall out: money on what was
+accepted, the right to start the next work package, owned liability, a labelled
+record.
 
-Formally, eight typed elements: `⟨ Context, Subject, Grounds, Criteria, Authority,
-Decision, Effect, Record ⟩`. The spec uses short, code-friendly names for each;
-the bridge is defined once, in [`GLOSSARY.md`](GLOSSARY.md):
-
-| Acceptance Act | In the spec |
-|----------------|-------------|
-| Context | the gate definition |
-| Subject / Grounds / Criteria | `claim` / `evidence` / `checks` |
-| Authority / Decision / Effect | `reviewer` / `decision` / `consequences` |
-| Record | the append-only **event log** that **folds** into state |
-
-## The spec is executable — see it in a folded case
-
-A gate case is an event log; folding it yields a state. A **disputed** claim
-(survey 100 vs. claim 120 — 20% of the reference, outside the 5% tolerance) cannot
-be accepted:
-
-```jsonc
-{ "status": "returned_for_rework", "checksPassed": false,
-  "checks": [ { "id": "claim-matches-survey", "outcome": "fail",
-               "detail": "|claim−ref|=20 (20.00% of ref 100) exceeds limit 5" } ],
-  "consequences": [ { "effect": "dataset_label", "payload": { "dataset": "construction.work_acceptance" } } ] }
-// only the audit label fired — no money, no unlock. The stage stays locked.
-```
-
-An **honest** claim (survey 117 ± 4, k=2 — within tolerance *and* measurement
-uncertainty) is accepted on the **surveyed 117, not the claimed 120**, and money is
-computed on what was accepted:
+![One gate up close — a claim turning into an accepted fact with consequences](docs/media/open-gates-flow.gif)
 
 ```jsonc
 { "status": "accepted", "checksPassed": true, "cycleDays": 2.25,
@@ -60,113 +44,156 @@ computed on what was accepted:
     { "effect": "risk", "payload": { "assignedTo": "technical_supervisor" } } ] }
 ```
 
-These two states are conformance cases — every engine must reproduce them (below).
-Run them with the reference impl: `cd packages/engine && npm run demo:dispute` /
-`demo:accept`.
+A **disputed** claim (survey 100 vs. claim 120 — 20%, far outside tolerance)
+cannot be accepted: only the audit label fires, no money, the stage stays locked.
+That moment — a *claim* becoming an *accepted fact with consequences*, paid on
+**reality not the assertion** — is the unit the whole operational map is built
+from. Control the gates, and you control the operation.
 
-## The record is an event log (event sourcing)
+---
 
-A case is an append-only log; `fold(gate, events) → state` is a **pure,
-deterministic** reduction — it reads no wall clock and no randomness, dedups
-redelivered events by `id`, and rejects out-of-order ones. The same log yields the
-same state forever, and every state is explainable from its history. Normative in
-[`SPEC.md` §2–3](SPEC.md).
+## Where are your gates?
 
-## Claim vs. reality, done right
+Business usually says "we need a CRM / a dashboard / AI / automation." Open Gates
+asks the cheaper, sharper question:
 
-The defining check, `cross_check`, measures error **against the reference** (the
-surveyed value, per VIM §2.16) — not the claim — with an absolute floor and, when
-the evidence carries an expanded uncertainty `U` (GUM, `U = k·u`), a hard
-uncertainty band. Honest measurement, not a hand-wave. [`SPEC.md` §4.1](SPEC.md),
-[`STANDARDS.md`](STANDARDS.md).
+> **Where is your most expensive disputed fact?**
 
-## Money is real
-
-Payment is computed on the **accepted** quantity, in integer minor units, less
-retention, with a VAT memo — and the folded state carries `cycleDays` (free, from
-event timestamps). The auto-accept ceiling is a review-vs-leakage break-even, not a
-magic number. [`SPEC.md` §6.1](SPEC.md), [`docs/ECONOMICS.md`](docs/ECONOMICS.md).
-
-## Conformance — the contract is data, not code
-
-This is what makes Open Gates a standard. [`conformance/`](conformance/) holds, for
-each case, the **normative state any engine must fold to** — in any language. Five
-cases across two domains; the reference engine passes all five:
-
-```bash
-npm run conformance     # ✓ construction.accept / dispute / remarks · logistics.accept / dispute
+```text
+construction:   contractor claims a volume — site supervision hasn't accepted it
+logistics:      driver claims delivery — customer disputes it
+manufacturing:  a batch is claimed good — QC finds a defect
+retail:         supplier claims a shipment — the warehouse received less
+healthcare:     a service was rendered — the insurer won't confirm it
+agriculture:    a field was treated — the agronomist isn't sure
 ```
 
-The golden files are the authority; the reference engine is one passing
-implementation, not privileged. To certify your own engine, fold each case and
-compare to [`conformance/expected/`](conformance/expected/) — see
-[`conformance/README.md`](conformance/README.md) for the normative projection.
-
-## Standards it speaks
-
-The record maps onto formats existing software and AI already read — W3C PROV-O,
-OMG DMN, GUM/VIM, ISO/IEC 17025, ANSI/EIA-748 (EVM) — with an honest
-load-bearing-vs-decorative split. [`STANDARDS.md`](STANDARDS.md).
+Every row is the same thing: **a fact has been asserted, but not yet accepted.**
+Find that one gate, model it, put it under control — your entry point into
+digitizing an operation without a giant ERP rollout. Case catalog:
+[`examples/`](examples/).
 
 ---
 
-## What's in this repository
+## Seeing and controlling it
 
-**Normative — the standard:**
+A fact isn't only *how much* and *when* — often it is *where*. A claim can carry
+a **zone**: a place in a 3D model of the operation (here, one block of a
+building — *section × row × floor*). That turns the map into a two-way control
+surface:
 
-| | What | Where |
-|---|------|-------|
-| **Spec** | the Acceptance Act, events & fold, the metrology-aware checks, accepted-quantity money | [`SPEC.md`](SPEC.md) |
-| **Schemas** | machine-readable gate / event / scenario / dataset-label | [`spec/schema/`](spec/schema/) |
-| **Conformance** | golden states every engine must reproduce | [`conformance/`](conformance/) |
-| **Examples** | worked gates — construction (work volume, hidden works), logistics | [`examples/`](examples/) |
-| **Standards** | real, field-level mappings | [`STANDARDS.md`](STANDARDS.md) |
+- **Report from the map.** A site supervisor selects the zone where work just
+  finished and submits a report — that *is* the claim (`claim.submitted`), bound
+  to a real place. No abstract form; you point at the building.
+- **Control from the map.** Evidence attaches to the same zone, checks run, a
+  proven reviewer accepts — and the zone turns "accepted", releasing the money,
+  the right to start the next system, and the owned risk. One zone carries
+  several **parallel systems** (structure → envelope → MEP → fit-out), each its
+  own acceptance, each unlocking the next.
 
-**Non-normative — one implementation & its tooling:**
+A zone is an **anchor**: `indexByZone` inverts the claim→zone link so clicking a
+zone shows every work and document behind it. One canonical model
+(`viz/model/building.json`) drives an interactive three.js **zone selector**, an
+**OBJ export**, and the animation at the top — so the picture you click and the
+facts the engine accepts are the same truth. Worked example:
+[`examples/construction/systems/`](examples/construction/systems)
+(`npm run demo:zone`); full detail in [`viz/README.md`](viz/README.md).
 
-| | What | Where |
-|---|------|-------|
-| **Reference engine** | a dependency-free TypeScript fold | [`packages/engine/`](packages/engine/) |
-| **Runtime & integration** | review queue, OAuth 2.1, MCP server, durable-execution embedding | [`docs/`](docs/) |
-| **Roadmap** | unbuilt verticals and products (incl. a hosted service) | [`ROADMAP.md`](ROADMAP.md) |
+```bash
+python3 -m http.server 8099      # from the repo root, then open /viz/viewer/
+```
+
+**Where this is heading — AR/LiDAR.** The natural next step is the foreman
+capturing the *as-built* 3D on site with LiDAR, so "claim vs. reality" becomes
+literal geometry. The foundational design that keeps the engine pure while making
+that possible (evidence-by-reference, a checkable `ZoneBinding`, a phased plan) is
+in [`docs/architecture/spatial-evidence-and-ar.md`](docs/architecture/spatial-evidence-and-ar.md).
 
 ---
+
+## Under the hood: a verifiable acceptance standard
+
+The operational map is only as trustworthy as the acceptances under it — so those
+are held to a standard. Every gate is an **Acceptance Act**: eight typed elements
+`⟨ Context, Subject, Grounds, Criteria, Authority, Decision, Effect, Record ⟩`,
+mapped once to the engine's terms in [`GLOSSARY.md`](GLOSSARY.md).
+
+- **Executable & event-sourced.** A case is an append-only log;
+  `fold(gate, events) → state` is a **pure, deterministic** reduction — no wall
+  clock, no randomness, dedups by event `id`, rejects out-of-order events. Same
+  log, same state, forever. Normative in [`SPEC.md`](SPEC.md).
+- **Claim vs. reality, done right.** `cross_check` measures error against the
+  **reference** (the surveyed value, VIM §2.16), with an absolute floor and — when
+  the evidence carries expanded uncertainty `U` (GUM, `U = k·u`) — a hard
+  uncertainty band. Honest metrology, not a hand-wave.
+- **Money is real.** Paid on the **accepted** quantity, in integer minor units,
+  less retention, with a VAT memo; the state carries `cycleDays` for free.
+  [`docs/ECONOMICS.md`](docs/ECONOMICS.md).
+- **Conformance — the contract is data, not code.** [`conformance/`](conformance/)
+  holds the normative state every engine must fold to, in any language.
+
+  ```bash
+  npm run conformance   # ✓ construction.accept / dispute / remarks · logistics.accept / dispute
+  ```
+
+- **Standards it speaks.** W3C PROV-O, OMG DMN, GUM/VIM, ISO/IEC 17025, ANSI/EIA-748
+  (EVM), with an honest load-bearing-vs-decorative split. [`STANDARDS.md`](STANDARDS.md).
 
 ## Reference implementation (non-normative)
 
 [`packages/engine/`](packages/engine/) makes the spec executable and generates the
-conformance goldens. It runs TypeScript directly — Node ≥ 22.18, no build, no
-dependencies — so you can read it as living pseudocode or run it as-is.
+conformance goldens — dependency-free TypeScript, Node ≥ 22.18, no build. Read it
+as living pseudocode or run it:
 
 ```bash
 cd packages/engine
-npm test                # 61 tests incl. determinism + idempotency + fencing + SLA + OAuth + MCP
+npm test                # determinism · idempotency · fencing · SLA · OAuth · MCP · zones
 npm run demo:accept     # fold the accepted case -> €9,447.75 net certified
 ```
 
 It also ships a **runtime layer that is not part of the standard** — a push/pull
 review queue (fencing leases, SLAs, delegation trail), OAuth 2.1 authority where
-the reviewer role is proven by token scope, an MCP server so an agent can drive the
-loop, and guidance for embedding the fold as a step in Temporal / Inngest /
-Restate. These are conveniences built **on** the Acceptance Act, not part of it:
+the reviewer role is *proven* by token scope, an MCP server so an agent can drive
+the loop, and guidance for embedding the fold in Temporal / Inngest / Restate.
+Conveniences built **on** the Acceptance Act, not part of it:
+[review queue](docs/REVIEW-QUEUE.md) · [agents (MCP + OAuth)](docs/MCP.md) ·
+[durable execution](docs/DURABLE-EXECUTION.md).
 
-- Deploy & review queue → [`docs/REVIEW-QUEUE.md`](docs/REVIEW-QUEUE.md)
-- Agents (MCP + OAuth) → [`docs/MCP.md`](docs/MCP.md)
-- Durable execution → [`docs/DURABLE-EXECUTION.md`](docs/DURABLE-EXECUTION.md)
+---
 
-```bash
-# stateless spec engine on Vercel, or the full queue + MCP self-hosted:
-docker compose up --build      # or: npm run serve   (Node ≥ 22.18, no build)
-```
+## What's in this repository
+
+**Operations — what you see and control:**
+
+| | What | Where |
+|---|------|-------|
+| **Map** | spatial zones — 3D model, zone selector, OBJ, animation | [`viz/`](viz/README.md) |
+| **Cases** | the most expensive disputed fact, by industry | [`examples/`](examples/) |
+| **AR design** | field-captured (LiDAR) evidence, foundational architecture | [`docs/architecture/`](docs/architecture/spatial-evidence-and-ar.md) |
+
+**The standard — what makes it trustworthy (normative):**
+
+| | What | Where |
+|---|------|-------|
+| **Spec** | the Acceptance Act, events & fold, metrology-aware checks, accepted-quantity money | [`SPEC.md`](SPEC.md) |
+| **Schemas** | machine-readable gate / event / scenario / dataset-label | [`spec/schema/`](spec/schema/) |
+| **Conformance** | golden states every engine must reproduce | [`conformance/`](conformance/) |
+| **Standards** | real, field-level mappings | [`STANDARDS.md`](STANDARDS.md) |
+
+**Implementation & tooling (non-normative):** a reference engine
+[`packages/engine/`](packages/engine/), a runtime ([`docs/`](docs/)), and a
+[`ROADMAP.md`](ROADMAP.md) of unbuilt verticals.
 
 ## What it is / is not
 
-**Is:** an open standard for the acceptance boundary — the typed, event-sourced,
-replayable step where a claim becomes a payable fact — with a conformance suite and
-one reference implementation.
+**Is:** a way to **see and control real operations**, on top of an open,
+verifiable standard for the acceptance boundary — the typed, event-sourced step
+where a claim becomes a payable fact, with a conformance suite and one reference
+implementation.
 
 **Is not:** a workflow runtime, an ERP, a BPM tool, or an AI framework. The
-standard owns the one decision; runtimes and products are built on it, not baked in.
+standard owns the one decision; the map and any product are built on it, not baked
+in.
 
 ## License
 

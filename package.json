@@ -1,7 +1,7 @@
 {
   "name": "open-gates",
   "version": "0.0.1",
-  "description": "Open Gates — the review-queue server and tooling around the reference fold engine.",
+  "description": "Open Gates — see and control business operations on a verifiable acceptance standard. Reference engine, conformance suite, spatial map.",
   "type": "module",
   "license": "MIT",
   "private": true,
@@ -17,6 +17,8 @@
     "demo:accept": "node packages/engine/src/cli.ts examples/construction/gate.json examples/construction/scenario.accept.json",
     "demo:remarks": "node packages/engine/src/cli.ts examples/construction/gate.json examples/construction/scenario.remarks.json",
     "demo:logistics": "node packages/engine/src/cli.ts examples/logistics/gate.json examples/logistics/scenario.accept.json",
+    "demo:zone": "node packages/engine/src/zone-cli.ts --gate examples/construction/systems/gate.json --gate examples/facilities/gate.json examples/construction/systems/structure.accept.json examples/construction/systems/envelope.accept.json examples/construction/systems/mep.review.json examples/construction/systems/fitout.submitted.json examples/facilities/scenario.accept.json --model viz/model/building.json",
+    "viz:attachments": "node packages/engine/src/zone-cli.ts --gate examples/construction/systems/gate.json --gate examples/facilities/gate.json examples/construction/systems/structure.accept.json examples/construction/systems/envelope.accept.json examples/construction/systems/mep.review.json examples/construction/systems/fitout.submitted.json examples/facilities/scenario.accept.json --model viz/model/building.json --json viz/model/attachments.json",
     "eval": "node eval/replay.mjs examples/construction/gate.json examples/construction/dataset.sample.jsonl",
     "review:example": "node examples/reviewer/poll.mjs"
   }

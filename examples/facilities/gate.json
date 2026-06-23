@@ -1,0 +1,27 @@
+{
+  "id": "facilities.fire-safety-acceptance",
+  "name": "Fire-safety acceptance of a zone",
+  "domain": "facilities",
+  "description": "Before a zone can be occupied, a fire-safety officer accepts that detection, egress and suppression are in place. The acceptance is anchored to the same building zone as the construction work — different domain, same place.",
+  "claim": {
+    "type": "fire_safety_inspection",
+    "fields": [
+      { "name": "scope", "kind": "string", "required": true },
+      { "name": "zone", "kind": "zone", "model": "viz/model/building.json", "required": true }
+    ]
+  },
+  "evidence": [
+    { "kind": "inspection_report", "required": true, "description": "Signed fire-safety inspection report for the zone." }
+  ],
+  "checks": [
+    { "id": "report-present", "rule": "required_evidence", "kinds": ["inspection_report"], "severity": "blocking", "description": "A fire-safety inspection report must be attached." },
+    { "id": "zone-format", "rule": "field_pattern", "field": "zone", "pattern": "^[A-Z]\\d+-F\\d{2}$", "severity": "blocking", "description": "The zone must be a valid building zone id (e.g. A1-F03)." }
+  ],
+  "reviewer": { "role": "fire_safety_officer", "description": "The officer who accepts fire-safety responsibility for the zone." },
+  "decisions": ["accepted", "accepted_with_exceptions", "rejected", "returned_for_rework"],
+  "consequences": [
+    { "id": "unlock-occupancy", "effect": "right_to_proceed", "on": ["accepted"], "unlocks": "occupancy", "description": "Fire-safety acceptance unlocks occupancy of the zone." },
+    { "id": "liability", "effect": "risk", "on": ["accepted", "accepted_with_exceptions"], "assignedTo": "fire_safety_officer", "description": "The officer carries fire-safety liability for the zone." },
+    { "id": "label", "effect": "dataset_label", "on": ["accepted", "accepted_with_exceptions", "rejected", "returned_for_rework"], "dataset": "facilities.fire_safety" }
+  ]
+}

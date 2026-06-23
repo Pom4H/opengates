@@ -105,6 +105,7 @@ A check is a deterministic rule over the current claim + evidence. Each has an
 | `required_evidence` | `kinds[]` | every listed evidence kind is present |
 | `field_present` | `field` | the claim field is set and non-empty |
 | `field_range` | `field`, `min?`, `max?` | the numeric field is within range |
+| `field_pattern` | `field`, `pattern` | the claim field is a string matching the regex `pattern` (used to validate a `zone` id — §7.5) |
 | `date_window` | `field`, `start?`, `end?` | the date field falls within `[start, end]` |
 | `cross_check` | `claimField`, `claimUnit?`, `evidenceKind`, `evidenceField`, `tolerance?`, `absolute?`, `uncertaintyField?`, `requireUnitMatch?` | see §4.1 |
 
@@ -185,6 +186,40 @@ Schema: [`spec/schema/dataset-label.schema.json`](spec/schema/dataset-label.sche
 Every decided case yields one labelled record carrying **both** the claimed and
 the accepted values, the evidence kinds, and per-check outcomes → the decided
 `label`. Accumulated, these `features → label` rows are the substrate for §8.
+
+---
+
+## 7.5 Zones as anchors (optional, spatial)
+
+A claim field may have kind `zone`: a place in a 3D model of the operation — one
+block of a building (*section × row × floor*, id like `A1-F03`), its format checked
+by a `field_pattern` check (§4). Beyond the format check the engine treats it as an
+ordinary string that the consequences and dataset label carry through.
+
+A zone is an **anchor**. Many works (cases) and documents (evidence) reference the
+same zone over time, and the engine **inverts** that link. Given folded states,
+`indexByZone(states)` returns, per zone:
+
+- `works` — each contributing case (title, status, accepted money);
+- `documents` — the evidence refs across those cases;
+- `rollup` — `{ total, accepted, pct }`.
+
+This is the bridge to the spatial view in [`viz/`](viz/README.md): the 3D zone
+selector reads `viz/model/attachments.json` (this exact shape), so the block you
+click and the facts the engine accepted are one truth. A zone is typically built by
+several **parallel systems** (structure → envelope → MEP → fit-out), each its own
+case unlocking the next via a `right_to_proceed` consequence, and is **cross-domain**
+(a facilities acceptance can anchor to the same block as the construction work).
+Worked example: [`examples/construction/systems/`](examples/construction/systems).
+
+**Validation across cases.** Some rules a single in-case check can't see, because
+they span cases and the model. `lintZones(states, model)` flags `unknown_zone` (a
+claim anchored to a zone the model lacks) and `duplicate_acceptance` (the same
+zone + system accepted twice). Implemented in
+[`packages/engine/src/zones.ts`](packages/engine/src/zones.ts).
+
+Zones are **non-normative**: an engine may ignore them and still conform (§11).
+They add a spatial control surface over the same accepted facts.
 
 ---
 
