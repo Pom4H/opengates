@@ -32,6 +32,11 @@ Risk hangs in the air.
 Open Gates is my proposal to make those moments visible as separate acceptance
 nodes.
 
+![A construction site shown as an operational map of accepted work](docs/media/building-progress.gif)
+
+*A construction site as an operational map: claimed work becomes accepted fact
+zone by zone.*
+
 ## The acceptance node
 
 An acceptance node answers a small set of practical questions:
