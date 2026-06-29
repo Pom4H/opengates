@@ -1,0 +1,150 @@
+{
+  "nodes": [
+    {
+      "id": "SUP-rebar",
+      "kind": "actor",
+      "domain": "logistics",
+      "label": "Rebar supplier"
+    },
+    {
+      "id": "YARD-crane",
+      "kind": "actor",
+      "domain": "logistics",
+      "label": "Crane rental yard"
+    },
+    {
+      "id": "DEPOT-labor",
+      "kind": "actor",
+      "domain": "logistics",
+      "label": "Crew depot"
+    },
+    {
+      "id": "MAT-rebar",
+      "kind": "resource",
+      "resourceKind": "material",
+      "unit": "t",
+      "label": "Rebar"
+    },
+    {
+      "id": "CREW-concrete",
+      "kind": "resource",
+      "resourceKind": "labor",
+      "unit": "man-h",
+      "label": "Concrete crew"
+    },
+    {
+      "id": "EQ-crane-1",
+      "kind": "resource",
+      "resourceKind": "equipment",
+      "unit": "machine-h",
+      "label": "Tower crane #1"
+    },
+    {
+      "id": "SYS-A1-F03-structure",
+      "kind": "capital_work",
+      "domain": "construction",
+      "label": "Structure · A1-F03"
+    },
+    {
+      "id": "A1-F03",
+      "kind": "zone",
+      "domain": "construction",
+      "label": "Zone A1-F03"
+    },
+    {
+      "id": "ACC-project",
+      "kind": "account",
+      "domain": "finance",
+      "label": "Project account"
+    }
+  ],
+  "edges": [
+    {
+      "id": "deliver:SUP-rebar->MAT-rebar:MAT-rebar",
+      "kind": "deliver",
+      "from": "SUP-rebar",
+      "to": "MAT-rebar",
+      "resource": "MAT-rebar",
+      "qty": 24,
+      "acceptedQty": 23.8,
+      "unit": "t",
+      "status": "accepted",
+      "gateId": "operations.resource-flow",
+      "title": "MAT-rebar"
+    },
+    {
+      "id": "rent:YARD-crane->EQ-crane-1:EQ-crane-1",
+      "kind": "rent",
+      "from": "YARD-crane",
+      "to": "EQ-crane-1",
+      "resource": "EQ-crane-1",
+      "qty": 40,
+      "acceptedQty": 39.5,
+      "unit": "machine-h",
+      "status": "accepted",
+      "gateId": "operations.resource-flow",
+      "title": "EQ-crane-1"
+    },
+    {
+      "id": "deliver:DEPOT-labor->CREW-concrete:CREW-concrete",
+      "kind": "deliver",
+      "from": "DEPOT-labor",
+      "to": "CREW-concrete",
+      "resource": "CREW-concrete",
+      "qty": 64,
+      "acceptedQty": 64,
+      "unit": "man-h",
+      "status": "accepted",
+      "gateId": "operations.resource-flow",
+      "title": "CREW-concrete"
+    },
+    {
+      "id": "consume:MAT-rebar->SYS-A1-F03-structure:MAT-rebar",
+      "kind": "consume",
+      "from": "MAT-rebar",
+      "to": "SYS-A1-F03-structure",
+      "resource": "MAT-rebar",
+      "qty": 3.2,
+      "unit": "t",
+      "status": "under_review",
+      "gateId": "operations.resource-flow",
+      "title": "MAT-rebar"
+    },
+    {
+      "id": "consume:EQ-crane-1->SYS-A1-F03-structure:EQ-crane-1",
+      "kind": "consume",
+      "from": "EQ-crane-1",
+      "to": "SYS-A1-F03-structure",
+      "resource": "EQ-crane-1",
+      "qty": 8,
+      "unit": "machine-h",
+      "status": "under_review",
+      "gateId": "operations.resource-flow",
+      "title": "EQ-crane-1"
+    },
+    {
+      "id": "consume:CREW-concrete->SYS-A1-F03-structure:CREW-concrete",
+      "kind": "consume",
+      "from": "CREW-concrete",
+      "to": "SYS-A1-F03-structure",
+      "resource": "CREW-concrete",
+      "qty": 16,
+      "unit": "man-h",
+      "status": "under_review",
+      "gateId": "operations.resource-flow",
+      "title": "CREW-concrete"
+    },
+    {
+      "id": "produce:SYS-A1-F03-structure->A1-F03",
+      "kind": "produce",
+      "from": "SYS-A1-F03-structure",
+      "to": "A1-F03",
+      "qty": 14,
+      "status": "accepted",
+      "amount": 840,
+      "currency": "EUR",
+      "gateId": "construction.zone-system-acceptance",
+      "title": "structure"
+    }
+  ]
+}

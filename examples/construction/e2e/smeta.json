@@ -1,0 +1,26 @@
+{
+  "name": "Estimate / BOQ — unit-rate contract for the e2e object",
+  "currency": "EUR",
+  "terms": {
+    "retentionPct": 0.05,
+    "retentionCap": 25000,
+    "vatRate": 0.2,
+    "paymentTermsDays": 30,
+    "advancePct": 0.15,
+    "advancePaymentTermsDays": 10,
+    "defectsLiabilityDays": 730,
+    "_note": "Guarantee retention 5% (cap €25 000 per acceptance), VAT 20% (memo on net, excluded from earned value), payment 30 days from act signing, advance 15%, defects-liability period 730 days."
+  },
+  "lines": [
+    { "key": "design_and_permits", "phase": "design", "boq_ref": "BOQ 1.1", "estimateLine": "Design & survey works", "name_ru": "Design documentation + working documentation, state expert review → construction permit", "unit": "lump", "rate_eur": 480000, "basis": "fixed", "gate": "design-permit" },
+    { "key": "excavation_earthworks", "phase": "excavation", "boq_ref": "BOQ 2.1", "estimateLine": "FER01-01-013", "name_ru": "Excavation of soil in the pit by excavator + haul-off", "unit": "m3", "rate_eur": 18, "basis": "accepted_quantity", "gate": "excavation" },
+    { "key": "foundation_concrete", "phase": "foundation", "boq_ref": "BOQ 3.2", "estimateLine": "FER06-01-001-01", "name_ru": "Foundation raft concrete C25/30", "unit": "m3", "rate_eur": 85, "basis": "accepted_quantity", "gate": "work-volume" },
+    { "key": "frame_rebar", "phase": "frame", "boq_ref": "BOQ 4.2", "estimateLine": "FER06-01-092", "name_ru": "Rebar A500S, installation (closed via AOSR before concreting)", "unit": "t", "rate_eur": 1250, "basis": "accepted_quantity", "gate": "hidden-works", "billed": false, "note": "Reference line — closed via the AOSR hidden-works gate (right-to-pour, no separate KS-3 money); rebar cost is composite inside the frame_concrete FER rate." },
+    { "key": "frame_concrete", "phase": "frame", "boq_ref": "BOQ 4.1", "estimateLine": "FER06-01-015", "name_ru": "Monolithic frame: columns + slabs C30/37", "unit": "m3", "rate_eur": 140, "basis": "accepted_quantity", "gate": "structure", "system": "structure" },
+    { "key": "envelope_facade", "phase": "envelope", "boq_ref": "BOQ 5.1", "estimateLine": "FERm15-01", "name_ru": "Ventilated curtain façade + insulation", "unit": "m2", "rate_eur": 95, "basis": "accepted_quantity", "gate": "envelope", "system": "envelope" },
+    { "key": "envelope_glazing", "phase": "envelope", "boq_ref": "BOQ 5.2", "estimateLine": "FERm15-04", "name_ru": "Translucent structures / glazing (double-chamber insulating glass unit)", "unit": "m2", "rate_eur": 210, "basis": "accepted_quantity", "gate": "envelope", "system": "envelope", "billed": false, "note": "Reference line — glazing area is folded into the envelope (façade) acceptance scope in this demo; kept for BOQ completeness." },
+    { "key": "mep_systems", "phase": "mep", "boq_ref": "BOQ 6.1", "estimateLine": "FERm10-06", "name_ru": "Internal MEP (engineering systems) (HVAC + water/sewerage + electrical), normalized to zone area", "unit": "m2", "rate_eur": 120, "basis": "accepted_quantity", "gate": "mep", "system": "mep" },
+    { "key": "fit_out", "phase": "fitout", "boq_ref": "BOQ 7.1", "estimateLine": "FER15-04-005", "name_ru": "Finishing works / fit-out", "unit": "m2", "rate_eur": 60, "basis": "accepted_quantity", "gate": "fitout", "system": "fitout" },
+    { "key": "handover", "phase": "handover", "boq_ref": "BOQ 8.1", "estimateLine": "—", "name_ru": "Handover: ZOS + commissioning act / occupancy permit (triggers retention release)", "unit": "lump", "rate_eur": 0, "basis": "fixed", "gate": "handover" }
+  ]
+}

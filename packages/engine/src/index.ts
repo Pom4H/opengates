@@ -18,6 +18,27 @@ export { createOutbox, pending, deliver } from "./effects.ts";
 export { labelOf, collectLabels, toJsonl } from "./dataset.ts";
 export { zoneOf, indexByZone, attachmentsByZone, lintZones, knownZoneIds } from "./zones.ts";
 export type { ZoneWork, ZoneDocument, ZoneAttachments, SpatialModel, ZoneIssue } from "./zones.ts";
+export {
+  flowOf,
+  flowsOf,
+  flowGraph,
+  flowGraphJSON,
+  resourceLedger,
+  ledgerJSON,
+  lintFlows,
+} from "./flows.ts";
+export type {
+  Anchor,
+  AnchorKind,
+  ResourceKind,
+  Flow,
+  FlowKind,
+  OperationalModel,
+  FlowGraph,
+  ResourceLine,
+  FlowIssue,
+  FlowIssueKind,
+} from "./flows.ts";
 
 /** Parse a plain object into a GateDefinition (typing only; no validation). */
 export function loadGate(obj: unknown): GateDefinition {

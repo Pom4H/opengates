@@ -36,7 +36,7 @@
       "type": "evidence.attached",
       "at": "2026-06-02T11:07:00Z",
       "actor": "contractor:alfa-stroy",
-      "evidence": { "kind": "aosr_ref", "values": { "act": "АОСР-2026-05-014" }, "ref": "aosr/2026-05-014.pdf" }
+      "evidence": { "kind": "aosr_ref", "values": { "act": "AOSR-2026-05-014" }, "ref": "aosr/2026-05-014.pdf" }
     },
     {
       "type": "decision.recorded",
@@ -45,7 +45,7 @@
       "reviewerRole": "technical_supervisor",
       "outcome": "accepted_with_exceptions",
       "acceptedValues": { "quantity": 118 },
-      "note": "Принято с замечаниями: cold joint at axis 3 and surface раковины. Accept 118 m³ (survey, within tolerance); remediate by 2026-06-20. 5% retention held against the punch list and released after the defects are closed."
+      "note": "Accepted w/ remarks: cold joint at axis 3 and surface honeycombing. Accept 118 m³ (survey, within tolerance); remediate by 2026-06-20. 5% retention held against the punch list and released after the defects are closed."
     }
   ]
 }

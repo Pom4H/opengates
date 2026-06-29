@@ -1,0 +1,778 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <title>Open Gates — construction operations model (e2e)</title>
+    <style>
+      :root {
+        --bg: #070b12; --panel: #0e1622d9; --border: #1e2d40; --text: #e6edf6; --dim: #7e8ea3;
+        --accent: #4ade80; --amber: #f5a524; --green: #34d399; --red: #f87171; --cyan: #22d3ee;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif; overflow: hidden; }
+      #app { position: fixed; inset: 0; }
+      .card { position: absolute; background: var(--panel); border: 1px solid var(--border);
+        border-radius: 14px; padding: 13px 15px; backdrop-filter: blur(9px); box-shadow: 0 8px 30px #0008; }
+      h1, h2 { margin: 0; }
+      #title { top: 16px; left: 16px; max-width: 330px; }
+      #title h1 { font-size: 14px; letter-spacing: 3px; color: var(--accent); }
+      #title .obj { font-size: 16px; font-weight: 700; margin-top: 5px; }
+      #title .sub { font-size: 12px; color: var(--dim); margin-top: 3px; line-height: 1.45; }
+      #roles { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 11px; }
+      .rolebtn { font-size: 11px; padding: 5px 9px; border-radius: 8px; cursor: pointer; border: 1px solid var(--border);
+        background: #121d2e; color: var(--text); transition: .12s; }
+      .rolebtn:hover { border-color: #34507a; }
+      .rolebtn.on { border-color: currentColor; box-shadow: 0 0 0 1px currentColor inset; font-weight: 700; }
+      #action { margin-top: 9px; font-size: 11px; color: var(--dim); }
+      #action b { color: var(--text); }
+
+      #acts { top: 250px; left: 16px; width: 320px; bottom: 150px; display: flex; flex-direction: column; padding: 12px 6px 12px 14px; }
+      #acts h2 { font-size: 11px; letter-spacing: 2px; color: var(--dim); }
+      #actsList { overflow-y: auto; margin-top: 8px; padding-right: 8px; }
+      .act { display: flex; gap: 8px; padding: 5px 0; border-bottom: 1px solid #16202f; font-size: 11.5px; align-items: baseline; }
+      .act .dot { width: 7px; height: 7px; border-radius: 50%; flex: none; margin-top: 4px; }
+      .act .t { color: var(--dim); font-variant-numeric: tabular-nums; font-size: 10px; flex: none; width: 56px; }
+      .act .b { flex: 1; line-height: 1.35; }
+      .act .b .a { color: var(--text); }
+      .act .b .g { color: var(--dim); }
+      .act .money { color: var(--green); white-space: nowrap; }
+
+      #money { top: 16px; right: 16px; width: 300px; font-family: ui-monospace, monospace; }
+      #money h2 { font-size: 11px; letter-spacing: 2px; color: var(--dim); }
+      .kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+      .kpi { background: #0c1521; border: 1px solid #16202f; border-radius: 9px; padding: 8px 9px; }
+      .kpi .l { font-size: 9.5px; color: var(--dim); letter-spacing: .4px; }
+      .kpi .v { font-size: 16px; font-weight: 700; margin-top: 2px; }
+      .evm { margin-top: 12px; }
+      .evm .hd { display: flex; justify-content: space-between; font-size: 10px; color: var(--dim); }
+      .badge { padding: 1px 7px; border-radius: 6px; border: 1px solid; font-size: 10px; }
+
+      #zonepanel { top: 16px; right: 332px; width: 290px; font-family: ui-monospace, monospace; display: none; max-height: 70vh; overflow-y: auto; }
+      #zonepanel .zid { font-size: 22px; font-weight: 700; }
+      #zonepanel .meta { font-size: 11px; color: var(--dim); margin-top: 3px; }
+      #zonepanel .grp { color: var(--dim); letter-spacing: 1px; margin: 11px 0 5px; font-size: 10px; }
+      #zonepanel .w { padding: 6px 8px; border: 1px solid #16202f; border-radius: 8px; margin-bottom: 5px; }
+      #zonepanel .w .top { display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
+      #zonepanel .w .sub { font-size: 10px; color: var(--dim); margin-top: 3px; line-height: 1.4; }
+      #zonepanel .doc { display: flex; gap: 7px; font-size: 10.5px; padding: 2px 0; }
+      #zonepanel .doc .k { color: var(--cyan); white-space: nowrap; }
+      #zonepanel .doc .r { color: var(--dim); word-break: break-all; }
+      .sbadge { font-size: 9.5px; padding: 1px 6px; border-radius: 5px; border: 1px solid; }
+      #zclose { float: right; cursor: pointer; color: var(--dim); font-size: 16px; line-height: 1; }
+
+      #legend { bottom: 150px; right: 16px; width: 300px; font-size: 11px; }
+      #legend .row { display: inline-flex; align-items: center; gap: 6px; margin: 3px 9px 3px 0; }
+      #legend .sw { width: 12px; height: 12px; border-radius: 3px; }
+
+      #timeline { left: 16px; right: 16px; bottom: 16px; height: 118px; padding: 10px 16px 8px; }
+      #tlhead { display: flex; align-items: center; gap: 14px; }
+      #playbtn { cursor: pointer; background: #16243a; border: 1px solid var(--border); color: var(--text);
+        border-radius: 8px; width: 34px; height: 30px; font-size: 14px; }
+      #playbtn:hover { border-color: #34507a; }
+      #tlnow { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
+      #tlphase { font-size: 12px; color: var(--accent); }
+      #tlspeed { margin-left: auto; font-size: 11px; color: var(--dim); }
+      #tlspeed select { background: #16243a; color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 2px 5px; }
+      #track { position: relative; margin-top: 8px; height: 56px; cursor: pointer; }
+      #track svg { display: block; width: 100%; height: 100%; }
+      .hint { font-size: 11px; color: var(--dim); }
+      #err { top: 50%; left: 50%; transform: translate(-50%,-50%); max-width: 440px; display: none; }
+      code { color: var(--cyan); }
+      #toast { position: absolute; bottom: 150px; left: 50%; transform: translateX(-50%); background: #16243aee;
+        border: 1px solid #34507a; border-radius: 9px; padding: 8px 14px; font-size: 12px; opacity: 0; transition: .25s; pointer-events: none; }
+      ::-webkit-scrollbar { width: 8px; } ::-webkit-scrollbar-thumb { background: #1e2d40; border-radius: 4px; }
+
+      /* ---- touch surfaces (all devices) ---- */
+      #app canvas { touch-action: none; }      /* finger orbits the model, page doesn't scroll/zoom */
+      #track { touch-action: none; }           /* finger drags the scrubber, page doesn't scroll */
+
+      /* ---- mobile bottom tab bar (hidden on desktop) ---- */
+      #tabbar { position: fixed; left: 8px; right: 8px; bottom: 8px; height: 54px; z-index: 40;
+        display: none; gap: 6px; padding: 6px; }
+      #tabbar button { flex: 1; min-height: 42px; border: 1px solid var(--border); background: #0e1622ee;
+        color: var(--dim); border-radius: 12px; font: inherit; font-size: 10px; cursor: pointer;
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; }
+      #tabbar button .ic { font-size: 15px; line-height: 1; }
+      #tabbar button.on { color: var(--text); border-color: #34507a; background: #16243a; }
+
+      /* ---- mobile layout: side panels become swipe-up sheets ---- */
+      @media (max-width: 920px) {
+        #title { left: 8px; right: 8px; top: 8px; max-width: none; padding: 9px 12px; }
+        #title h1 { font-size: 12px; letter-spacing: 2px; }
+        #title .obj { font-size: 14px; margin-top: 3px; }
+        #title .sub, #title #action { display: none; }
+        #roles { margin-top: 8px; flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 3px; }
+        .rolebtn { white-space: nowrap; min-height: 34px; display: inline-flex; align-items: center; }
+        #bldgbtn { font-size: 10px; min-height: 32px; }
+
+        #money, #acts, #legend, #zonepanel {
+          position: fixed !important; left: 0; right: 0; top: auto !important; bottom: 166px;
+          width: auto !important; max-width: none !important; max-height: 44vh; overflow-y: auto;
+          border-radius: 18px 18px 0 0; transform: translateY(calc(100% + 180px)); transition: transform .26s ease;
+          display: block !important; z-index: 30; }
+        #money.sheet-open, #acts.sheet-open, #legend.sheet-open, #zonepanel.sheet-open { transform: none !important; }
+        #acts #actsList { max-height: 36vh; }
+        #zonepanel { right: 0; }
+
+        #timeline { left: 8px; right: 8px; bottom: 70px; height: 88px; padding: 9px 12px 6px; }
+        #playbtn { width: 44px; height: 40px; font-size: 15px; }
+        #track { height: 56px; }
+        #tlnow { font-size: 13px; }
+        #tabbar { display: flex; }
+        #toast { bottom: 176px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+
+    <div id="title" class="card">
+      <h1>OPEN&nbsp;GATES · E2E</h1>
+      <div class="obj" id="objname">—</div>
+      <div class="sub" id="objsub"></div>
+      <div id="roles"></div>
+      <div id="action"></div>
+      <div id="bldgbtn" class="rolebtn" style="margin-top:9px;display:inline-block;color:#a78bfa">▢ Whole object (BLDG) — design · advance · handover · retention</div>
+    </div>
+
+    <div id="acts" class="card">
+      <h2>ACTS FEED · claim → evidence → decision</h2>
+      <div id="actsList"></div>
+    </div>
+
+    <div id="money" class="card">
+      <h2>MONEY · KS-3 / EVM — as of date</h2>
+      <div class="kpis" id="kpis"></div>
+      <div class="evm">
+        <div class="hd"><span>Earned (S-curve): <b style="color:var(--green)">EV</b> · <b style="color:var(--dim)">PV</b> · <b style="color:var(--amber)">AC</b></span><span id="spicpi"></span></div>
+        <div id="evmchart"></div>
+      </div>
+    </div>
+
+    <div id="zonepanel" class="card">
+      <span id="zclose">×</span>
+      <div class="zid" id="zid">—</div>
+      <div class="meta" id="zmeta"></div>
+      <div id="zbody"><div class="hint" style="padding:4px 0">Tap a block on the 3D model to see its acts, documents and payments.</div></div>
+    </div>
+
+    <div id="legend" class="card">
+      <div class="grp" style="color:var(--dim);font-size:10px;letter-spacing:1px;margin-bottom:4px">LIFECYCLE — colour = what's ACCEPTED as of the date</div>
+      <div id="legrows"></div>
+    </div>
+
+    <div id="timeline" class="card">
+      <div id="tlhead">
+        <button id="playbtn">▶</button>
+        <div id="tlnow">—</div>
+        <div id="tlphase"></div>
+        <div id="tlspeed">speed
+          <select id="speed"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select>
+        </div>
+      </div>
+      <div id="track"></div>
+    </div>
+
+    <div id="tabbar">
+      <button data-sheet="" class="on"><span class="ic">◳</span>3D</button>
+      <button data-sheet="money"><span class="ic">€</span>Money</button>
+      <button data-sheet="acts"><span class="ic">≡</span>Acts</button>
+      <button data-sheet="zone"><span class="ic">▢</span>Zone</button>
+      <button data-sheet="legend"><span class="ic">◧</span>Colours</button>
+    </div>
+
+    <div id="toast"></div>
+
+    <div id="err" class="card">
+      <b>Failed to load the model.</b>
+      <p class="hint">Open over HTTP, not <code>file://</code>. From the repo root: <code>python3 -m http.server 8099</code>, then
+        <code>/viz/viewer/control/</code>. Before that: <code>node viz/model/generate.ts &amp;&amp; node examples/construction/e2e/drive.ts</code>.
+        For the close-to-reality run: <code>node examples/construction/e2e/simulate.ts</code>, then open <code>/viz/viewer/control/?src=sim</code>.</p>
+    </div>
+
+    <!-- Absolute paths from the repo root (serve with `python3 -m http.server`
+         from the repo root) so module resolution doesn't depend on the page's
+         trailing slash or the directory it's opened from. -->
+    <script type="importmap">
+      { "imports": { "three": "/viz/viewer/vendor/three/three.module.js", "three/addons/": "/viz/viewer/vendor/three/addons/" } }
+    </script>
+
+    <script type="module">
+      import * as THREE from "three";
+      import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+      import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+      import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+      import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
+      import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
+
+      // a soft vertical gradient, used as the scene backdrop (nicer than a flat colour)
+      const gradientTexture = (top, bot) => {
+        const c = document.createElement("canvas"); c.width = 4; c.height = 256;
+        const x = c.getContext("2d"); const g = x.createLinearGradient(0, 0, 0, 256);
+        g.addColorStop(0, top); g.addColorStop(1, bot); x.fillStyle = g; x.fillRect(0, 0, 4, 256);
+        const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+      };
+
+      // Drive the crane from the build's current top (topY) and how far the build
+      // has progressed (place01) — both PURE FUNCTIONS of the scrubber time t. The
+      // crane runs N delivery cycles synced to the build: lower the trolley to the
+      // ground QUEUE, grab the front block, carry it out + up, set it on the current
+      // top, return. The queue marches toward the pickup as blocks are consumed.
+      // Everything is a function of place01 (so it freezes on pause); only the flag
+      // uses elapsed e.
+      function runCrane(rig, topY, place01, e) {
+        const { mast, slew, trolley, cable, hookBlk, load, flag, BASE, JIBY, queueBlocks, SP, Q, dSup, dPlace, N } = rig;
+        const lerp = (a, b, t) => a + (b - a) * t;
+        const ease = (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
+        const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+        const craneH = clamp(topY + 9, 13, 60);
+        mast.scale.y = craneH; mast.position.y = craneH / 2; slew.position.y = craneH; // climb with the build
+        slew.rotation.y = BASE + Math.sin(e * 0.18) * 0.02; // cosmetic micro-sway
+        const jibW = craneH + JIBY;
+        const groundL = jibW - 1.4; // cable to the ground queue
+        const carryL = clamp(jibW - (topY + 4), 3, jibW); // hook just above the top while carrying
+        const placeL = clamp(jibW - (topY + 1.6), 3, jibW); // set onto the top
+        const dt = place01 * N, cyc = dt - Math.floor(dt); // delivery cycle, synced to the build
+        let tx, L, loadVis;
+        if (cyc < 0.16) { tx = dSup; L = lerp(carryL, groundL, ease(cyc / 0.16)); loadVis = false; }            // lower to the queue
+        else if (cyc < 0.26) { tx = dSup; L = lerp(groundL, carryL, ease((cyc - 0.16) / 0.1)); loadVis = true; } // grab + hoist
+        else if (cyc < 0.6) { tx = lerp(dSup, dPlace, ease((cyc - 0.26) / 0.34)); L = carryL; loadVis = true; }  // carry to the building
+        else if (cyc < 0.76) { tx = dPlace; L = lerp(carryL, placeL, ease((cyc - 0.6) / 0.16)); loadVis = true; }// lower onto the top
+        else if (cyc < 0.86) { tx = dPlace; L = placeL; loadVis = false; }                                       // release
+        else { tx = lerp(dPlace, dSup, ease((cyc - 0.86) / 0.14)); L = carryL; loadVis = false; }                // return empty
+        trolley.position.x = tx;
+        cable.scale.y = L; cable.position.y = -L / 2; hookBlk.position.y = -L;
+        load.position.y = -L - 1.0; load.visible = loadVis;
+        // march the ground queue toward the pickup; hide the one at the very front (on the hook)
+        if (queueBlocks) { const span = Q * SP; for (let i = 0; i < Q; i++) { const x = (((i * SP - dt * SP) % span) + span) % span; queueBlocks[i].position.x = x; queueBlocks[i].visible = x > SP * 0.55; } }
+        flag.rotation.y = Math.sin(e * 3.0) * 0.5;
+      }
+
+      // A graded construction site so the building plants into the ground and
+      // casts its shadow instead of floating: an earth apron at grade with an open
+      // pit, a concrete edge, a ground-floor slab, a road + driveway, and props
+      // (tower crane, site cabins, hoarding, material stacks, a truck).
+      // Returns { animate(elapsed) } — a PURE function of elapsed time for the
+      // ambient motion (crane slew, hook bob), so it can never drift or break.
+      function buildSite(scene, shadows) {
+        const SITE_X = 76, SITE_Z = 58, PIT_X = 22, PIT_Z = 16, FX = 18.3, FZ = 12.3;
+        const matt = (color, o) => new THREE.MeshStandardMaterial({ color, roughness: 1, metalness: 0, ...(o || {}) });
+        const flat = (w, d, color, y) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), matt(color)); m.rotation.x = -Math.PI / 2; m.position.y = y; m.receiveShadow = shadows; scene.add(m); return m; };
+        const ring = (color, y, ox, oz, ix, iz) => {
+          const s = new THREE.Shape(); s.moveTo(-ox, -oz); s.lineTo(ox, -oz); s.lineTo(ox, oz); s.lineTo(-ox, oz); s.closePath();
+          const h = new THREE.Path(); h.moveTo(-ix, -iz); h.lineTo(-ix, iz); h.lineTo(ix, iz); h.lineTo(ix, -iz); h.closePath(); s.holes.push(h);
+          const m = new THREE.Mesh(new THREE.ShapeGeometry(s), matt(color)); m.rotation.x = -Math.PI / 2; m.position.y = y; m.receiveShadow = shadows; scene.add(m); return m;
+        };
+        const box = (w, h, d, mat, x, y, z, parent) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); m.position.set(x, y, z); m.castShadow = shadows; m.receiveShadow = shadows; (parent || scene).add(m); return m; };
+
+        // --- ground ---
+        flat(580, 580, 0x070b11, -9.3); // deep ground = pit bottom
+        const grid = new THREE.GridHelper(330, 66, 0x1b2942, 0x0f1827); grid.position.y = -9.24; grid.material.transparent = true; grid.material.opacity = 0.18; scene.add(grid);
+        ring(0x232720, 0, SITE_X, SITE_Z, PIT_X, PIT_Z); // grade apron (earth) with the pit opening
+        ring(0x33373d, 0.012, PIT_X + 2.4, PIT_Z + 2.4, PIT_X, PIT_Z); // concrete edge framing the pit
+        box(2 * FX, 0.5, 2 * FZ, matt(0x2a2f36), 0, -0.1, 0); // ground-floor slab the tower stands on
+        flat(2 * SITE_X, 9, 0x121419, 0.03).position.set(0, 0.03, -38); // road
+        flat(11, 22, 0x121419, 0.03).position.set(0, 0.03, -28); // driveway up to the site
+        for (let x = -SITE_X + 6; x < SITE_X; x += 11) { const d = new THREE.Mesh(new THREE.PlaneGeometry(4.5, 0.45), matt(0xb7c0cb)); d.rotation.x = -Math.PI / 2; d.position.set(x, 0.05, -38); scene.add(d); } // centre line
+
+        // --- materials / palettes ---
+        const steel = matt(0xcf9f38, { roughness: 0.6, metalness: 0.25 });
+        const dark = matt(0x24272d, { roughness: 0.85 });
+        const concrete = matt(0x39414a, { roughness: 1 });
+        // perimeter hoarding around the pit (gap on the south for the drive)
+        const HX = 31, HZ = 23, HH = 2.4;
+        box(2 * HX, HH, 0.3, concrete, 0, HH / 2, HZ);
+        box(0.3, HH, 2 * HZ, concrete, HX, HH / 2, 0);
+        box(0.3, HH, 2 * HZ, concrete, -HX, HH / 2, 0);
+        box(HX - 6, HH, 0.3, concrete, -(HX / 2 + 3), HH / 2, -HZ);
+        box(HX - 6, HH, 0.3, concrete, HX / 2 + 3, HH / 2, -HZ);
+        // site cabins (stacked containers) by the entrance
+        box(6.6, 2.7, 2.7, matt(0x2c4f6e, { roughness: 0.7 }), 26, 1.35, -19);
+        box(6.6, 2.7, 2.7, matt(0x4a5560, { roughness: 0.7 }), 26, 4.15, -19);
+        box(6.6, 2.7, 2.7, matt(0x4a5560, { roughness: 0.7 }), 26, 1.35, -22.9);
+        // rebar bundles + a pallet stack + an aggregate pile
+        box(12, 0.55, 0.55, steel, -26, 0.3, 4); box(12, 0.55, 0.55, steel, -26, 0.3, 4.7); box(12, 0.55, 0.55, steel, -26, 0.85, 4.35);
+        box(3, 1.4, 3, concrete, -26, 0.7, -8); box(2.6, 0.6, 2.6, matt(0x8a7d5a), -26, 1.7, -8);
+        const pile = new THREE.Mesh(new THREE.ConeGeometry(4, 3, 18), matt(0x47432f)); pile.position.set(25, 1.5, 9); pile.castShadow = shadows; pile.receiveShadow = shadows; scene.add(pile);
+        // flatbed truck on the driveway
+        box(7.5, 1, 2.6, concrete, 0, 1.5, -28); box(3, 2.1, 2.6, dark, 2.6, 1.7, -28); box(5, 1.3, 2.1, matt(0x6b7280), -0.8, 2.6, -28);
+
+        // --- tower crane (mast + slewing jib + counter-jib + hook) ---
+        const crane = new THREE.Group(); crane.position.set(-34, 0, 22); scene.add(crane);
+        const JIBY = 2.7, BASE = 0.575; // jib points over the building
+        const mast = box(1.6, 1, 1.6, steel, 0, 0.5, 0, crane); // unit mast, SCALED to climb with the build
+        const slew = new THREE.Group(); crane.add(slew); // lifted to the crane top each frame
+        box(2.0, 2.0, 2.0, steel, 0, 1.0, 0, slew); // turntable / cab
+        box(0.5, 5, 0.5, steel, 0, 4.6, 0, slew); // apex
+        box(42, 1.0, 1.1, steel, 21, JIBY, 0, slew); // jib (+x)
+        box(14, 1.0, 1.1, steel, -7, JIBY, 0, slew); // counter-jib (−x)
+        box(3.4, 2.8, 2.8, dark, -13, 1.9, 0, slew); // counterweight
+        const flag = box(1.7, 1.0, 0.06, matt(0x4ade80, { roughness: 0.7, side: THREE.DoubleSide, emissive: 0x2f9e57, emissiveIntensity: 0.35 }), 1.0, 7.7, 0, slew);
+        const trolley = new THREE.Group(); trolley.position.set(20, JIBY, 0); slew.add(trolley); // rides forward/back along the jib
+        const cable = box(0.14, 1, 0.14, dark, 0, -0.5, 0, trolley); // unit cable, scaled to the hook drop
+        const hookBlk = box(0.9, 0.9, 0.9, dark, 0, -1, 0, trolley); // hook block
+        const load = box(2.2, 1.0, 2.2, matt(0x8a93a3, { roughness: 0.8 }), 0, -2, 0, trolley); // the block being lifted
+        // ground queue: a marching line of blocks the crane lifts from
+        const Q = 12, SP = 2.8, dSup = 11, dPlace = 33;
+        const jd = [Math.cos(BASE), 0, -Math.sin(BASE)]; // jib world direction
+        const queue = new THREE.Group();
+        queue.position.set(crane.position.x + dSup * jd[0], 0.7, crane.position.z + dSup * jd[2]);
+        queue.rotation.y = BASE + Math.PI; // local +x runs back along the jib, away from the building
+        scene.add(queue);
+        const queueBlocks = [];
+        for (let i = 0; i < Q; i++) queueBlocks.push(box(2.3, 1.2, 2.3, matt(0x8a93a3, { roughness: 0.85 }), i * SP, 0, 0, queue));
+        const rig = { mast, slew, trolley, cable, hookBlk, load, flag, BASE, JIBY, queue, queueBlocks, SP, Q, dSup, dPlace, N: 26 };
+        runCrane(rig, 24, 0.5, 0); // sensible static pose
+        return { rig };
+      }
+
+      const $ = (id) => document.getElementById(id);
+      const fmt = (n) => "€" + (Math.abs(n) < 0.5 ? 0 : Math.round(n)).toLocaleString("ru-RU");
+      const fmtK = (n) => (Math.abs(n) < 0.5 ? "€0" : Math.abs(n) >= 1e6 ? "€" + (n / 1e6).toFixed(2) + "M" : Math.abs(n) >= 1e3 ? "€" + (n / 1e3).toFixed(0) + "k" : fmt(n));
+      const ms = (s) => Date.parse(s);
+      const day = (t) => new Date(t).toISOString().slice(0, 10);
+      const hexNum = (h) => parseInt(h.slice(1), 16);
+
+      async function getJSON(p) { const r = await fetch(p, { cache: "no-store" }); if (!r.ok) throw new Error(p); return r.json(); }
+
+      // Data source: ?src=sim loads the DES-driven, close-to-reality run
+      // (viz/model/e2e-sim/, from examples/construction/e2e/simulate.ts); default
+      // is the scripted e2e. Both have identical shape, so the cockpit is agnostic.
+      const SRC = new URLSearchParams(location.search).get("src") === "sim" ? "e2e-sim" : "e2e";
+      const BASE = "/viz/model/" + SRC + "/";
+
+      Promise.all([
+        getJSON("/viz/model/building.json"),
+        getJSON(BASE + "timeline.json"),
+        getJSON(BASE + "attachments.json"),
+        getJSON(BASE + "ledger.json"),
+        getJSON(BASE + "certificate.json"),
+        getJSON(BASE + "roles.json"),
+        SRC === "e2e-sim" ? getJSON(BASE + "ensemble.json").catch(() => null) : Promise.resolve(null),
+      ]).then(main).catch((e) => { console.error(e); $("err").style.display = "block"; });
+
+      function main([model, timeline, attach, ledger, cert, meta, ensemble]) {
+        // ---- palette / lifecycle ----
+        const P = model.palette;
+        const SYS = model.systems.map((s) => hexNum(s.color));
+        const NOT = hexNum(P.not_started), GLAZE = hexNum(P.glazing), SEL = hexNum(P.selected);
+        const colourFor = (n) => (n <= 0 ? NOT : SYS[Math.min(SYS.length, n) - 1]);
+        const SCOPECOL = { excavation: hexNum(P.excavation), foundation: hexNum(P.foundation_mat), roof: hexNum(P.roof) };
+        const STAGE_COL = { kotlovan: P.excavation, raft: P.foundation_mat, structure: model.systems[0].color, envelope: model.systems[1].color, mep: model.systems[2].color, fitout: model.systems[3].color, "fire-safety": "#a78bfa", roof: P.roof, handover: "#a78bfa", accepted: model.systems[3].color };
+        const STATUS_COL = { accepted: "#34d399", accepted_with_exceptions: "#34d399", under_review: "#f5a524", submitted: "#f5a524", returned_for_rework: "#f87171", rejected: "#f87171" };
+
+        // ---- object header ----
+        $("objname").textContent = meta.object.name + (ensemble ? "  · SIMULATED" : "");
+        $("objsub").textContent = `excavation pit −9 m → raft → ${model.grid.basements} underground → ${model.grid.floors} above-ground → roof · ${Object.keys(attach).length} zones`;
+        if (ensemble) {
+          // Close-to-reality run: show the schedule distribution over many seeded
+          // worlds. Money is anchored to accepted reality; the schedule is not.
+          $("objsub").textContent += ` · finish day P10/P50/P90 ${ensemble.finishDayP10}/${ensemble.finishDayP50}/${ensemble.finishDayP90} vs plan ${ensemble.plannedFinishDay} (${ensemble.runs} seeds, ${ensemble.avgDisputes} avg disputes)`;
+        }
+
+        // ---- legend ----
+        const legend = [["excavation", P.excavation], ["raft", P.foundation_mat], ["1·frame", model.systems[0].color], ["2·façade", model.systems[1].color], ["3·MEP", model.systems[2].color], ["4·fit-out (accepted)", model.systems[3].color], ["roof", P.roof], ["not started", P.not_started]];
+        $("legrows").innerHTML = legend.map(([l, c]) => `<span class="row"><span class="sw" style="background:${c}"></span>${l}</span>`).join("");
+
+        // ---- three scene ----
+        const app = $("app");
+        // shadows + bloom on desktop by default; ?hq / ?lq force it on/off
+        const _q = new URLSearchParams(location.search);
+        const HIQ = _q.has("hq") ? true : _q.has("lq") ? false : !matchMedia("(max-width: 920px)").matches;
+        const scene = new THREE.Scene();
+        scene.background = gradientTexture("#112742", "#05080e");
+        scene.fog = new THREE.Fog(0x05080e, 120, 300);
+        const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 2000);
+        camera.position.set(58, 46, 86);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+        renderer.setSize(innerWidth, innerHeight); renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+        renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.24;
+        if (HIQ) { renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; }
+        app.appendChild(renderer.domElement);
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.target.set(0, 16, 0); controls.enableDamping = true;
+        // layered lighting: sky/ground hemisphere + warm key (casts shadows) + cool rim + soft fill
+        scene.add(new THREE.HemisphereLight(0x9fbce8, 0x141b28, 1.12));
+        const key = new THREE.DirectionalLight(0xfff2e2, 2.0); key.position.set(48, 92, 42);
+        if (HIQ) {
+          key.castShadow = true; key.shadow.mapSize.set(2048, 2048);
+          const sc = key.shadow.camera; sc.near = 20; sc.far = 300; sc.left = -78; sc.right = 78; sc.top = 98; sc.bottom = -42;
+          key.shadow.bias = -0.0004; key.shadow.normalBias = 0.7;
+        }
+        scene.add(key);
+        const rim = new THREE.DirectionalLight(0x6fa8ff, 0.8); rim.position.set(-46, 36, -54); scene.add(rim);
+        const fillL = new THREE.DirectionalLight(0xaec6ff, 0.22); fillL.position.set(-22, 16, 34); scene.add(fillL);
+        const site = buildSite(scene, HIQ);
+        const clock = new THREE.Clock();
+        // post-processing: subtle bloom so the glazing and accepted zones glow
+        let composer = null;
+        if (HIQ) {
+          composer = new EffectComposer(renderer);
+          composer.addPass(new RenderPass(scene, camera));
+          composer.addPass(new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.5, 0.55, 0.72));
+          composer.addPass(new OutputPass());
+        }
+
+        const size = (b) => [b.max[0] - b.min[0], b.max[1] - b.min[1], b.max[2] - b.min[2]];
+        const center = (b) => [(b.min[0] + b.max[0]) / 2, (b.min[1] + b.max[1]) / 2, (b.min[2] + b.max[2]) / 2];
+
+        // ---- build meshes ----
+        const Z = {}; // id -> {zone, mesh, glass[], level}
+        const selectable = [];
+        for (const z of model.zones) {
+          if (z.level === "marker") continue;
+          const s = size(z.structure), c = center(z.structure);
+          if (s[0] <= 0 || s[1] <= 0 || s[2] <= 0) continue;
+          const excav = z.level === "excavation";
+          const mat = new THREE.MeshStandardMaterial({
+            color: NOT, roughness: excav ? 1 : 0.7, metalness: excav ? 0 : 0.12,
+            transparent: true, opacity: 1, depthWrite: !excav,
+          });
+          const mesh = new THREE.Mesh(new THREE.BoxGeometry(s[0], s[1], s[2]), mat);
+          mesh.position.set(c[0], c[1], c[2]); mesh.userData.zone = z;
+          mesh.castShadow = !excav; mesh.receiveShadow = !excav;
+          scene.add(mesh);
+          const glass = [];
+          for (const g of z.glazing || []) {
+            const gs = size(g.box), gc = center(g.box);
+            const gm = new THREE.Mesh(new THREE.BoxGeometry(gs[0], gs[1], gs[2]),
+              new THREE.MeshStandardMaterial({ color: GLAZE, transparent: true, opacity: 0.72, roughness: 0.04, metalness: 0.9, emissive: GLAZE, emissiveIntensity: 0.85 }));
+            gm.position.set(gc[0], gc[1], gc[2]); gm.visible = false; scene.add(gm); glass.push(gm);
+          }
+          Z[z.id] = { zone: z, mesh, glass, level: z.level };
+          selectable.push(mesh);
+        }
+        // BLDG is a non-geometry marker — register it (no mesh) so its
+        // building-level acts (design, advance, handover, release) are reachable.
+        const bldgZone = model.zones.find((z) => z.id === "BLDG");
+        if (bldgZone) Z["BLDG"] = { zone: bldgZone, mesh: null, glass: [], level: "marker" };
+
+        // ---- timeline / stage lookup ----
+        const stageByZone = {};
+        for (const [zid, arr] of Object.entries(timeline.stageByZone))
+          stageByZone[zid] = arr.map((e) => ({ at: ms(e.at), systemsDone: e.systemsDone || 0, stage: e.stage }));
+        const evAt = (zid, t) => { const a = stageByZone[zid]; if (!a) return null; let r = null; for (const e of a) { if (e.at <= t) r = e; else break; } return r; };
+        const scopeAt = {};
+        const firstStage = (zid) => (stageByZone[zid] ? stageByZone[zid][0].at : Infinity);
+        scopeAt.excavation = firstStage("SITE");
+        scopeAt.foundation = firstStage("BLDG-L00");
+        scopeAt.roof = firstStage("BLDG-R01");
+
+        // Construction primitive: the rising top of the build, derived from the
+        // engine's accepted facts. structAccepts = every bay's structure
+        // acceptance {at,y}; tops[] is the cumulative max top by time. craneState(t)
+        // returns the current top + fraction built — a pure lookup, so the crane
+        // tracks the build exactly (always at the newest blocks) and freezes on pause.
+        const structAccepts = [];
+        for (const zid in stageByZone) {
+          const o = Z[zid]; if (!o || o.zone.scope !== "bay") continue;
+          const ev = stageByZone[zid].find((e) => (e.systemsDone || 0) >= 1); if (!ev) continue;
+          structAccepts.push({ at: ev.at, y: o.zone.structure.max[1] });
+        }
+        structAccepts.sort((a, b) => a.at - b.at);
+        let _mx = -1e9;
+        const tops = structAccepts.map((s) => { _mx = Math.max(_mx, s.y); return { at: s.at, top: _mx }; });
+        const nStruct = structAccepts.length || 1;
+        const craneState = (t) => {
+          if (!tops.length) return { topY: 12, place01: 0 };
+          let i = -1; for (let k = 0; k < tops.length; k++) { if (tops[k].at <= t) i = k; else break; }
+          if (i < 0) return { topY: tops[0].top, place01: 0 };
+          return { topY: tops[i].top, place01: (i + 1) / nStruct };
+        };
+
+        const MIN = ms(timeline.range.minAt), MAX = ms(timeline.range.maxAt);
+        const events = timeline.events; const evMs = events.map((e) => ms(e.at));
+
+        // ---- role lens ----
+        const roleByActor = {}; for (const r of meta.roles) roleByActor[r.actor] = r.key;
+        const lensRoles = meta.roles.filter((r) => r.lens);
+        const ACTIONS = {
+          contractor: "Submit <b>KS-2</b> for the selected zone", technical_supervisor: "Accept / return the work (<b>decision</b>)",
+          client_technical_customer: "Confirm <b>KS-3</b> payment", surveyor: "Attach <b>as-built survey</b>", lab: "Attach <b>test report</b>",
+        };
+        let lens = null;
+        const rolesDiv = $("roles");
+        rolesDiv.innerHTML = `<span class="rolebtn on" data-k="" style="color:var(--text)">All</span>` +
+          lensRoles.map((r) => `<span class="rolebtn" data-k="${r.key}" style="color:${r.color}">${r.short}</span>`).join("");
+        rolesDiv.querySelectorAll(".rolebtn").forEach((b) => b.addEventListener("click", () => {
+          rolesDiv.querySelectorAll(".rolebtn").forEach((x) => x.classList.remove("on"));
+          b.classList.add("on"); lens = b.dataset.k || null;
+          $("action").innerHTML = lens && ACTIONS[lens] ? "Role action: " + ACTIONS[lens] : "The role sets what's highlighted and which acts are in the feed.";
+          paintAll(); renderActs();
+        }));
+        $("action").innerHTML = "The role sets what's highlighted and which acts are in the feed.";
+
+        // ---- mobile bottom-sheet tab bar ----
+        const isMobile = () => matchMedia("(max-width: 920px)").matches;
+        const tabbar = $("tabbar");
+        const SHEETS = { money: "money", acts: "acts", zone: "zonepanel", legend: "legend" };
+        function setSheet(name) {
+          for (const [k, id] of Object.entries(SHEETS)) $(id).classList.toggle("sheet-open", k === name);
+          tabbar.querySelectorAll("button").forEach((b) => b.classList.toggle("on", (b.dataset.sheet || "") === (name || "")));
+        }
+        tabbar.querySelectorAll("button").forEach((b) =>
+          b.addEventListener("click", () => setSheet(b.classList.contains("on") ? "" : b.dataset.sheet || "")));
+
+        // role highlight predicate over a bay's at-t state
+        function lensGlow(zid, st) {
+          if (!lens || !st) return false;
+          const done = st.systemsDone || 0; const recent = st.at > T - 26 * 864e5;
+          if (lens === "technical_supervisor") return done >= 1 && done < 4; // awaiting acceptance
+          if (lens === "contractor") return recent && done < 4; // the active build frontier
+          if (lens === "client_technical_customer") return done >= 4;
+          if (lens === "surveyor") return recent;
+          if (lens === "lab") return recent && (st.stage === "structure" || st.stage === "mep");
+          return false;
+        }
+
+        // ---- selection ----
+        let selected = null;
+        function paintOne(id) {
+          const o = Z[id]; if (!o || !o.mesh) return; const z = o.zone; const isSel = o.mesh === selected;
+          let built, col, op = 1;
+          if (z.scope === "bay") {
+            const st = evAt(id, T); built = !!st; const done = st ? st.systemsDone : 0;
+            col = colourFor(done); op = done === 0 ? 0.28 : 1;
+            o.glass.forEach((g) => (g.visible = built && done >= 2));
+            if (!isSel && lensGlow(id, st)) { col = blend(col, 0xffffff, 0.18); op = 1; }
+          } else if (z.level === "excavation") {
+            built = T >= scopeAt.excavation; col = SCOPECOL.excavation; op = 0.16;
+          } else if (z.level === "foundation") {
+            built = T >= scopeAt.foundation; col = SCOPECOL.foundation; op = 1;
+          } else if (z.level === "roof") {
+            built = T >= scopeAt.roof; col = SCOPECOL.roof; op = 1;
+          } else { built = false; }
+          o.mesh.visible = built;
+          if (isSel) { col = SEL; op = 1; }
+          o.mesh.material.color.setHex(col); o.mesh.material.opacity = op;
+          // emissive glow: selected (cyan), accepted bays (their colour → blooms), or lens highlight
+          let emHex = 0x000000, emI = 0;
+          if (isSel) { emHex = SEL; emI = 0.55; }
+          else if (z.scope === "bay") {
+            const st2 = evAt(id, T);
+            if (st2 && st2.systemsDone >= 4) { emHex = col; emI = 0.4; }
+            else if (lensGlow(id, st2)) { emHex = col; emI = 0.32; }
+          } else if (z.level === "roof" && built) { emHex = col; emI = 0.12; }
+          o.mesh.material.emissive.setHex(emHex); o.mesh.material.emissiveIntensity = emI;
+        }
+        function blend(a, b, t) { const ar = (a >> 16) & 255, ag = (a >> 8) & 255, ab = a & 255, br = (b >> 16) & 255, bg = (b >> 8) & 255, bb = b & 255;
+          return ((ar + (br - ar) * t) << 16 | (ag + (bg - ag) * t) << 8 | (ab + (bb - ab) * t)) & 0xffffff; }
+        function paintAll() { for (const id in Z) paintOne(id); }
+
+        // ---- raycast select ----
+        const ray = new THREE.Raycaster(), ptr = new THREE.Vector2(); let down = null;
+        renderer.domElement.addEventListener("pointerdown", (e) => (down = { x: e.clientX, y: e.clientY }));
+        renderer.domElement.addEventListener("pointerup", (e) => {
+          if (!down) return; const moved = Math.hypot(e.clientX - down.x, e.clientY - down.y); down = null; if (moved > 5) return;
+          ptr.x = (e.clientX / innerWidth) * 2 - 1; ptr.y = -(e.clientY / innerHeight) * 2 + 1;
+          ray.setFromCamera(ptr, camera);
+          const hit = ray.intersectObjects(selectable.filter((m) => m.visible), false)[0];
+          if (hit) selectZone(hit.object.userData.zone.id);
+        });
+        function selectZone(id) {
+          const prev = selected ? selected.userData.zone.id : null; selected = Z[id].mesh;
+          if (prev) paintOne(prev); paintOne(id); renderZone(id); $("zonepanel").style.display = "block";
+          if (isMobile()) setSheet("zone"); // pop the zone sheet up on phones
+        }
+        $("zclose").addEventListener("click", () => { const p = selected ? selected.userData.zone.id : null; selected = null; if (p) paintOne(p); $("zonepanel").style.display = "none"; setSheet(""); });
+        $("bldgbtn").addEventListener("click", () => selectZone("BLDG"));
+
+        function renderZone(id) {
+          const z = Z[id].zone; const a = attach[id];
+          $("zid").textContent = id;
+          const where = z.scope === "bay" ? `axis ${z.col} · row ${z.row} · ${z.floor >= 90 ? "underground −" + (z.floor - 90) : "floor " + z.floor}` : ({ excavation: "excavation pit", foundation: "foundation raft", roof: "roof / plant", marker: "whole object" }[z.level] || z.scope);
+          $("zmeta").textContent = where + (z.scope === "bay" ? ` · ${z.id}` : "");
+          if (!a) { $("zbody").innerHTML = `<div class="grp">NO WORKS BOUND</div><div class="hint">No act is bound to this zone.</div>`; return; }
+          let h = `<div class="grp">WORKS · ${a.rollup.accepted}/${a.rollup.total} accepted</div>`;
+          for (const w of a.works) {
+            const col = STATUS_COL[w.status] || "var(--dim)"; const visible = (w.acceptedAt ? ms(w.acceptedAt) : ms(w.claimedAt)) <= T;
+            const money = w.net != null ? ` · <span class="money">${fmt(w.net)}</span>` : "";
+            const due = w.paymentDueAt ? ` · payment by ${day(ms(w.paymentDueAt))}` : "";
+            h += `<div class="w" style="opacity:${visible ? 1 : 0.4}"><div class="top"><span>${ru(w.system) || PHASE_RU[w.phase] || w.title || w.gateId}</span><span class="sbadge" style="color:${col};border-color:${col}66">${ruStatus(w.status)}</span></div>` +
+              `<div class="sub">${w.quantity != null ? "survey " + w.quantity + " · " : ""}${w.unitPrice ? "@" + w.unitPrice + " €" : ""}${money}${due}<br>` +
+              `${w.claimedBy ? "KS-2: " + actorShort(w.claimedBy) : ""}${w.acceptedBy ? " → accepted " + actorShort(w.acceptedBy) + " " + (w.acceptedAt ? day(ms(w.acceptedAt)) : "") : ""}${w.cycleDays != null ? " · cycle " + w.cycleDays + " d" : ""}</div></div>`;
+          }
+          const groups = {};
+          for (const d of a.documents) (groups[d.docClass] ||= []).push(d);
+          h += `<div class="grp">DOCUMENTS</div>`;
+          for (const [cls, ds] of Object.entries(groups)) for (const d of ds)
+            h += `<div class="doc"><span class="k">${DOCRU[cls] || cls}</span><span class="r">${d.ref || "—"}</span></div>`;
+          $("zbody").innerHTML = h;
+        }
+        const DOCRU = { aosr: "AOSR", obmer: "survey", protokol: "report", permit: "permit/ZOS", inspection: "inspection", defects: "remarks", photo: "photo", doc: "doc." };
+        const RU = { structure: "1 · Frame (monolithic)", envelope: "2 · Façade / envelope", mep: "3 · MEP (engineering systems)", fitout: "4 · Fit-out" };
+        const ru = (s) => RU[s] || null;
+        const PHASE_RU = { design: "Design + permit", advance: "Advance 15%", excavation: "Excavation pit", foundation: "Foundation (AOSR + raft)", "fire-safety": "Fire safety", handover: "Handover / ZOS / commissioning act", release: "Retention release" };
+        const RUSTATUS = { accepted: "accepted", accepted_with_exceptions: "accepted w/ remarks", under_review: "under review", submitted: "submitted", returned_for_rework: "returned", rejected: "rejected" };
+        const ruStatus = (s) => RUSTATUS[s] || s;
+        const SHORT = {}; for (const r of meta.roles) SHORT[r.actor] = r.short;
+        const actorShort = (a) => SHORT[a] || a;
+
+        // ---- money / EVM panel ----
+        const stepCum = (arr, t) => { let v = 0; for (const p of arr) { if (ms(p.at) <= t) v = p.cum; else break; } return v; };
+        const monthLE = (t) => day(t).slice(0, 7);
+        function moneyAsOf() {
+          const certified = stepCum(cert.evm.ev, T);
+          let retHeld = 0, recovered = 0, paid = 0, released = 0;
+          const mo = monthLE(T);
+          for (const p of ledger.periods) { if (p.periodLabel <= mo) { retHeld += p.retentionThisPeriod; recovered += p.advanceRecovery; } if (ms(p.paymentDueAt) <= T) paid += p.netPayment; }
+          if (T >= ms(ledger.retention.tranche1At)) released += ledger.retention.tranche1;
+          if (T >= ms(ledger.retention.tranche2At)) released += ledger.retention.tranche2;
+          const reserve = retHeld - released;
+          const advOut = Math.max(0, ledger.advance.issued - recovered);
+          let spi = 1, cpi = 1; for (const s of cert.spiCpiAt) { if (ms(s.at) <= T) { spi = s.spi; cpi = s.cpi; } else break; }
+          $("kpis").innerHTML = [
+            ["Certified KS-3", fmtK(certified), "var(--green)"],
+            ["Paid", fmtK(paid), "var(--text)"],
+            ["Retention (reserve)", fmtK(reserve), "var(--amber)"],
+            ["Advance outstanding", fmtK(advOut), "var(--text)"],
+          ].map(([l, v, c]) => `<div class="kpi"><div class="l">${l}</div><div class="v" style="color:${c}">${v}</div></div>`).join("");
+          $("spicpi").innerHTML = `<span class="badge" style="color:${spi >= 0.99 ? "var(--green)" : "var(--amber)"};border-color:currentColor">SPI ${spi.toFixed(2)}</span> <span class="badge" style="color:${cpi >= 0.99 ? "var(--green)" : "var(--amber)"};border-color:currentColor">CPI ${cpi.toFixed(2)}</span>`;
+          drawEVM();
+        }
+        function drawEVM() {
+          const W = 268, H = 86, pad = 2; const bac = cert.evm.bac;
+          const x = (t) => pad + tToF(t) * (W - 2 * pad);
+          const y = (v) => H - pad - (v / bac) * (H - 2 * pad);
+          // extend each curve flat to the right edge (earned value is settled after
+          // completion, so PV/EV/AC hold their final value through the tail).
+          const ext = (arr) => (arr.length ? arr.concat([{ at: new Date(MAX).toISOString(), cum: arr[arr.length - 1].cum }]) : arr);
+          const path = (arr) => ext(arr).map((p, i) => (i ? "L" : "M") + x(ms(p.at)).toFixed(1) + " " + y(p.cum).toFixed(1)).join(" ");
+          const px = x(Math.min(MAX, Math.max(MIN, T)));
+          $("evmchart").innerHTML = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:86px">
+            <path d="${path(cert.evm.pv)}" fill="none" stroke="#7e8ea3" stroke-width="1.3" stroke-dasharray="3 2"/>
+            <path d="${path(cert.evm.ac)}" fill="none" stroke="#f5a524" stroke-width="1.3"/>
+            <path d="${path(cert.evm.ev)}" fill="none" stroke="#34d399" stroke-width="1.8"/>
+            <line x1="${px}" y1="0" x2="${px}" y2="${H}" stroke="#22d3ee" stroke-width="1"/>
+          </svg>`;
+        }
+
+        // ---- acts feed ----
+        function renderActs() {
+          let idx = upper(evMs, T); const out = []; let n = 0;
+          for (let i = idx - 1; i >= 0 && n < 48; i--) {
+            const e = events[i]; if (lens && roleByActor[e.actor] !== lens) continue; n++;
+            const role = meta.roles.find((r) => r.actor === e.actor); const col = role ? role.color : "#7e8ea3";
+            const verb = VERB[e.verb] || e.verb; const money = e.money ? `<span class="money">${fmt(e.money.net)}</span>` : "";
+            const zone = e.zone ? `<span class="g"> · ${e.zone}</span>` : "";
+            out.push(`<div class="act"><span class="dot" style="background:${col}"></span><span class="t">${day(evMs[i]).slice(5)}</span><span class="b"><span class="a">${actorShort(e.actor)}</span> ${verb}${e.evidenceKind ? " <span class='g'>" + (DOCRU[e.docClass] || e.evidenceKind) + "</span>" : ""}${zone}</span>${money}</div>`);
+          }
+          $("actsList").innerHTML = out.join("") || `<div class="hint">No acts for this role before the selected date.</div>`;
+        }
+        const VERB = { claimed: "submitted KS-2", attached: "attached", accepted: "<b style='color:var(--green)'>accepted</b>", accepted_with_exceptions: "<b style='color:var(--green)'>accepted w/ remarks</b>", returned_for_rework: "<b style='color:var(--red)'>returned</b>", rejected: "<b style='color:var(--red)'>rejected</b>" };
+        function upper(arr, t) { let lo = 0, hi = arr.length; while (lo < hi) { const m = (lo + hi) >> 1; if (arr[m] <= t) lo = m + 1; else hi = m; } return lo; }
+
+        // ---- scrubber ----
+        let T = MAX;
+        // The defects-liability (warranty) period is a ~2-year event-free gap
+        // between the first and second retention tranches. Compress it on the axis
+        // so the dense build phase stays readable and the final release stays
+        // visible. tToF: time → axis fraction [0,1]; fToT: its inverse.
+        const GAP = (() => {
+          let lo = MIN, hi = MAX, best = 0;
+          for (let i = 1; i < evMs.length; i++) { const g = evMs[i] - evMs[i - 1]; if (g > best) { best = g; lo = evMs[i - 1]; hi = evMs[i]; } }
+          return best > 150 * 864e5 && lo > MIN && hi < MAX ? { lo, hi } : null;
+        })();
+        const FA = 0.85, FB = 0.9; // [0..FA] build · [FA..FB] compressed gap · [FB..1] tail
+        function tToF(t) {
+          if (!GAP) return (t - MIN) / (MAX - MIN);
+          if (t <= GAP.lo) return ((t - MIN) / (GAP.lo - MIN)) * FA;
+          if (t < GAP.hi) return FA + ((t - GAP.lo) / (GAP.hi - GAP.lo)) * (FB - FA);
+          return FB + ((t - GAP.hi) / (MAX - GAP.hi)) * (1 - FB);
+        }
+        function fToT(f) {
+          if (!GAP) return MIN + f * (MAX - MIN);
+          if (f <= FA) return MIN + (f / FA) * (GAP.lo - MIN);
+          if (f < FB) return GAP.lo + ((f - FA) / (FB - FA)) * (GAP.hi - GAP.lo);
+          return GAP.hi + ((f - FB) / (1 - FB)) * (MAX - GAP.hi);
+        }
+        const PHASES = [["design+advance", "#a78bfa"], ["excavation/raft", P.excavation], ["frame→façade→MEP→fit-out", P.foundation_mat], ["handover/payments", "#a78bfa"]];
+        function phaseAt(t) {
+          if (t < scopeAt.excavation) return "Design · permit · advance";
+          if (t < scopeAt.foundation) return "Excavation · survey · soil acceptance";
+          if (t < ms(ledger.retention.tranche1At) - 30 * 864e5) return "Construction: frame → façade → MEP → fit-out";
+          return "Handover · ZOS · retention release";
+        }
+        const trackEl = $("track");
+        function drawTrack() {
+          const W = 1000, H = 56; const x = (t) => tToF(t) * W; const bac = cert.evm.bac;
+          const yv = (c) => H - (c / bac) * (H - 6);
+          // cumulative certified area (EV) under the track, held flat through the tail
+          const pts = cert.evm.ev.map((p) => `${x(ms(p.at)).toFixed(1)},${yv(p.cum).toFixed(1)}`);
+          const lastY = cert.evm.ev.length ? yv(cert.evm.ev[cert.evm.ev.length - 1].cum) : H;
+          const area = `M0,${H} L` + pts.join(" L") + ` L${W},${lastY.toFixed(1)} L${W},${H} Z`;
+          const curve = "M" + pts.join(" L") + ` L${W},${lastY.toFixed(1)}`;
+          // compressed-gap band (the warranty period)
+          let band = "";
+          if (GAP) { const gx0 = x(GAP.lo), gx1 = x(GAP.hi); band = `<rect x="${gx0}" y="0" width="${gx1 - gx0}" height="${H}" fill="#0c1521" stroke="#1e2d40" stroke-dasharray="2 2"/>`; }
+          // year labels (skip those inside the compressed gap)
+          let grid = "";
+          for (let yy = new Date(MIN).getUTCFullYear(); yy <= new Date(MAX).getUTCFullYear(); yy++) {
+            const t = Date.parse(yy + "-01-01T00:00:00Z"); if (t < MIN || t > MAX || (GAP && t > GAP.lo && t < GAP.hi)) continue;
+            const gx = x(t); grid += `<line x1="${gx}" y1="0" x2="${gx}" y2="${H}" stroke="#16202f"/>`;
+          }
+          const hx = x(T);
+          trackEl.innerHTML = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+            ${grid}${band}
+            <path d="${area}" fill="#34d39922"/>
+            <path d="${curve}" fill="none" stroke="#34d399" stroke-width="1"/>
+            <line x1="${hx}" y1="0" x2="${hx}" y2="${H}" stroke="#22d3ee" stroke-width="2"/>
+            <circle cx="${hx}" cy="4" r="4" fill="#22d3ee"/>
+          </svg>`;
+          // HTML overlays (not stretched by the SVG's preserveAspectRatio=none):
+          // year ticks + the compressed-gap caption.
+          let ov = "";
+          for (let yy = new Date(MIN).getUTCFullYear(); yy <= new Date(MAX).getUTCFullYear(); yy++) {
+            const t = Date.parse(yy + "-01-01T00:00:00Z"); if (t < MIN || t > MAX || (GAP && t > GAP.lo && t < GAP.hi)) continue;
+            ov += `<span style="position:absolute;left:${(tToF(t) * 100).toFixed(2)}%;top:0;font-size:9px;color:#41506a;padding-left:3px;pointer-events:none">${yy}</span>`;
+          }
+          if (GAP) { const f0 = tToF(GAP.lo) * 100, f1 = tToF(GAP.hi) * 100; ov += `<span style="position:absolute;left:${f0}%;width:${(f1 - f0).toFixed(2)}%;bottom:1px;text-align:center;font-size:7.5px;line-height:1.05;color:#5b6b82;pointer-events:none">warranty<br>period</span>`; }
+          trackEl.insertAdjacentHTML("beforeend", `<div style="position:absolute;inset:0;pointer-events:none">${ov}</div>`);
+        }
+        function setT(t, redrawTrack = true) {
+          T = Math.max(MIN, Math.min(MAX, t));
+          $("tlnow").textContent = day(T); $("tlphase").textContent = phaseAt(T);
+          paintAll(); moneyAsOf(); renderActs(); if (redrawTrack) drawTrack();
+        }
+        function trackToT(clientX) { const r = trackEl.getBoundingClientRect(); const f = Math.max(0, Math.min(1, (clientX - r.left) / r.width)); return fToT(f); }
+        let dragging = false;
+        trackEl.addEventListener("pointerdown", (e) => { dragging = true; stop(); setT(trackToT(e.clientX)); });
+        addEventListener("pointermove", (e) => { if (dragging) setT(trackToT(e.clientX)); });
+        addEventListener("pointerup", () => (dragging = false));
+
+        // ---- play ----
+        let playing = false, raf = 0, lastTick = 0;
+        const speed = $("speed");
+        function stop() { playing = false; $("playbtn").textContent = "▶"; if (raf) cancelAnimationFrame(raf); raf = 0; }
+        function play() {
+          playing = true; $("playbtn").textContent = "⏸"; if (T >= MAX) T = MIN; lastTick = performance.now();
+          const loop = (now) => {
+            if (!playing) return; const dt = (now - lastTick) / 1000; lastTick = now;
+            // advance on the (compressed) AXIS so the playhead moves at a uniform
+            // visual speed — the compressed warranty gap passes quickly.
+            const f = tToF(T) + dt * (1 / 26) * parseFloat(speed.value); // whole timeline in ~26s at 1×
+            if (f >= 1) { setT(MAX); stop(); return; }
+            setT(fToT(f)); raf = requestAnimationFrame(loop);
+          }; raf = requestAnimationFrame(loop);
+        }
+        $("playbtn").addEventListener("click", () => (playing ? stop() : play()));
+
+        // ---- toast for role actions ----
+        function toast(msg) { const t = $("toast"); t.innerHTML = msg; t.style.opacity = 1; clearTimeout(t._h); t._h = setTimeout(() => (t.style.opacity = 0), 2600); }
+        $("action").addEventListener("click", () => { if (lens) toast("In a real deployment this would emit an Open Gates event (claim/evidence/decision) for the selected zone."); });
+
+        // ---- go ----
+        setT(MAX);
+        // one render step, used by both the rAF loop and the ?capture hook (so
+        // recording works even when the tab is backgrounded and rAF is paused)
+        function frame() { controls.update(); const cs = craneState(T); runCrane(site.rig, cs.topY, cs.place01, clock.getElapsedTime()); if (composer) composer.render(); else renderer.render(scene, camera); }
+        // capture hook (?capture): drive the timeline precisely to record media
+        if (_q.has("capture")) window.__viz = { setT, fToT, frame, camera, controls, range: { MIN, MAX } };
+        addEventListener("resize", () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); if (composer) composer.setSize(innerWidth, innerHeight); });
+        (function loop() { requestAnimationFrame(loop); frame(); })();
+      }
+    </script>
+  </body>
+</html>

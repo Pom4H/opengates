@@ -136,11 +136,11 @@
             "quantityField": { "type": "string", "description": "Pay unitPrice per accepted unit of this field." },
             "unitPrice": { "type": "number" },
             "amount": { "type": "number", "description": "Or a fixed amount." },
-            "retentionPct": { "type": "number", "minimum": 0, "maximum": 1, "description": "Guarantee retention withheld from gross (гарантийное удержание)." },
+            "retentionPct": { "type": "number", "minimum": 0, "maximum": 1, "description": "Guarantee retention withheld from gross (guarantee retention)." },
             "retentionCap": { "type": "number", "minimum": 0, "description": "Cap on cumulative retention (major units)." },
             "vatRate": { "type": "number", "minimum": 0, "description": "VAT rate, surfaced as a memo line on the net." },
             "paymentTermsDays": { "type": "integer", "minimum": 0 },
-            "estimateLine": { "type": "string", "description": "Contract/estimate line reference (e.g. ФЕР06-01-001-01)." },
+            "estimateLine": { "type": "string", "description": "Contract/estimate line reference (e.g. FER06-01-001-01)." },
             "contractRef": { "type": "string" }
           },
           "required": ["currency"]

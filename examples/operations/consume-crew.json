@@ -1,0 +1,11 @@
+{
+  "gate": "operations.resource-flow",
+  "events": [
+    {
+      "type": "claim.submitted",
+      "at": "2026-05-04T16:10:00Z",
+      "actor": "foreman:sidorov",
+      "claim": { "type": "resource_flow", "values": { "flowKind": "consume", "resource": "CREW-concrete", "qty": 16, "unit": "man-h", "from": "CREW-concrete", "to": "SYS-A1-F03-structure" } }
+    }
+  ]
+}

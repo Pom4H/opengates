@@ -1,0 +1,35 @@
+{
+  "id": "construction.envelope-acceptance",
+  "name": "Acceptance of the façade / envelope in a bay",
+  "domain": "construction",
+  "description": "Ventilated curtain façade + glazing on the exposed faces of a bay. The survey is the surveyed façade area; material certificates back the cladding/glazing. Technical supervision accepts on the surveyed m²; money at the façade rate unlocks MEP in the bay. Per-bay scope (perimeter bays only).",
+  "claim": {
+    "type": "system_work_completed",
+    "fields": [
+      { "name": "system", "kind": "string", "required": true },
+      { "name": "work_item", "kind": "string", "required": true },
+      { "name": "quantity", "kind": "number", "unit": "m2", "required": true },
+      { "name": "zone", "kind": "zone", "model": "viz/model/building.json", "required": true }
+    ]
+  },
+  "evidence": [
+    { "kind": "inspection", "required": true, "description": "Façade structures acceptance act — façade acceptance inspection." },
+    { "kind": "executive_survey", "required": true, "description": "Survey of façade / glazing area — surveyed façade area (drives payment)." },
+    { "kind": "material_passport", "required": false, "description": "Material certificates for the façade system and glazing units." },
+    { "kind": "photo_log", "required": false, "description": "Geotagged photographs of the works." }
+  ],
+  "checks": [
+    { "id": "evidence-present", "rule": "required_evidence", "kinds": ["inspection", "executive_survey"], "severity": "blocking", "description": "Inspection and survey are attached." },
+    { "id": "quantity-present", "rule": "field_present", "field": "quantity", "severity": "blocking" },
+    { "id": "zone-format", "rule": "field_pattern", "field": "zone", "pattern": "^[A-Z]\\d+-F\\d{2}$", "severity": "blocking" },
+    { "id": "claim-matches-survey", "rule": "cross_check", "claimField": "quantity", "claimUnit": "m2", "evidenceKind": "executive_survey", "evidenceField": "quantity", "uncertaintyField": "U", "tolerance": 0.05, "absolute": 2, "severity": "blocking", "description": "Claimed area within 5% / 2 m² of the surveyed value and within its uncertainty U." }
+  ],
+  "reviewer": { "role": "technical_supervisor", "description": "Client's technical supervision (technadzor)." },
+  "decisions": ["accepted", "accepted_with_exceptions", "rejected", "returned_for_rework"],
+  "consequences": [
+    { "id": "earned-value", "effect": "money", "on": ["accepted", "accepted_with_exceptions"], "basis": "accepted_quantity", "quantityField": "quantity", "unitPrice": 95, "currency": "EUR", "retentionPct": 0.05, "retentionCap": 25000, "vatRate": 0.2, "paymentTermsDays": 30, "estimateLine": "FERm15-01", "contractRef": "BOQ 5.1 'Ventilated curtain façade + insulation' @ EUR 95.00/m²", "description": "Accepted façade area becomes earned value." },
+    { "id": "unlock-mep", "effect": "right_to_proceed", "on": ["accepted"], "unlocks": "mep-in-zone", "description": "Envelope closed — MEP may start in this bay." },
+    { "id": "acceptance-liability", "effect": "risk", "on": ["accepted", "accepted_with_exceptions"], "assignedTo": "technical_supervisor" },
+    { "id": "label", "effect": "dataset_label", "on": ["accepted", "accepted_with_exceptions", "rejected", "returned_for_rework"], "dataset": "construction.system_acceptance" }
+  ]
+}

@@ -4,11 +4,11 @@
 > a hidden-works gate + a labelled dataset + tests.
 
 **The expensive disputed fact:** a contractor reports a completed volume for a
-billing period; technical supervision (технадзор) has not accepted it. Until they
+billing period; technical supervision (technadzor) has not accepted it. Until they
 do, the contractor isn't paid for it and the next package can't close out. The
-gate reconciles three numbers that are usually argued over email — the **КС-2
-claim**, the **обмер (survey) measurement**, and the **смета (estimate) rate** —
-into one signed, event-sourced act, so the **КС-3 payment certificate is computed
+gate reconciles three numbers that are usually argued over email — the **KS-2
+claim**, the **survey measurement**, and the **estimate rate** —
+into one signed, event-sourced act, so the **KS-3 payment certificate is computed
 on what was *accepted*, not on what was *claimed*.**
 
 ## The gate
@@ -16,7 +16,7 @@ on what was *accepted*, not on what was *claimed*.**
 | | |
 |---|---|
 | **Claim** | `work_volume_completed`: `work_item`, `quantity` (m³), `period`. |
-| **Evidence** | `executive_survey` (обмер — drives payment), `concrete_strength_protocol`, `works_log`, `aosr_ref` — all required; `delivery_notes` optional (supply side, not proof of execution). |
+| **Evidence** | `executive_survey` (survey — drives payment), `concrete_strength_protocol`, `works_log`, `aosr_ref` — all required; `delivery_notes` optional (supply side, not proof of execution). |
 | **Checks** | executive documentation complete; **claim vs. survey** within 5% of the surveyed value **or** 2 m³ (whichever greater) **and** within the survey's uncertainty U; quantity non-negative. |
 | **Reviewer** | `technical_supervisor`. |
 | **Decision** | `accepted` / `accepted_with_exceptions` / `rejected` / `returned_for_rework`. |
@@ -64,7 +64,7 @@ one line.**
 
 ### Remarks — accepted with a punch list ([`scenario.remarks.json`](scenario.remarks.json))
 
-The modal real-site outcome: survey 118, accepted **with замечания** (cold joint,
+The modal real-site outcome: survey 118, accepted **with remarks** (cold joint,
 surface defects) to remediate by a deadline. Pays the accepted 118 m³ (gross
 €10,030, net €9,528.50) and holds the retention against the open punch list.
 
@@ -74,7 +74,7 @@ npm run demo:remarks
 
 ## Also here
 
-- [`hidden-works/`](hidden-works/) — the **АОСР** gate: the act must be signed
+- [`hidden-works/`](hidden-works/) — the **AOSR** gate: the act must be signed
   *before* the work is covered; the right to pour is the consequence.
 - [`dataset.sample.jsonl`](dataset.sample.jsonl) — 10 labelled cases the eval
   harness replays (`npm run eval` from the repo root) to score the automation
@@ -82,7 +82,7 @@ npm run demo:remarks
 
 ## Notes
 
-- The €85/m³ rate, 5% retention, 20% VAT and the `ФЕР06-01-001-01` estimate line
+- The €85/m³ rate, 5% retention, 20% VAT and the `FER06-01-001-01` estimate line
   are illustrative; a real gate sources them from the contract.
 - The `policy` auto-accepts only below €2,000 net once checks pass — derived from
   the review-vs-leakage break-even (see [`../../docs/ECONOMICS.md`](../../docs/ECONOMICS.md)).

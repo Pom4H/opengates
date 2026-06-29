@@ -1,0 +1,35 @@
+{
+  "id": "construction.structure-acceptance",
+  "name": "Acceptance of the monolithic frame in a bay",
+  "domain": "construction",
+  "description": "Monolithic frame (columns + slabs C30/37) in one bay. The geodetic survey (obmer) is the surveyed reference for the poured volume; the 28-day strength protocol and the acceptance inspection (AOOK, responsible-structures act, for responsible structures) back the decision. Technical supervision accepts on the surveyed m³; money at the frame rate unlocks the envelope in the bay. Per-bay scope.",
+  "claim": {
+    "type": "system_work_completed",
+    "fields": [
+      { "name": "system", "kind": "string", "required": true },
+      { "name": "work_item", "kind": "string", "required": true },
+      { "name": "quantity", "kind": "number", "unit": "m3", "required": true },
+      { "name": "zone", "kind": "zone", "model": "viz/model/building.json", "required": true }
+    ]
+  },
+  "evidence": [
+    { "kind": "inspection", "required": true, "description": "Acceptance inspection act / AOOK (responsible-structures act, responsible structures) — acceptance inspection of the frame in the bay." },
+    { "kind": "concrete_strength_protocol", "required": true, "description": "28-day concrete strength test report — 28-day compressive strength for the grade." },
+    { "kind": "executive_survey", "required": true, "description": "As-built geodetic survey / survey (obmer) — surveyed poured volume (drives payment)." },
+    { "kind": "photo_log", "required": false, "description": "Geotagged photographs of the works." }
+  ],
+  "checks": [
+    { "id": "evidence-present", "rule": "required_evidence", "kinds": ["inspection", "concrete_strength_protocol", "executive_survey"], "severity": "blocking", "description": "Inspection, strength protocol and survey are attached." },
+    { "id": "quantity-present", "rule": "field_present", "field": "quantity", "severity": "blocking", "description": "The completed volume must be stated." },
+    { "id": "zone-format", "rule": "field_pattern", "field": "zone", "pattern": "^[A-Z]\\d+-F\\d{2}$", "severity": "blocking", "description": "A valid per-bay zone id (e.g. A1-F03, A1-F91)." },
+    { "id": "claim-matches-survey", "rule": "cross_check", "claimField": "quantity", "claimUnit": "m3", "evidenceKind": "executive_survey", "evidenceField": "quantity", "uncertaintyField": "U", "tolerance": 0.05, "absolute": 1, "severity": "blocking", "description": "Claimed volume within 5% / 1 m³ of the surveyed value and within its uncertainty U." }
+  ],
+  "reviewer": { "role": "technical_supervisor", "description": "Client's technical supervision (technadzor)." },
+  "decisions": ["accepted", "accepted_with_exceptions", "rejected", "returned_for_rework"],
+  "consequences": [
+    { "id": "earned-value", "effect": "money", "on": ["accepted", "accepted_with_exceptions"], "basis": "accepted_quantity", "quantityField": "quantity", "unitPrice": 140, "currency": "EUR", "retentionPct": 0.05, "retentionCap": 25000, "vatRate": 0.2, "paymentTermsDays": 30, "estimateLine": "FER06-01-015", "contractRef": "BOQ 4.1 'Monolithic frame C30/37' @ EUR 140.00/m³", "description": "Accepted frame volume becomes earned value." },
+    { "id": "unlock-envelope", "effect": "right_to_proceed", "on": ["accepted"], "unlocks": "envelope-in-zone", "description": "Frame accepted — the envelope may start in this bay." },
+    { "id": "acceptance-liability", "effect": "risk", "on": ["accepted", "accepted_with_exceptions"], "assignedTo": "technical_supervisor" },
+    { "id": "label", "effect": "dataset_label", "on": ["accepted", "accepted_with_exceptions", "rejected", "returned_for_rework"], "dataset": "construction.system_acceptance" }
+  ]
+}

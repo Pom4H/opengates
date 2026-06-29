@@ -1,0 +1,26 @@
+{
+  "gate": "operations.resource-flow",
+  "events": [
+    {
+      "type": "claim.submitted",
+      "at": "2026-05-02T06:00:00Z",
+      "actor": "yard:liftco",
+      "claim": { "type": "resource_flow", "values": { "flowKind": "rent", "resource": "EQ-crane-1", "qty": 40, "unit": "machine-h", "from": "YARD-crane", "to": "EQ-crane-1" } }
+    },
+    {
+      "type": "evidence.attached",
+      "at": "2026-05-06T18:00:00Z",
+      "actor": "telematics:liftco",
+      "evidence": { "kind": "reference_count", "values": { "qty": 39.5, "unit": "machine-h" }, "ref": "telematics/crane-1-week18.csv" }
+    },
+    {
+      "type": "decision.recorded",
+      "at": "2026-05-06T18:20:00Z",
+      "actor": "storeman:petrov",
+      "reviewerRole": "goods_in",
+      "outcome": "accepted",
+      "acceptedValues": { "qty": 39.5 },
+      "note": "Tower crane hours confirmed against telematics (39.5 of 40 claimed)."
+    }
+  ]
+}

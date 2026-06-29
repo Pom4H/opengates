@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Open Gates — social card</title>
+    <style>
+      html, body { margin: 0; height: 100%; background: #070b12; overflow: hidden; }
+      /* The composed 1280×640 card fills the page so a screenshot captures it 1:1. */
+      #card { position: absolute; top: 0; left: 0; width: 100vw; height: auto; }
+      #gl { position: absolute; left: -99999px; top: 0; } /* offscreen WebGL source */
+    </style>
+  </head>
+  <body>
+    <canvas id="card" width="1280" height="640"></canvas>
+    <div id="gl"></div>
+
+    <script type="importmap">
+      { "imports": { "three": "/viz/viewer/vendor/three/three.module.js" } }
+    </script>
+    <script type="module">
+      import * as THREE from "three";
+      import { EffectComposer } from "/viz/viewer/vendor/three/addons/postprocessing/EffectComposer.js";
+      import { RenderPass } from "/viz/viewer/vendor/three/addons/postprocessing/RenderPass.js";
+      import { UnrealBloomPass } from "/viz/viewer/vendor/three/addons/postprocessing/UnrealBloomPass.js";
+      import { OutputPass } from "/viz/viewer/vendor/three/addons/postprocessing/OutputPass.js";
+
+      const gradientTexture = (top, bot) => {
+        const c = document.createElement("canvas"); c.width = 4; c.height = 256;
+        const x = c.getContext("2d"); const g = x.createLinearGradient(0, 0, 0, 256);
+        g.addColorStop(0, top); g.addColorStop(1, bot); x.fillStyle = g; x.fillRect(0, 0, 4, 256);
+        const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+      };
+
+      // Crane driver (same rig as the interactive viewer): climb to the floor +
+      // one pick/place lift over progress u. Here it's only used for a static
+      // hero pose (the viewer drives u from the build timeline).
+      function runCrane(rig, topY, place01, e) {
+        const { mast, slew, trolley, cable, hookBlk, load, flag, BASE, JIBY } = rig;
+        const craneH = Math.max(13, Math.min(60, topY + 9));
+        mast.scale.y = craneH; mast.position.y = craneH / 2; slew.position.y = craneH;
+        slew.rotation.y = BASE + Math.sin(e * 0.2) * 0.025;
+        const jibW = craneH + JIBY;
+        const ph = place01 * Math.PI * 2 * 28;
+        trolley.position.x = 30 + Math.sin(ph * 0.5) * 3.5;
+        const baseL = Math.max(3, jibW - (topY + 2.6));
+        const L = baseL + (Math.sin(ph) * 0.5 + 0.5) * 2.4;
+        cable.scale.y = L; cable.position.y = -L / 2; hookBlk.position.y = -L;
+        load.position.y = -L - 1.0; load.visible = true;
+        const sw = Math.sin(e * 1.8) * 0.08; hookBlk.position.x = sw; load.position.x = sw;
+        flag.rotation.y = Math.sin(e * 3.0) * 0.5;
+      }
+
+      // graded construction site + props (crane/cabins/hoarding/materials/truck)
+      // so the building plants into the ground instead of floating.
+      function buildSite(scene, shadows) {
+        const SITE_X = 76, SITE_Z = 58, PIT_X = 22, PIT_Z = 16, FX = 18.3, FZ = 12.3;
+        const matt = (color, o) => new THREE.MeshStandardMaterial({ color, roughness: 1, metalness: 0, ...(o || {}) });
+        const flat = (w, d, color, y) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), matt(color)); m.rotation.x = -Math.PI / 2; m.position.y = y; m.receiveShadow = shadows; scene.add(m); return m; };
+        const ring = (color, y, ox, oz, ix, iz) => {
+          const s = new THREE.Shape(); s.moveTo(-ox, -oz); s.lineTo(ox, -oz); s.lineTo(ox, oz); s.lineTo(-ox, oz); s.closePath();
+          const h = new THREE.Path(); h.moveTo(-ix, -iz); h.lineTo(-ix, iz); h.lineTo(ix, iz); h.lineTo(ix, -iz); h.closePath(); s.holes.push(h);
+          const m = new THREE.Mesh(new THREE.ShapeGeometry(s), matt(color)); m.rotation.x = -Math.PI / 2; m.position.y = y; m.receiveShadow = shadows; scene.add(m); return m;
+        };
+        const box = (w, h, d, mat, x, y, z, parent) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); m.position.set(x, y, z); m.castShadow = shadows; m.receiveShadow = shadows; (parent || scene).add(m); return m; };
+
+        flat(580, 580, 0x070b11, -9.3);
+        const grid = new THREE.GridHelper(330, 66, 0x1b2942, 0x0f1827); grid.position.y = -9.24; grid.material.transparent = true; grid.material.opacity = 0.18; scene.add(grid);
+        ring(0x232720, 0, SITE_X, SITE_Z, PIT_X, PIT_Z);
+        ring(0x33373d, 0.012, PIT_X + 2.4, PIT_Z + 2.4, PIT_X, PIT_Z);
+        box(2 * FX, 0.5, 2 * FZ, matt(0x2a2f36), 0, -0.1, 0);
+        flat(2 * SITE_X, 9, 0x121419, 0.03).position.set(0, 0.03, -38);
+        flat(11, 22, 0x121419, 0.03).position.set(0, 0.03, -28);
+        for (let x = -SITE_X + 6; x < SITE_X; x += 11) { const d = new THREE.Mesh(new THREE.PlaneGeometry(4.5, 0.45), matt(0xb7c0cb)); d.rotation.x = -Math.PI / 2; d.position.set(x, 0.05, -38); scene.add(d); }
+
+        const steel = matt(0xcf9f38, { roughness: 0.6, metalness: 0.25 });
+        const dark = matt(0x24272d, { roughness: 0.85 });
+        const concrete = matt(0x39414a, { roughness: 1 });
+        const HX = 31, HZ = 23, HH = 2.4;
+        box(2 * HX, HH, 0.3, concrete, 0, HH / 2, HZ);
+        box(0.3, HH, 2 * HZ, concrete, HX, HH / 2, 0);
+        box(0.3, HH, 2 * HZ, concrete, -HX, HH / 2, 0);
+        box(HX - 6, HH, 0.3, concrete, -(HX / 2 + 3), HH / 2, -HZ);
+        box(HX - 6, HH, 0.3, concrete, HX / 2 + 3, HH / 2, -HZ);
+        box(6.6, 2.7, 2.7, matt(0x2c4f6e, { roughness: 0.7 }), 26, 1.35, -19);
+        box(6.6, 2.7, 2.7, matt(0x4a5560, { roughness: 0.7 }), 26, 4.15, -19);
+        box(6.6, 2.7, 2.7, matt(0x4a5560, { roughness: 0.7 }), 26, 1.35, -22.9);
+        box(12, 0.55, 0.55, steel, -26, 0.3, 4); box(12, 0.55, 0.55, steel, -26, 0.3, 4.7); box(12, 0.55, 0.55, steel, -26, 0.85, 4.35);
+        box(3, 1.4, 3, concrete, -26, 0.7, -8); box(2.6, 0.6, 2.6, matt(0x8a7d5a), -26, 1.7, -8);
+        const pile = new THREE.Mesh(new THREE.ConeGeometry(4, 3, 18), matt(0x47432f)); pile.position.set(25, 1.5, 9); pile.castShadow = shadows; pile.receiveShadow = shadows; scene.add(pile);
+        box(7.5, 1, 2.6, concrete, 0, 1.5, -28); box(3, 2.1, 2.6, dark, 2.6, 1.7, -28); box(5, 1.3, 2.1, matt(0x6b7280), -0.8, 2.6, -28);
+
+        const crane = new THREE.Group(); crane.position.set(-15, 0, -16); scene.add(crane);
+        const JIBY = 2.7, BASE = -0.82;
+        const mast = box(1.6, 1, 1.6, steel, 0, 0.5, 0, crane);
+        const slew = new THREE.Group(); crane.add(slew);
+        box(2.0, 2.0, 2.0, steel, 0, 1.0, 0, slew);
+        box(0.5, 5, 0.5, steel, 0, 4.6, 0, slew);
+        box(42, 1.0, 1.1, steel, 21, JIBY, 0, slew);
+        box(14, 1.0, 1.1, steel, -7, JIBY, 0, slew);
+        box(3.4, 2.8, 2.8, dark, -13, 1.9, 0, slew);
+        const flag = box(1.7, 1.0, 0.06, matt(0x4ade80, { roughness: 0.7, side: THREE.DoubleSide, emissive: 0x2f9e57, emissiveIntensity: 0.35 }), 1.0, 7.7, 0, slew);
+        const trolley = new THREE.Group(); trolley.position.set(20, JIBY, 0); slew.add(trolley);
+        const cable = box(0.14, 1, 0.14, dark, 0, -0.5, 0, trolley);
+        const hookBlk = box(0.9, 0.9, 0.9, dark, 0, -1, 0, trolley);
+        const load = box(2.2, 1.0, 2.2, matt(0x8a93a3, { roughness: 0.8 }), 0, -2, 0, trolley);
+        const rig = { mast, slew, trolley, cable, hookBlk, load, flag, BASE, JIBY };
+        runCrane(rig, 49, 0.62, 0); // static hero pose: a block riding at the top
+        return { rig };
+      }
+
+      const W = 1280, H = 640, BG = 0x070b12;
+      const hexNum = (h) => parseInt(h.slice(1), 16);
+      const FONT = '-apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Arial, sans-serif';
+      // wave fraction through the build (0..1); pick a mid-build for a colourful hero
+      const params = new URLSearchParams(location.search);
+      const F = params.has("p") ? Number(params.get("p")) : 0.58;
+
+      async function getJSON(p) { const r = await fetch(p, { cache: "no-store" }); if (!r.ok) throw new Error(p); return r.json(); }
+
+      const [model, ledger] = await Promise.all([
+        getJSON("/viz/model/building.json"),
+        getJSON("/viz/model/e2e/ledger.json").catch(() => null),
+      ]);
+
+      // ---- render the building hero into an offscreen WebGL canvas ----
+      const P = model.palette, SYS = model.systems;
+      const SYSCOL = SYS.map((s) => hexNum(s.color)), NOT = hexNum(P.not_started), GLAZE = hexNum(P.glazing);
+      const ramp = model.build.ramp, MINA = model.build.minArrival, MAXA = model.build.maxArrival;
+      const p = MINA + F * (MAXA - MINA);
+      const doneAt = (z) => SYS.reduce((n, s) => n + (p >= z.arrival + s.lag + ramp ? 1 : 0), 0);
+
+      const scene = new THREE.Scene();
+      scene.background = gradientTexture("#13294a", "#05080e");
+      scene.fog = new THREE.Fog(0x05080e, 90, 240);
+      const camera = new THREE.PerspectiveCamera(44, W / H, 0.1, 2000);
+      camera.position.set(46, 18, 61);
+      camera.lookAt(-12, 18, 1);
+      const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+      renderer.setSize(W, H); renderer.setPixelRatio(2);
+      renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.22;
+      renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      document.getElementById("gl").appendChild(renderer.domElement);
+      scene.add(new THREE.HemisphereLight(0x9fbce8, 0x141b28, 1.05));
+      const key = new THREE.DirectionalLight(0xfff2e2, 2.1); key.position.set(44, 86, 40);
+      key.castShadow = true; key.shadow.mapSize.set(2048, 2048);
+      { const sc = key.shadow.camera; sc.near = 20; sc.far = 260; sc.left = -70; sc.right = 70; sc.top = 90; sc.bottom = -40; key.shadow.bias = -0.0004; key.shadow.normalBias = 0.7; }
+      scene.add(key);
+      const rim = new THREE.DirectionalLight(0x6fa8ff, 0.85); rim.position.set(-44, 34, -52); scene.add(rim);
+      const fill = new THREE.DirectionalLight(0xaec6ff, 0.25); fill.position.set(-22, 16, 34); scene.add(fill);
+      buildSite(scene, true);
+
+      const size = (b) => [b.max[0] - b.min[0], b.max[1] - b.min[1], b.max[2] - b.min[2]];
+      const center = (b) => [(b.min[0] + b.max[0]) / 2, (b.min[1] + b.max[1]) / 2, (b.min[2] + b.max[2]) / 2];
+      const SCOPECOL = { excavation: hexNum(P.excavation), foundation: hexNum(P.foundation_mat), roof: hexNum(P.roof) };
+      const colourFor = (n) => (n <= 0 ? NOT : SYSCOL[Math.min(SYSCOL.length, n) - 1]);
+
+      for (const z of model.zones) {
+        if (z.level === "marker") continue;
+        const s = size(z.structure), c = center(z.structure);
+        if (s[0] <= 0 || s[1] <= 0 || s[2] <= 0) continue;
+        let col, op = 1, built = true;
+        if (z.scope === "bay") { const n = doneAt(z); built = n > 0 || z.level === "basement" && p >= z.arrival; col = colourFor(n); op = n === 0 ? 0.22 : 1; }
+        else if (z.level === "excavation") { col = SCOPECOL.excavation; op = 0.18; built = p >= z.arrival; }
+        else if (z.level === "foundation") { col = SCOPECOL.foundation; built = p >= z.arrival; }
+        else if (z.level === "roof") { col = SCOPECOL.roof; built = p >= z.arrival; }
+        if (!built) continue;
+        const excav = z.level === "excavation";
+        const mat = new THREE.MeshStandardMaterial({ color: col, roughness: excav ? 1 : 0.68, metalness: excav ? 0 : 0.12, transparent: true, opacity: op, depthWrite: !excav });
+        if (z.scope === "bay" && doneAt(z) >= 4) { mat.emissive.setHex(col); mat.emissiveIntensity = 0.42; }  // accepted floors glow
+        else if (z.level === "roof") { mat.emissive.setHex(col); mat.emissiveIntensity = 0.12; }
+        const mesh = new THREE.Mesh(new THREE.BoxGeometry(s[0], s[1], s[2]), mat);
+        mesh.position.set(c[0], c[1], c[2]); mesh.castShadow = !excav; mesh.receiveShadow = !excav; scene.add(mesh);
+        if (z.scope === "bay" && doneAt(z) >= 2) for (const g of z.glazing || []) {
+          const gs = size(g.box), gc = center(g.box);
+          const gm = new THREE.Mesh(new THREE.BoxGeometry(gs[0], gs[1], gs[2]),
+            new THREE.MeshStandardMaterial({ color: GLAZE, transparent: true, opacity: 0.72, roughness: 0.04, metalness: 0.9, emissive: GLAZE, emissiveIntensity: 0.85 }));
+          gm.position.set(gc[0], gc[1], gc[2]); scene.add(gm);
+        }
+      }
+
+      // bloom so the glazing + accepted floors glow, then compose the card
+      const composer = new EffectComposer(renderer);
+      composer.addPass(new RenderPass(scene, camera));
+      composer.addPass(new UnrealBloomPass(new THREE.Vector2(W, H), 0.55, 0.55, 0.72));
+      composer.addPass(new OutputPass());
+      for (let i = 0; i < 3; i++) composer.render();
+      compose(renderer.domElement);
+
+      // ---- compose the 1280×640 card (3D + scrim + text) ----
+      // Pattern drawn from successful OSS social cards: dominant logo + wordmark
+      // (instantly readable repo name), ONE hero tagline, one value line, one
+      // understated proof line, a strong product visual, safe margins.
+      function compose(gl) {
+        const cv = document.getElementById("card"), ctx = cv.getContext("2d");
+        ctx.drawImage(gl, 0, 0, W, H);
+
+        // left + bottom scrim so the text stays crisp over the 3D
+        let g = ctx.createLinearGradient(0, 0, W * 0.74, 0);
+        g.addColorStop(0, "rgba(7,11,18,0.98)"); g.addColorStop(0.5, "rgba(7,11,18,0.88)"); g.addColorStop(1, "rgba(7,11,18,0)");
+        ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+        g = ctx.createLinearGradient(0, H, 0, H - 140);
+        g.addColorStop(0, "rgba(7,11,18,0.8)"); g.addColorStop(1, "rgba(7,11,18,0)");
+        ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+
+        const X = 72; // safe left margin (platforms crop toward 1.91:1; GitHub rounds corners)
+        ctx.textBaseline = "alphabetic";
+
+        // brand row — logo mark + wordmark (the #1 thing: which repo is this)
+        drawLogo(ctx, X, 86, 46);
+        ctx.fillStyle = "#eef3f9"; ctx.font = `700 33px ${FONT}`;
+        ctx.fillText("Open Gates", X + 62, 120);
+
+        // hero tagline
+        ctx.fillStyle = "#f4f8fc"; ctx.font = `800 56px ${FONT}`;
+        ctx.fillText("See and control", X, 234);
+        ctx.fillText("your operations.", X, 298);
+
+        // one value line
+        ctx.fillStyle = "#aebfd2"; ctx.font = `400 23px ${FONT}`;
+        ctx.fillText("Every gate is an Acceptance Act — a claim", X, 352);
+        ctx.fillText("becomes a payable fact, on a live 3D map.", X, 384);
+
+        // one understated proof line
+        const M = ledger ? (ledger.contractValue / 1e6).toFixed(1) : "4.0";
+        ctx.fillStyle = "#62758b"; ctx.font = `600 18px ${FONT}`;
+        ctx.fillText(`1,560 acceptance acts · €${M}M certified · one deterministic engine`, X, 442);
+
+        // url
+        ctx.fillStyle = "#4ade80"; ctx.font = `700 19px ${FONT}`;
+        ctx.fillText("github.com/Pom4H/opengates", X, H - 52);
+
+        window.__card = cv.toDataURL("image/png");
+        window.__ready = true;
+      }
+
+      // a small "open gate" mark: two posts + a top arch on a green rounded square
+      function drawLogo(ctx, x, y, s) {
+        ctx.fillStyle = "#4ade80"; roundRect(ctx, x, y, s, s, s * 0.26); ctx.fill();
+        ctx.strokeStyle = "#06170e"; ctx.lineWidth = s * 0.12; ctx.lineCap = "round";
+        const p = s * 0.27, midY = y + s * 0.48;
+        ctx.beginPath();
+        ctx.moveTo(x + p, y + s - p); ctx.lineTo(x + p, midY);
+        ctx.moveTo(x + s - p, y + s - p); ctx.lineTo(x + s - p, midY);
+        ctx.stroke();
+        ctx.beginPath(); ctx.arc(x + s / 2, midY, s / 2 - p, Math.PI, 0); ctx.stroke();
+      }
+
+      function roundRect(ctx, x, y, w, h, r) {
+        ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r);
+        ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+      }
+    </script>
+  </body>
+</html>

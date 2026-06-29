@@ -36,7 +36,7 @@
       "type": "evidence.attached",
       "at": "2026-06-02T11:07:00Z",
       "actor": "contractor:alfa-stroy",
-      "evidence": { "kind": "aosr_ref", "values": { "act": "АОСР-2026-05-014" }, "ref": "aosr/2026-05-014.pdf" }
+      "evidence": { "kind": "aosr_ref", "values": { "act": "AOSR-2026-05-014" }, "ref": "aosr/2026-05-014.pdf" }
     },
     {
       "type": "decision.recorded",
@@ -44,7 +44,7 @@
       "actor": "supervisor:ivanov",
       "reviewerRole": "technical_supervisor",
       "outcome": "returned_for_rework",
-      "note": "Обмер: claimed 120 m³ vs survey 100 m³; |error|=20 m³ = 20% of reference — an order of magnitude beyond U=4 m³ and far outside the 5% tolerance. Re-measure and resubmit. Nothing certified."
+      "note": "Survey: claimed 120 m³ vs survey 100 m³; |error|=20 m³ = 20% of reference — an order of magnitude beyond U=4 m³ and far outside the 5% tolerance. Re-measure and resubmit. Nothing certified."
     }
   ]
 }

@@ -30,8 +30,8 @@ emitting the event log as a signed PROV-O bundle a third party can verify.
 
 ## A construction vertical
 
-A thin product around the construction gate: КС-2 intake, обмер capture, a
-КС-3 certificate out of the accepted quantities, retention tracking across a
+A thin product around the construction gate: KS-2 (work-acceptance act) intake, survey capture, a
+KS-3 (cost/payment certificate) out of the accepted quantities, retention tracking across a
 defects-liability period. The gate is the engine; this is the surface.
 
 ## A product (hosted service)
