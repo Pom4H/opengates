@@ -3,11 +3,19 @@
 **See and control your operations — one accepted fact at a time.**
 Not task management. Fact acceptance.
 
-Every operation runs on facts that must be **accepted** before anything moves:
-work gets done, goods arrive, a batch passes QC, a service is delivered. Until
-someone accepts the fact, money is frozen and the next step is blocked. Open
-Gates turns each of those acceptance moments — a **gate** — into something you
-can **see on a live map, verify against a trusted reference, and control**.
+Most operational problems don't begin with the absence of a big system. They
+begin with a fact that has been **claimed, but not yet accepted**:
+
+- Someone says the work is done.
+- Someone says the goods were delivered.
+- Someone says the batch passed quality control.
+- Someone says the service was rendered.
+
+Until another role accepts that statement, the operation hangs: money can't be
+paid with confidence, the next stage can't open safely, responsibility is
+unclear, risk hangs in the air. Open Gates turns each of those moments — a
+**gate** — into something you can **see on a live map, verify against a trusted
+reference, and control**.
 
 Underneath, every gate is an **Acceptance Act**: a typed, event-sourced,
 replayable step where a claim becomes a payable fact. That rigor is what makes
@@ -199,6 +207,16 @@ Conveniences built **on** the Acceptance Act, not part of it:
 **Implementation & tooling (non-normative):** a reference engine
 [`packages/engine/`](packages/engine/), a runtime ([`docs/`](docs/)), and a
 [`ROADMAP.md`](ROADMAP.md) of unbuilt verticals.
+
+## The role of assistants
+
+Assistants such as Claude or Codex fit this model well — and not just as chat.
+Connected to the engine (there's an [MCP server](docs/MCP.md)), an assistant can
+find the disputed case, collect the relevant data, compare a claim against its
+evidence, surface the mismatch, and prepare the decision for a human reviewer.
+But responsibility stays with the person: the assistant does not make the
+business decision — it gets people to the point where they can make it
+consciously and faster.
 
 ## What it is / is not
 
